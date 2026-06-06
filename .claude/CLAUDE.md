@@ -14,6 +14,24 @@ cellular behavior.
 - Track B (Kaggle): https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b
 - GitHub: https://github.com/jmsung/bio-reasoning
 
+## Philosophy
+
+This project is a sandbox for **agentic engineering**, not our day job. We
+use it to practice building with agents on a biologically meaningful problem
+(gene regulation and prediction) in a safe, low-stakes environment.
+
+- **Agents do the work, we manage.** The point is not for the developer to
+  write the code — it's to define the goal, shape the plan, review, and give
+  feedback. The agent executes under our direction and approval.
+- **Agents must ask.** When intent is unclear or a decision is ambiguous,
+  the agent stops and asks rather than guessing. Alignment beats velocity.
+- **System thinking over micro-management.** Prefer cutting-edge harness,
+  agentic workflows, and meta-learning over hand-tuning. If we find
+  ourselves fine-tuning by hand, we're doing it wrong — step back and let
+  the system do it.
+- **Learn by doing.** Try, fail, iterate. Shipping a rough thing and
+  learning from it beats planning a perfect thing.
+
 ## Team
 - Jongmin Sung — https://www.linkedin.com/in/jongmin-sung/
 - Bing Hu — https://www.linkedin.com/in/bingxuhu/
@@ -70,5 +88,5 @@ in `src/`. Otherwise `scripts/`. Never duplicate functions across scripts.
 
 ## Shared resources
 - GitHub (code + PRs + issues): https://github.com/jmsung/bio-reasoning
-- Google Drive (papers, materials): *(link TBD)*
+- Google Drive (papers, materials): https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS
 - Kaggle competitions: see Track A / Track B URLs above
