@@ -6,11 +6,12 @@ Testing whether LLMs and agentic systems can serve as useful computational engin
 
 ## Challenge
 
-Three tracks (see https://genentech.github.io/BioReasoningChallenge/):
+Predict perturbation outcomes in macrophages using LLMs / agentic systems.
+Three tracks (prompt-only, agentic tool-use, fine-tuning). Canonical
+summary, per-track detail, and entry decision live in
+[`docs/challenge.md`](docs/challenge.md).
 
-- **Track A** — Prompt-only (no tools, single call). Fixed base: GPT-OSS-120B. Max 4,096 prompt tokens, 3 samples per question.
-- **Track B** — (Multi-)agentic tool-use. Fixed base: GPT-OSS-120B. Max 100 tools, 250 calls, 16,384 prompt tokens. Traces required.
-- **Track C** — Fine-tuning (reasoning, no tools). Open model < 10B params; any FT technique.
+Overview: https://genentech.github.io/BioReasoningChallenge/
 
 Likely entering A and/or B.
 
