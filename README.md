@@ -23,7 +23,25 @@ uv sync
 ## Layout
 
 - `src/bio_reasoning/` — library code
-- `scripts/` — entry points and orchestration
-- `notebooks/` — exploration
+  - `data/` — loaders, transforms
+  - `features/` — feature engineering
+  - `models/` — model definitions
+  - `training/` — train loop, callbacks
+  - `eval/` — metrics, validation
+  - `utils/` — seed, logging, io
+- `scripts/` — entry points: `prepare_data.py`, `train.py`, `predict.py`, `make_submission.py`
+- `configs/` — experiment configs (YAML per experiment)
+- `notebooks/` — exploration (numbered: `01-eda.ipynb`, …)
 - `tests/` — pytest
-- `docs/` — team-facing docs (architecture, design notes)
+- `docs/` — team-facing docs (architecture, design notes, decisions)
+- `data/` — `raw/`, `processed/`, `external/`, `interim/` (gitignored except READMEs/.gitkeep)
+- `models/` — checkpoints (gitignored except README)
+- `outputs/` — run artifacts: logs, preds, figures (gitignored except README)
+- `submissions/` — Kaggle submission files (gitignored except README)
+
+## Source of truth
+
+`README.md` and `docs/` are the authoritative reference for this repo.
+Any code change that affects workflow, API, file layout, data schema, or
+commands **must** update the relevant docs in the same commit or PR.
+Stale docs are worse than missing docs.
