@@ -15,9 +15,9 @@ cellular behavior.
 - GitHub: https://github.com/jmsung/bio-reasoning
 
 ## Team
-- Jongmin Sung
-- Bing Hu
-- Joo Lee
+- Jongmin Sung — https://www.linkedin.com/in/jongmin-sung/
+- Bing Hu — https://www.linkedin.com/in/bingxuhu/
+- Joo Lee — https://www.linkedin.com/in/joo-lee-b0a9b9161/
 
 ## Tech stack
 - Python 3.x, managed with `uv`
