@@ -1,25 +1,25 @@
 ---
 name: wiki-ingest
-description: Ingest an artifact (paper, web page, repo, talk) into docs/source/ as a single distilled page. Human-gated.
+description: Ingest an artifact (paper, web page, repo, talk) into knowledge/source/ as a single distilled page. Human-gated.
 
 argument-hint: [--type <type>] <url-or-path>
 ---
 
-Ingest an external artifact: read it, draft a distilled summary, and (on user approval) write a single page at `docs/source/<slug>.md`. Layout is flat — type lives in frontmatter (`source_type:`), not folders.
+Ingest an external artifact: read it, draft a distilled summary, and (on user approval) write a single page at `knowledge/source/<slug>.md`. Layout is flat — type lives in frontmatter (`source_type:`), not folders.
 
 **Human-gated.** The skill reads the source, drafts the distillation, and **proposes** the write. Nothing lands without per-artifact approval.
 
-**Three knowledge layers** (full spec in `docs/wiki/README.md`):
+**Three knowledge layers** (full spec in `knowledge/wiki/README.md`):
 
 | Layer | Job | Written by |
 |---|---|---|
-| `docs/raw/` | Native originals (PDF, HTML) | gitignored — local cache |
-| `docs/source/` | One distilled markdown per artifact | this skill (`/wiki-ingest`) |
-| `docs/wiki/` | Hand-curated synthesis (findings, methods, decisions, concepts) | humans + `/wiki-learn` + `/wiki-query --file-back` |
+| `knowledge/raw/` | Native originals (PDF, HTML) | gitignored — local cache |
+| `knowledge/source/` | One distilled markdown per artifact | this skill (`/wiki-ingest`) |
+| `knowledge/wiki/` | Hand-curated synthesis (findings, methods, decisions, concepts) | humans + `/wiki-learn` + `/wiki-query --file-back` |
 
-This skill writes ONLY to `docs/source/`. Synthesis pages in `docs/wiki/` are not created here.
+This skill writes ONLY to `knowledge/source/`. Synthesis pages in `knowledge/wiki/` are not created here.
 
-**Raw artifacts go to Drive** (`02-papers/`, `01-challenge/`, etc.), not the repo. Cite the Drive link from the source page's `drive:` field. `docs/raw/` is a local cache — gitignored.
+**Raw artifacts go to Drive** (`02-papers/`, `01-challenge/`, etc.), not the repo. Cite the Drive link from the source page's `drive:` field. `knowledge/raw/` is a local cache — gitignored.
 
 Steps:
 
@@ -27,13 +27,13 @@ Steps:
 
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
-  echo "Not inside a git checkout — /wiki-ingest needs the repo root to find docs/source/." >&2
+  echo "Not inside a git checkout — /wiki-ingest needs the repo root to find knowledge/source/." >&2
   exit 1
 }
-SOURCE="$REPO_ROOT/docs/source"
-WIKI="$REPO_ROOT/docs/wiki"
+SOURCE="$REPO_ROOT/knowledge/source"
+WIKI="$REPO_ROOT/knowledge/wiki"
 [ -d "$SOURCE" ] || {
-  echo "docs/source/ does not exist. See $WIKI/README.md for the 3-layer setup." >&2
+  echo "knowledge/source/ does not exist. See $WIKI/README.md for the 3-layer setup." >&2
   exit 1
 }
 ```
@@ -61,7 +61,7 @@ If `--type <type>` was given, use it. Valid types: `papers`, `web`, `repos`, `ta
 ## 3. Read source
 
 - **URL:** use `WebFetch`. If it fails (paywall, auth, 4xx/5xx), ask the user to provide a local copy or paste relevant text.
-- **Local PDF:** `Read` with `pages: "1-3"` for metadata (title, author, year). If the body is needed for distillation, `Read` more pages or ask the user to convert to markdown first (`pandoc` or open-the-PDF-and-paste). The skill does NOT store raw PDFs in `docs/source/` — those go to Drive, optionally cached in `docs/raw/` (gitignored).
+- **Local PDF:** `Read` with `pages: "1-3"` for metadata (title, author, year). If the body is needed for distillation, `Read` more pages or ask the user to convert to markdown first (`pandoc` or open-the-PDF-and-paste). The skill does NOT store raw PDFs in `knowledge/source/` — those go to Drive, optionally cached in `knowledge/raw/` (gitignored).
 - **Local `.md` / `.txt` / `.html`:** `Read` directly.
 
 Extract: **title**, **author / source**, **date**.
@@ -83,7 +83,7 @@ Per-type conventions:
 | `web` | `<domain>-<slug>` or `<author>-<slug>` for personal sites |
 | `notion`, `slack` | `<channel-or-page>-<slug>` |
 
-Target path: `docs/source/<stem>.md` (flat — no type subfolder).
+Target path: `knowledge/source/<stem>.md` (flat — no type subfolder).
 
 ## 5. Dedup check
 
@@ -114,7 +114,7 @@ Print:
 Proposed ingest:
   Source: <URL or path>
   Type:   <type>
-  Target: docs/source/<stem>.md
+  Target: knowledge/source/<stem>.md
 
   Preview:
     ---
@@ -196,7 +196,7 @@ Skip silently if qmd or the collection is unavailable.
 
 ```bash
 cd "$REPO_ROOT"
-git add "docs/source/<stem>.md" docs/wiki/index.md docs/wiki/log.md
+git add "knowledge/source/<stem>.md" knowledge/wiki/index.md knowledge/wiki/log.md
 git commit -m "docs(source): ingest <stem>"
 ```
 
@@ -340,8 +340,8 @@ Apply the template matching the artifact's `<type>`. Distillations should be sel
 
 ## What this skill does NOT do
 
-- **Does not write to `docs/wiki/`** (except `index.md` + `log.md`). Synthesis pages are hand-curated, or via `/wiki-learn` / `/wiki-query --file-back`.
-- **Does not save raw artifacts in git.** PDFs / large files go to Drive — link to them via `drive:` in frontmatter. Local `docs/raw/` cache is gitignored.
+- **Does not write to `knowledge/wiki/`** (except `index.md` + `log.md`). Synthesis pages are hand-curated, or via `/wiki-learn` / `/wiki-query --file-back`.
+- **Does not save raw artifacts in git.** PDFs / large files go to Drive — link to them via `drive:` in frontmatter. Local `knowledge/raw/` cache is gitignored.
 - **Does not auto-ingest.** Approval per artifact is mandatory.
 - **Does not scan for cross-references.** Use `/wiki-lint` later to find and add them.
 
@@ -350,5 +350,5 @@ Apply the template matching the artifact's `<type>`. Distillations should be sel
 - **Human-gated.** Step 7's approval gate is mandatory.
 - **One source page per artifact.** Don't try to combine multiple sources in one page — make separate pages and cross-link.
 - **Cite the source URL or path** in `source_url:` — every page must trace back to its origin.
-- **`docs/source/` holds distilled markdown only.** Raw artifacts go to Drive (optionally cached in `docs/raw/`, gitignored).
+- **`knowledge/source/` holds distilled markdown only.** Raw artifacts go to Drive (optionally cached in `knowledge/raw/`, gitignored).
 - If WebFetch fails, ask the user for a local copy or pasted text.

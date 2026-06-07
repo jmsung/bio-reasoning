@@ -9,7 +9,7 @@ to catch the orphan.
 
 ## source/ — per-artifact distillations
 
-Files live flat under `docs/source/`. Type lives in each page's
+Files live flat under `knowledge/source/`. Type lives in each page's
 `source_type:` frontmatter; this index groups them by type for browsing.
 
 ### Papers

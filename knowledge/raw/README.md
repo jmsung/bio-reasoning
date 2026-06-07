@@ -2,7 +2,7 @@
 
 Local cache of native source artifacts (PDFs, HTML, .docx, etc.).
 **Gitignored** — never committed. The canonical in-git record is
-`docs/source/<type>/<stem>.md`, which captures the URL, retrieval date,
+`knowledge/source/<stem>.md`, which captures the URL, retrieval date,
 hash, and distilled summary.
 
 For sharing the original file with teammates, upload to Drive

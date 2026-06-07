@@ -57,7 +57,7 @@ download instructions once `scripts/prepare_data.py` is wired up.
 | [`docs/roadmap.md`](docs/roadmap.md) | Single living plan — priority-ordered Todo + completed milestones |
 | [`docs/development.md`](docs/development.md) | Setup, R&D workflow, conventions |
 | [`docs/where-things-live.md`](docs/where-things-live.md) | Map of repo / Drive / Kaggle and a "what goes where" cheatsheet |
-| [`docs/wiki/`](docs/wiki/) | Distilled team knowledge — see its [README](docs/wiki/README.md) for the four `/wiki-*` skills |
+| [`knowledge/wiki/`](knowledge/wiki/) | Distilled team knowledge — see its [README](knowledge/wiki/README.md) for the four `/wiki-*` skills |
 | [`.claude/CLAUDE.md`](.claude/CLAUDE.md) | Agent-facing team conventions |
 
 ## Resources

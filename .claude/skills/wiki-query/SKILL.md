@@ -5,7 +5,7 @@ description: Query the team wiki — search, synthesize, and optionally file the
 argument-hint: <question>
 ---
 
-Query the team wiki at `docs/wiki/` — search relevant pages, synthesize a cited answer, and optionally file it back as a new page.
+Query the team wiki at `knowledge/wiki/` — search relevant pages, synthesize a cited answer, and optionally file it back as a new page.
 
 Steps:
 
@@ -13,16 +13,16 @@ Steps:
 
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
-  echo "Not inside a git checkout — /wiki-query needs the repo root to find docs/wiki/." >&2
+  echo "Not inside a git checkout — /wiki-query needs the repo root to find knowledge/wiki/." >&2
   exit 1
 }
-WIKI="$REPO_ROOT/docs/wiki"
+WIKI="$REPO_ROOT/knowledge/wiki"
 [ -d "$WIKI" ] || {
-  echo "docs/wiki/ does not exist. See $WIKI/README.md for setup (or create it)." >&2
+  echo "knowledge/wiki/ does not exist. See $WIKI/README.md for setup (or create it)." >&2
   exit 1
 }
 [ -f "$WIKI/index.md" ] || {
-  echo "docs/wiki/index.md missing — the wiki hasn't been initialized." >&2
+  echo "knowledge/wiki/index.md missing — the wiki hasn't been initialized." >&2
   exit 1
 }
 ```
@@ -88,7 +88,7 @@ If no: print the answer and stop.
 
 ```bash
 cd "$REPO_ROOT"
-git add "docs/wiki/<new-page-path>" docs/wiki/index.md
+git add "knowledge/wiki/<new-page-path>" knowledge/wiki/index.md
 git commit -m "docs(wiki): query \"<short question>\" — filed as <path>"
 ```
 

@@ -5,7 +5,7 @@ description: Lint the team wiki — find orphans, stale claims, missing cites, a
 argument-hint: [--fix]
 ---
 
-Lint the team wiki at `docs/wiki/` for health issues — orphan pages, broken cross-references, missing cites, and contradictions.
+Lint the team wiki at `knowledge/wiki/` for health issues — orphan pages, broken cross-references, missing cites, and contradictions.
 
 Steps:
 
@@ -13,12 +13,12 @@ Steps:
 
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
-  echo "Not inside a git checkout — /wiki-lint needs the repo root to find docs/wiki/." >&2
+  echo "Not inside a git checkout — /wiki-lint needs the repo root to find knowledge/wiki/." >&2
   exit 1
 }
-WIKI="$REPO_ROOT/docs/wiki"
+WIKI="$REPO_ROOT/knowledge/wiki"
 [ -d "$WIKI" ] || {
-  echo "docs/wiki/ does not exist. See $WIKI/README.md for setup." >&2
+  echo "knowledge/wiki/ does not exist. See $WIKI/README.md for setup." >&2
   exit 1
 }
 ```
@@ -75,7 +75,7 @@ For pages on overlapping topics, scan for conflicting claims:
 Print a summary:
 
 ```
-Wiki lint for docs/wiki/:
+Wiki lint for knowledge/wiki/:
   Pages:           N total, M in index
   Orphans:         N (fixed: M)
   Broken cites:    N (fixed: M)
@@ -88,7 +88,7 @@ Wiki lint for docs/wiki/:
 
 ```bash
 cd "$REPO_ROOT"
-git add docs/wiki/
+git add knowledge/wiki/
 git commit -m "docs(wiki): lint — fix N orphans, N broken cites, N body link gaps"
 ```
 
@@ -98,4 +98,4 @@ Rules:
 - Never auto-fix contradictions — always report for human review.
 - Broken cites, orphans, and body link gaps are safe to auto-fix with `--fix`.
 - Missing cross-references require user confirmation before adding.
-- All `cites:` paths are **wiki-root-relative** (from `docs/wiki/`), never file-relative.
+- All `cites:` paths are **wiki-root-relative** (from `knowledge/wiki/`), never file-relative.

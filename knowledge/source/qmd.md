@@ -42,7 +42,7 @@ local GGUF models via node-llama-cpp.
 
 `/wiki-query` (in `.claude/skills/`) uses qmd as its preferred search
 backend when available, falling back to grep. Register a collection
-once (`qmd collection add ./docs/source --name bio-reasoning`) and the
+once (`qmd collection add ./knowledge/source --name bio-reasoning`) and the
 team source layer becomes semantically searchable. Optional, personal
 — not a team dependency.
 

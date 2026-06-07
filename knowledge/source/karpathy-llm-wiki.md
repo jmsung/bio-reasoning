@@ -67,18 +67,18 @@ couldn't solve was who does the maintenance. The LLM handles that."*
 
 ## Why interesting for us
 
-Direct parallel to what we're doing in `docs/source/` + `docs/wiki/`
+Direct parallel to what we're doing in `knowledge/source/` + `knowledge/wiki/`
 (ingest → query → lint via `/wiki-ingest`, `/wiki-query`,
 `/wiki-lint`). Validates the pattern; also suggests refinements we
 might adopt:
 
 - **Filing query answers back into the wiki** — our `/wiki-query
-  --file-back` does this; underused so far. Lands in `docs/wiki/findings/`.
+  --file-back` does this; underused so far. Lands in `knowledge/wiki/findings/`.
 - **The wiki touching 10–15 pages per ingest** — we currently write
   only the source distillation page; we don't auto-update related
-  concept pages in `docs/wiki/`. Worth considering when we have more
+  concept pages in `knowledge/wiki/`. Worth considering when we have more
   pages to interconnect.
-- **`log.md` as append-only history** — we have one in `docs/wiki/`;
+- **`log.md` as append-only history** — we have one in `knowledge/wiki/`;
   check that `/wiki-ingest` is actually appending to it.
 
 ## Open questions

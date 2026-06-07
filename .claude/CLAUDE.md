@@ -63,7 +63,7 @@ functions across scripts.
 | [`docs/foundation-models.md`](../docs/foundation-models.md) | Track C open-weights candidates + comparisons + pick |
 | [`docs/kaggle-rules.md`](../docs/kaggle-rules.md) | Per-track submission format, limits, gotchas |
 | [`docs/where-things-live.md`](../docs/where-things-live.md) | Repo / Drive / Kaggle map |
-| [`docs/wiki/`](../docs/wiki/) | Distilled team knowledge — see [README](../docs/wiki/README.md) |
+| [`knowledge/wiki/`](../knowledge/wiki/) | Distilled team knowledge — see [README](../knowledge/wiki/README.md) |
 
 When the user asks "where does X live / how does Y work", check these first
 and quote them. Don't duplicate their content here.
@@ -77,7 +77,7 @@ brainstorm → roadmap → branch → PR → merge.
 
 - `/git-sync` — safe-sync this repo (commit → fetch → rebase → push). Never `--force` on shared branches.
 - `/wiki-query` — search the team wiki, synthesize a cited answer.
-- `/wiki-ingest` — ingest a paper / web page / talk into `docs/source/` as a distilled page.
+- `/wiki-ingest` — ingest a paper / web page / talk into `knowledge/source/` as a distilled page.
 - `/wiki-learn` — distill a conversation insight into a new wiki page.
 - `/wiki-lint` — wiki health checks (orphans, stale claims, missing cites).
 
@@ -86,8 +86,8 @@ brainstorm → roadmap → branch → PR → merge.
 This project's wiki is a living, hybrid (human + agent) knowledge base.
 When answering a question, rank sources in this order:
 
-1. **The wiki first** — `docs/source/` (per-artifact distillations) and
-   `docs/wiki/` (hand-curated synthesis). Treat these as ground truth
+1. **The wiki first** — `knowledge/source/` (per-artifact distillations) and
+   `knowledge/wiki/` (hand-curated synthesis). Treat these as ground truth
    for this project; cite the specific page.
 2. **Web second** — WebFetch / WebSearch only when the wiki is silent
    or insufficient. Cite the URL inline. If the source is durably
@@ -101,7 +101,7 @@ something durable from the web or from a teammate conversation, file
 it back via `/wiki-ingest` or `/wiki-learn` so future agents and
 teammates land at step 1.
 
-For full layout + flow: [`docs/wiki/README.md`](../docs/wiki/README.md).
+For full layout + flow: [`knowledge/wiki/README.md`](../knowledge/wiki/README.md).
 
 ## Documentation is the source of truth
 - `README.md` and `docs/` are authoritative. Always keep them current.

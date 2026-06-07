@@ -1,20 +1,20 @@
 # Team knowledge layers
 
-Three sibling directories under `docs/`, each with a clear job. Both
+Three sibling directories under `knowledge/`, each with a clear job. Both
 `raw/` and `source/` are **flat** — no type subfolders, type lives in
 frontmatter (`source_type:`).
 
 | Layer | What it holds | In git? |
 |---|---|---|
-| [`docs/raw/`](../raw/) | Native source artifacts (PDFs, HTML, .docx), flat | **gitignored** — local cache only |
-| [`docs/source/`](../source/) | One distilled markdown page per artifact, flat, with provenance frontmatter | yes |
-| [`docs/wiki/`](.) | Hand-curated synthesis: home / index / log / findings / methods / decisions / concepts | yes |
+| [`knowledge/raw/`](../raw/) | Native source artifacts (PDFs, HTML, .docx), flat | **gitignored** — local cache only |
+| [`knowledge/source/`](../source/) | One distilled markdown page per artifact, flat, with provenance frontmatter | yes |
+| [`knowledge/wiki/`](.) | Hand-curated synthesis: home / index / log / findings / methods / decisions / concepts | yes |
 
 ## Reliability order — wiki > web > model knowledge
 
 When answering a question, sources rank in this order:
 
-1. **The wiki first** (`docs/source/` + `docs/wiki/`) — cited, curated,
+1. **The wiki first** (`knowledge/source/` + `knowledge/wiki/`) — cited, curated,
    ground-truth for this project.
 2. **Web second** — WebFetch / WebSearch when the wiki is silent. Cite
    the URL inline. If the source proves useful, ingest it via
@@ -130,14 +130,14 @@ broken cites, and missing cross-references.
   ---
   ```
 - Body: distilled summary first (3–6 lines), then sections as needed.
-- Cross-link with `[[other-page-slug]]` (resolved relative to `docs/`).
+- Cross-link with `[[other-page-slug]]` (resolved relative to `knowledge/`).
   When you cross-link across layers, add the target to `cites:`.
 - Update [`index.md`](index.md) when adding a page (the skills do this).
 
 ## Wiki subdirectories (synthesis)
 
 ```
-docs/wiki/
+knowledge/wiki/
 ├── README.md      # this file
 ├── home.md        # project orientation, entry point for queries
 ├── index.md       # catalog of source/ AND wiki/ pages
