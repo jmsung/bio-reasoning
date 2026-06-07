@@ -2,51 +2,70 @@
 
 BioReasoning Challenge 2026 — MLGenX Workshop @ ICLR 2026.
 
-Testing whether LLMs and agentic systems can serve as useful computational engines for predicting cellular behavior.
+Testing whether LLMs and agentic systems can serve as useful computational
+engines for predicting cellular behavior. Specifically: predict perturbation
+outcomes in macrophages across three challenge tracks
+([overview](https://genentech.github.io/BioReasoningChallenge/)).
 
-## Challenge
+## Team
+- Jongmin Sung — https://www.linkedin.com/in/jongmin-sung/
+- Bing Hu — https://www.linkedin.com/in/bingxuhu/
+- Joo Lee — https://www.linkedin.com/in/joo-lee-b0a9b9161/
 
-Predict perturbation outcomes in macrophages using LLMs / agentic systems.
-Three tracks (prompt-only, agentic tool-use, fine-tuning). Canonical
-summary, per-track detail, and entry decision live in
-[`docs/challenge.md`](docs/challenge.md).
+## Approach
 
-Overview: https://genentech.github.io/BioReasoningChallenge/
+We're running this project **agentically**: we plan, guide, and review;
+the agent does most of the actual code work. The point is hands-on
+practice with agent-driven engineering on a biologically meaningful problem
+in a low-stakes setting. Concretely:
 
-Likely entering A and/or B.
+- **Agents do the work, we manage.** Define goals, shape the plan, review
+  diffs, give feedback. The agent executes under our direction.
+- **Agents must ask.** When intent is ambiguous, stop and ask — alignment
+  beats velocity.
+- **System over micro-management.** Cutting-edge harness and agentic
+  workflows over hand-tuning.
+
+(Full philosophy + agent conventions: [`.claude/CLAUDE.md`](.claude/CLAUDE.md))
+
+## Where to start
+
+If you just cloned this repo:
+
+1. Skim [`docs/challenge.md`](docs/challenge.md) — what the challenge is,
+   tracks, our entry decision.
+2. Skim [`docs/where-things-live.md`](docs/where-things-live.md) — repo
+   vs. Drive vs. Kaggle.
+3. Point your Claude Code (or any agent) at [`.claude/CLAUDE.md`](.claude/CLAUDE.md) —
+   team-shared conventions and skills.
 
 ## Setup
 
 ```bash
-uv sync
+uv sync                 # install deps
+cp .env.example .env    # add API keys (Together AI / Fireworks for GPT-OSS-120B; Kaggle)
 ```
 
-## Where things live
+Data is pulled from Kaggle, not committed. See `data/README.md` for
+download instructions once `scripts/prepare_data.py` is wired up.
 
-Team work happens in three places: **this repo**, the **shared Drive**,
-and **Kaggle**. See [`docs/where-things-live.md`](docs/where-things-live.md)
-for the full map and a "what goes where" cheatsheet. Distilled team
-knowledge lives in [`docs/wiki/`](docs/wiki/) — see its
-[README](docs/wiki/README.md) for the four `/wiki-*` skills.
+## Canonical docs
 
-## Layout
+| File | Owns |
+|---|---|
+| [`docs/challenge.md`](docs/challenge.md) | Challenge summary, per-track detail, entry decision |
+| [`docs/where-things-live.md`](docs/where-things-live.md) | Map of repo / Drive / Kaggle and a "what goes where" cheatsheet |
+| [`docs/wiki/`](docs/wiki/) | Distilled team knowledge — see its [README](docs/wiki/README.md) for the four `/wiki-*` skills |
+| [`.claude/CLAUDE.md`](.claude/CLAUDE.md) | Agent-facing team conventions |
 
-- `src/bio_reasoning/` — library code
-  - `data/` — loaders, transforms
-  - `features/` — feature engineering
-  - `models/` — model definitions
-  - `training/` — train loop, callbacks
-  - `eval/` — metrics, validation
-  - `utils/` — seed, logging, io
-- `scripts/` — entry points: `prepare_data.py`, `train.py`, `predict.py`, `make_submission.py`
-- `configs/` — experiment configs (YAML per experiment)
-- `notebooks/` — exploration (numbered: `01-eda.ipynb`, …)
-- `tests/` — pytest
-- `docs/` — team-facing docs (architecture, design notes, decisions)
-- `data/` — `raw/`, `processed/`, `external/`, `interim/` (gitignored except READMEs/.gitkeep)
-- `models/` — checkpoints (gitignored except README)
-- `outputs/` — run artifacts: logs, preds, figures (gitignored except README)
-- `submissions/` — Kaggle submission files (gitignored except README)
+## Resources
+
+- **GitHub:** https://github.com/jmsung/bio-reasoning
+- **Drive** (papers, raw artifacts, writeups): https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS
+- **Kaggle:**
+  [Track A](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-a) ·
+  [Track B](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b) ·
+  [Track C](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-c)
 
 ## Source of truth
 
