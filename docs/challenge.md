@@ -114,6 +114,46 @@ before first submit.
 23 entries total. Headroom over baseline (~0.10) suggests prompting
 alone gets meaningful signal — the question is how much.
 
+## Track B — (multi-)agentic tool-use
+
+[Kaggle](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b) · Community competition · $2,000 USD prize.
+
+### Task and data
+
+**Identical to Track A.** Same 3-class problem (`up` / `down` / `none`),
+same `train.csv` and `test.csv` byte-for-byte, same dual-OOD split. The
+prediction target is the same; only the modeling rules differ.
+
+### Constraints (from challenge overview)
+
+- **Fixed base model:** GPT-OSS-120B.
+- **Tool use allowed:** design and use tools / multi-agent architectures
+  around the fixed base.
+- **Limits:** ≤ 100 tools, ≤ 250 calls per test row, 16,384 prompt tokens.
+- **Traces required:** submissions must include traces of tool calls for
+  reproducibility / audit.
+- Exact limits to confirm from the Kaggle rules tab.
+
+### Evaluation and submission
+
+Same metric and submission shape as Track A (`id,label`). Confirm against
+the Track B evaluation tab before relying.
+
+### Leaderboard snapshot (2026-06-06)
+
+| Rank | Team | Score |
+|---|---|---|
+| 1 | shijingzhao | 0.652 |
+| 2 | Alex Li | 0.632 |
+| 3 | Misha Shikhov | 0.620 |
+| 4 | Álvaro | 0.612 |
+| 5 | Tian Luyi | 0.606 |
+
+12 entries total. Top score is essentially tied with Track A's top —
+suggests that, at the current state of the leaderboard, agentic tool-use
+is not yet pulling ahead of careful prompting. Headroom for whichever
+approach lands the right tools.
+
 ## Timeline
 
 - **Final submission deadline:** 2026-07-22 07:00:00 UTC (all three tracks).
