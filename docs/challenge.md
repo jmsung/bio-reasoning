@@ -154,6 +154,59 @@ suggests that, at the current state of the leaderboard, agentic tool-use
 is not yet pulling ahead of careful prompting. Headroom for whichever
 approach lands the right tools.
 
+## Track comparison
+
+| Dimension | Track A (prompt-only) | Track B (agentic tool-use) | Track C (fine-tuning) |
+|---|---|---|---|
+| Task | 3-class direction (`up`/`down`/`none`) | identical | identical (unconfirmed; data gated) |
+| Data | `train.csv` 7,705 rows + `test.csv` 1,813 rows | byte-identical to A | likely identical (TBD) |
+| Base model | GPT-OSS-120B (fixed) | GPT-OSS-120B (fixed) | any open model < 10B (you train it) |
+| Modeling moves | prompt engineering only | tool design + agent architecture | fine-tuning technique |
+| Inference cost | 1 call × 3 samples per row | up to 250 tool calls per row | depends on chosen model |
+| Compute required | inference only | inference only | GPU training |
+| Top leaderboard (2026-06-06) | 0.651 | 0.652 | 0.611 |
+| Headroom over baseline (0.553) | +0.10 | +0.10 | +0.06 |
+| Submission cadence | Kaggle daily limit | Kaggle daily limit | Kaggle daily limit |
+| Reward | $2,000 USD | $2,000 USD | $2,000 USD |
+| Fit with project philosophy | Strong baseline; high signal per effort | Direct fit — "agentic engineering sandbox" | Off-pattern (we'd be fine-tuning, not orchestrating agents) |
+| Effort to enter | Low — prompt + submit | Medium — tool design + traces | High — GPU, FT pipeline |
+| Entries to date | 26 teams | 12 teams | 14 teams |
+
+Notes:
+- Tracks A and B compete on the **same task with the same data** — the
+  only thing being optimized is the design of the LLM-engineering layer
+  around a fixed base. Code, evaluation harness, and data loaders are
+  shared.
+- Top scores on A and B are essentially tied — at the current leaderboard
+  state, agentic tool-use has not yet beaten careful prompting. This is
+  upside for whoever lands the right tools.
+- Track C's lower top score is consistent with the harder problem of
+  beating a 120B base with a < 10B fine-tune.
+
+## Entry decision
+
+**Recommendation: enter Track A and Track B. Skip Track C.**
+
+Rationale:
+
+- **A + B share data and evaluation.** One data pipeline, one eval
+  harness, two submissions. Marginal cost of doing both ≈ the tool /
+  agent design work, which is exactly the practice we want.
+- **B aligns with the project's stated philosophy.** From `.claude/CLAUDE.md`:
+  "This project is a sandbox for **agentic engineering**". Track B is
+  literally that.
+- **A is the unavoidable baseline.** If we can't outperform a careful
+  prompt on this task, our agent design isn't earning its complexity. A
+  doubles as the control we measure B against, beyond what Kaggle's
+  leaderboard tells us.
+- **C is off-pattern.** Fine-tuning a < 10B model is a different
+  exercise — supervised learning on a curated dataset, GPU bookkeeping,
+  HF training stack. Useful skill, wrong project. The current top
+  score (0.611 vs 0.65) also suggests the FT route has less near-term
+  upside.
+
+Pending confirmation from Bing and Joo before this is final.
+
 ## Timeline
 
 - **Final submission deadline:** 2026-07-22 07:00:00 UTC (all three tracks).
