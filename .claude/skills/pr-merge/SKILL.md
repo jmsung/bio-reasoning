@@ -5,13 +5,19 @@ description: Post-merge cleanup after a human squash-merges in GitHub. Verify me
 disable-model-invocation: true
 ---
 
-After the human squash-merges in the GitHub UI, this skill closes the
-loop: verify the merge landed, archive the `mb/active/<slug>.md`
-tracking file to `mb/completed/`, prune the worktree, and delete the
-local branch.
+Closes the PR loop: optionally squash-merge via CLI if the PR is still
+open, then sync local `main`, archive the `mb/active/<slug>.md` tracking
+file to `mb/completed/`, prune the worktree, and delete the local
+branch.
+
+Two human-driven merge paths land here:
+- **Merged in GitHub UI already** → `/pr-merge` skips the merge step and
+  just cleans up.
+- **Still open** → `/pr-merge` offers to `gh pr merge --squash` on your
+  confirmation, then cleans up.
 
 Pairs with [`/pr-open`](../pr-open/SKILL.md). See
-`knowledge/wiki/decisions/0001-pr-workflow.md` for the 3-gate model.
+`knowledge/wiki/decisions/0001-pr-workflow.md`.
 
 ## Steps
 
@@ -26,19 +32,45 @@ BRANCH=$(git -C "$REPO" branch --show-current)
 Derive `SLUG="${BRANCH//\//-}"` and locate `mb/active/$SLUG.md` (under
 the umbrella, not the cb worktree). Abort if missing.
 
-### 2. Verify the PR is merged
+### 2. Check PR state — auto-merge if open
 
 ```bash
 STATE=$(gh pr view --json state -q .state 2>/dev/null) || {
   echo "No PR found for $BRANCH — did /pr-open run?" >&2; exit 1
 }
 case "$STATE" in
-  MERGED) ;;
-  CLOSED) echo "PR was closed without merging — aborting." >&2; exit 1 ;;
-  OPEN)   echo "PR is still OPEN — merge it in the GitHub UI first." >&2; exit 1 ;;
-  *)      echo "Unexpected PR state: $STATE" >&2; exit 1 ;;
+  MERGED)
+    # Already merged in the GitHub UI — skip the merge step.
+    ;;
+  OPEN)
+    # Ask the human to confirm before mutating main.
+    echo "PR #$(gh pr view --json number -q .number) is OPEN."
+    echo "Squash-merge now via CLI? [y/N]"
+    read REPLY
+    case "$REPLY" in
+      y|Y)
+        # No --delete-branch — we own branch + worktree cleanup below,
+        # and --delete-branch fails on worktrees by trying to switch.
+        gh pr merge --squash || {
+          echo "gh pr merge failed — aborting." >&2; exit 1
+        }
+        ;;
+      *)
+        echo "Aborting. Either merge in the GitHub UI and re-run, or rerun and answer 'y'." >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  CLOSED)
+    echo "PR was closed without merging — aborting." >&2; exit 1
+    ;;
+  *)
+    echo "Unexpected PR state: $STATE" >&2; exit 1
+    ;;
 esac
 ```
+
+Mandatory human gate: the skill never merges without explicit `y`.
 
 ### 3. Fetch + checkout main
 

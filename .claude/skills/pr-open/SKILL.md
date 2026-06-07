@@ -5,9 +5,10 @@ description: Run all pre-PR checks, push the branch, open the PR, and tick match
 disable-model-invocation: true
 ---
 
-Runs the full PR-time gate before main: checks → push → `gh pr create` →
-update `docs/roadmap.md` with `(#N)`. **Does not auto-merge** — the human
-clicks "Squash and merge" in the GitHub UI.
+Runs the full PR-time gate before main: rebase → checks → 4 parallel
+reviews → push → `gh pr create` → update `docs/roadmap.md` with `(#N)`.
+**Does not auto-merge** — the human clicks "Squash and merge" in the
+GitHub UI.
 
 Pairs with [`/pr-merge`](../pr-merge/SKILL.md) (post-merge cleanup) and
 [`/dev-setup`](../dev-setup/SKILL.md) (one-time onboarding). See
@@ -30,7 +31,17 @@ Find the branch's tracking file at `mb/active/<slug>.md` (slug =
 Verify every `# Goals` entry is `[x]`. If any `[ ]` remain, list them
 and abort: "Unfinished goals — finish or `/revise` before opening PR."
 
-### 2. Run local checks
+### 2. Rebase on main
+
+```bash
+git -C "$REPO" fetch origin
+git -C "$REPO" rebase origin/main
+```
+
+If rebase conflicts, stop and surface — never `--force` or `--abort`
+silently. User resolves, then re-runs `/pr-open`.
+
+### 3. Run local checks
 
 In order, abort on first failure:
 
@@ -42,16 +53,17 @@ uv run mypy                            # type check (config in pyproject.toml)
 
 If any step fails, print the failure verbatim and stop. Do not push.
 
-### 3. Quality gate — 4 reviews in parallel
+### 4. Quality gate — 5 reviews in parallel
 
-Run these in parallel (they're independent reports):
+Run these as parallel subagents (they're independent reports):
 
-| Review | Tool | What it catches |
+| Review | Tool / Agent | What it catches |
 |---|---|---|
 | Code review | `/code-review` (default effort) | bugs, reuse, simplification, efficiency in the diff |
-| Security audit | `/security-review` | secrets, leaks, injection, auth/authz mistakes in the diff |
+| Security audit | `@security-audit` agent | secrets, leaks, injection, auth/authz (HARD gate — reads project CLAUDE.md for scope) |
+| Docs status | `@docs-review` agent | README + `docs/` drift vs the code changes; auto-fixes committed locally |
 | Wiki health | `/wiki-lint` | orphans, broken cites, missing cross-refs in `knowledge/wiki/` |
-| Docs status | `docs-review` agent | README + `docs/` drift vs the code changes |
+| Distill | `@distill` agent | extracts findings + reproduction recipe into the teammate's own `mb/` |
 
 Aggregate the findings into one block grouped by source. Two outcomes:
 
@@ -124,7 +136,7 @@ Print:
 PR opened: <URL>
 Branch:    <branch>
 Checks:    pre-commit ✓ pytest ✓ mypy ✓
-Reviews:   code ✓ security ✓ wiki ✓ docs ✓
+Reviews:   code ✓ security ✓ docs ✓ wiki ✓ distill ✓
 Roadmap:   ticked items <N, M> with (#<PR_NUM>) (or "none — non-roadmap PR")
 
 Next: review in GitHub, then Squash-merge in the UI.
