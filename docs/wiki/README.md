@@ -34,6 +34,12 @@ Use **`/wiki-query <question>`**. It searches the wiki, follows citations,
 synthesizes an answer with inline cites, and optionally files the answer
 back as a new page.
 
+**Search backend (optional):** if you have [qmd](https://github.com/jmsung/qmd)
+installed and a `bio-reasoning` collection registered, `/wiki-query` uses
+hybrid BM25 + vector + rerank search. Otherwise it falls back to plain
+`grep` over the wiki — works fine for a small wiki, slower for a large
+one. qmd is a personal speedup, not a team dependency.
+
 ## How to keep it healthy
 
 Run **`/wiki-lint`** periodically (or `/wiki-lint --fix`) to find orphans,

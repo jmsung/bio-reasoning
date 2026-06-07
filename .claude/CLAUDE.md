@@ -12,6 +12,7 @@ cellular behavior.
 - Challenge overview: https://genentech.github.io/BioReasoningChallenge/
 - Track A (Kaggle): https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-a
 - Track B (Kaggle): https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b
+- Track C (Kaggle): https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-c
 - GitHub: https://github.com/jmsung/bio-reasoning
 
 ## Philosophy
@@ -43,17 +44,32 @@ use it to practice building with agents on a biologically meaningful problem
 - Run: `uv run <cmd>`
 
 ## Repo layout
-- `src/bio_reasoning/` — importable package code (`data/`, `features/`, `models/`, `training/`, `eval/`, `utils/`)
-- `scripts/` — entry points: `prepare_data.py`, `train.py`, `predict.py`, `make_submission.py`
-- `configs/` — experiment configs (one YAML per experiment)
-- `notebooks/` — exploration (numbered: `01-eda.ipynb`, …)
-- `tests/` — pytest
-- `docs/` — design notes, data schemas, decisions
-- `data/` — `raw/` / `processed/` / `external/` / `interim/` — gitignored except READMEs/.gitkeep
-- `models/`, `outputs/`, `submissions/` — gitignored except READMEs
 
-Rule: if it would be `import`ed from a notebook or another script, it lives
-in `src/`. Otherwise `scripts/`. Never duplicate functions across scripts.
+Full map (repo + Drive + Kaggle) lives in [`docs/where-things-live.md`](../docs/where-things-live.md) — single source of truth.
+
+In-repo rule: if it would be `import`ed from a notebook or another script,
+it lives in `src/bio_reasoning/`. Otherwise `scripts/`. Never duplicate
+functions across scripts.
+
+## Canonical docs
+
+| File | Owns |
+|---|---|
+| [`README.md`](../README.md) | Project entry point, team, philosophy, getting started |
+| [`docs/challenge.md`](../docs/challenge.md) | Challenge summary, per-track detail, entry decision |
+| [`docs/where-things-live.md`](../docs/where-things-live.md) | Repo / Drive / Kaggle map |
+| [`docs/wiki/`](../docs/wiki/) | Distilled team knowledge — see [README](../docs/wiki/README.md) |
+
+When the user asks "where does X live / how does Y work", check these first
+and quote them. Don't duplicate their content here.
+
+## Team skills (available in `.claude/skills/`)
+
+- `/git-sync` — safe-sync this repo (commit → fetch → rebase → push). Never `--force` on shared branches.
+- `/wiki-query` — search the team wiki, synthesize a cited answer.
+- `/wiki-ingest` — ingest a paper / web page / talk into the team wiki as a distilled page.
+- `/wiki-learn` — distill a conversation insight into a new wiki page.
+- `/wiki-lint` — wiki health checks (orphans, stale claims, missing cites).
 
 ## Documentation is the source of truth
 - `README.md` and `docs/` are authoritative. Always keep them current.
@@ -89,4 +105,4 @@ in `src/`. Otherwise `scripts/`. Never duplicate functions across scripts.
 ## Shared resources
 - GitHub (code + PRs + issues): https://github.com/jmsung/bio-reasoning
 - Google Drive (papers, materials): https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS
-- Kaggle competitions: see Track A / Track B URLs above
+- Kaggle competitions: Track A / B / C URLs in the Project section above

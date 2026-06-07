@@ -12,7 +12,7 @@ _(none yet — add via `/wiki-ingest <arxiv-url>`)_
 
 ## Web
 
-_(none yet)_
+- [BioReasoning Challenge 2026 — overview](web/2026-bioreasoning-challenge-overview.md) — genentech.github.io · 2026-06-06
 
 ## Repos
 
