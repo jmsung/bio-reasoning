@@ -28,6 +28,36 @@ For knowledge that came out of a conversation (not a fetchable artifact),
 use **`/wiki-learn`** to distill the current session into one or more
 pages.
 
+### Practical flow by source type
+
+| Source | Step 1 | Step 2 |
+|---|---|---|
+| **arXiv paper** | `/wiki-ingest <arxiv-url>` | Optionally upload PDF to Drive `02-papers/`, paste link as `drive:` in the page's frontmatter |
+| **Blog post / docs page** | `/wiki-ingest <url>` | — (no separate artifact) |
+| **Non-arXiv PDF / slides** | Upload to Drive `02-papers/`, download a local copy | `/wiki-ingest <local-path>`, add `drive:` link to frontmatter |
+| **Notion / Slack thread** | Paste relevant text into a local `.md` file | `/wiki-ingest <local-path>` |
+| **Conversation insight** | `/wiki-learn` (no fetch needed) | — |
+
+### Decision rule
+
+**Prefer URL over PDF.** WebFetch works without auth and produces clean
+markdown. Use a local PDF only when no usable URL exists.
+
+- **Wiki** = "what's in it + why we care" — distilled, in git, agent-searchable.
+- **Drive** = "the original artifact you can read in full" — PDFs, slides,
+  screenshots. Linked from the wiki via `drive:`, not searched directly.
+
+If a teammate can answer a question from the wiki page alone, ingest
+succeeded. If they need the original, they click `drive:`.
+
+### Anyone can ingest
+
+Not a curator role. Three guardrails keep it safe:
+
+1. **Approval gate** in the skill (nothing lands without `y`).
+2. **PR review** — wiki changes go through normal git flow.
+3. **`/wiki-lint`** periodically catches orphans, missing cites, stale claims.
+
 ## How to query
 
 Use **`/wiki-query <question>`**. It searches the wiki, follows citations,
