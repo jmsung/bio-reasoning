@@ -1,28 +1,39 @@
 ---
 name: wiki-ingest
-description: Ingest an artifact (paper, web page, repo, talk) into the team wiki as a single distilled page. Human-gated.
+description: Ingest an artifact (paper, web page, repo, talk) into docs/source/ as a single distilled page. Human-gated.
 
 argument-hint: [--type <type>] <url-or-path>
 ---
 
-Ingest an external artifact: read it, draft a distilled summary, and (on user approval) write a single page at `docs/wiki/<type>/<slug>.md`.
+Ingest an external artifact: read it, draft a distilled summary, and (on user approval) write a single page at `docs/source/<slug>.md`. Layout is flat — type lives in frontmatter (`source_type:`), not folders.
 
 **Human-gated.** The skill reads the source, drafts the distillation, and **proposes** the write. Nothing lands without per-artifact approval.
 
-**Raw artifacts go to Drive, not the repo.** Drop the PDF / screenshot / etc. into the team Drive (`02-papers/`, `01-challenge/`, etc.) and cite the Drive link from the wiki page. The wiki holds **distilled, cited markdown only**.
+**Three knowledge layers** (full spec in `docs/wiki/README.md`):
+
+| Layer | Job | Written by |
+|---|---|---|
+| `docs/raw/` | Native originals (PDF, HTML) | gitignored — local cache |
+| `docs/source/` | One distilled markdown per artifact | this skill (`/wiki-ingest`) |
+| `docs/wiki/` | Hand-curated synthesis (findings, methods, decisions, concepts) | humans + `/wiki-learn` + `/wiki-query --file-back` |
+
+This skill writes ONLY to `docs/source/`. Synthesis pages in `docs/wiki/` are not created here.
+
+**Raw artifacts go to Drive** (`02-papers/`, `01-challenge/`, etc.), not the repo. Cite the Drive link from the source page's `drive:` field. `docs/raw/` is a local cache — gitignored.
 
 Steps:
 
-## 1. Resolve wiki path
+## 1. Resolve paths
 
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
-  echo "Not inside a git checkout — /wiki-ingest needs the repo root to find docs/wiki/." >&2
+  echo "Not inside a git checkout — /wiki-ingest needs the repo root to find docs/source/." >&2
   exit 1
 }
+SOURCE="$REPO_ROOT/docs/source"
 WIKI="$REPO_ROOT/docs/wiki"
-[ -d "$WIKI" ] || {
-  echo "docs/wiki/ does not exist. See $WIKI/README.md for setup." >&2
+[ -d "$SOURCE" ] || {
+  echo "docs/source/ does not exist. See $WIKI/README.md for the 3-layer setup." >&2
   exit 1
 }
 ```
@@ -36,18 +47,21 @@ Infer from the `<url-or-path>` argument:
 | Pattern | Type |
 |---|---|
 | `arxiv.org/*`, `*.pdf` URL with academic context | `papers` |
-| `github.com/*`, `gitlab.com/*` | `repos` |
+| `github.com/<org>/<repo>` (top-level repo) | `repos` |
+| `gist.github.com/*` | `web` (it's a writeup, not source code) |
 | `youtube.com/*`, `youtu.be/*`, `vimeo.com/*` | `talks` |
+| `*.notion.so/*` | `notion` |
+| `*.slack.com/*` | `slack` |
 | any other `http(s)://` URL | `web` |
 | local `.pdf` | ask; default `papers` |
 | local `.md`, `.txt`, `.html` | ask user |
 
-If `--type <type>` was given, use it. Valid types: `papers`, `web`, `repos`, `talks`, `methods`, `decisions`.
+If `--type <type>` was given, use it. Valid types: `papers`, `web`, `repos`, `talks`, `notion`, `slack`.
 
 ## 3. Read source
 
 - **URL:** use `WebFetch`. If it fails (paywall, auth, 4xx/5xx), ask the user to provide a local copy or paste relevant text.
-- **Local PDF:** `Read` with `pages: "1-3"` for metadata (title, author, year). If the body is needed for distillation, `Read` more pages or ask the user to convert to markdown first (`pandoc` or open-the-PDF-and-paste). The wiki does NOT store raw PDFs — those go to Drive.
+- **Local PDF:** `Read` with `pages: "1-3"` for metadata (title, author, year). If the body is needed for distillation, `Read` more pages or ask the user to convert to markdown first (`pandoc` or open-the-PDF-and-paste). The skill does NOT store raw PDFs in `docs/source/` — those go to Drive, optionally cached in `docs/raw/` (gitignored).
 - **Local `.md` / `.txt` / `.html`:** `Read` directly.
 
 Extract: **title**, **author / source**, **date**.
@@ -64,17 +78,17 @@ Per-type conventions:
 | Type | Stem template |
 |---|---|
 | `papers` | `<year>-<firstAuthor>-<slug>` (e.g. `2025-edwards-bioreasoning-overview`) |
-| `repos` | `<org>-<repo>` |
+| `repos` | `<org>-<repo>` (e.g. `tobi-qmd`) |
 | `talks` | `<venue>-<year>-<speaker>-<slug>` |
-| `web` | `<domain>-<slug>` |
-| `methods`, `decisions` | `<slug>` |
+| `web` | `<domain>-<slug>` or `<author>-<slug>` for personal sites |
+| `notion`, `slack` | `<channel-or-page>-<slug>` |
 
-Target path: `docs/wiki/<type>/<stem>.md`.
+Target path: `docs/source/<stem>.md` (flat — no type subfolder).
 
 ## 5. Dedup check
 
 ```bash
-TARGET="$WIKI/<type>/<stem>.md"
+TARGET="$SOURCE/<stem>.md"
 if [ -f "$TARGET" ]; then
   echo "Page already exists: $TARGET"
   echo "Choose: [s]kip / [o]verwrite / [v]new-version (append -v2 to stem)"
@@ -100,14 +114,13 @@ Print:
 Proposed ingest:
   Source: <URL or path>
   Type:   <type>
-  Target: docs/wiki/<type>/<stem>.md
+  Target: docs/source/<stem>.md
 
   Preview:
     ---
-    title: <title>
-    cites:
-      - <url or path>
+    source_url: <url or "local file: <path>">
     source_type: <type>
+    title: <title>
     author: <author>
     retrieved: <YYYY-MM-DD>
     ---
@@ -129,47 +142,62 @@ This approval gate is mandatory. Never skip.
 ## 8. Write the page
 
 ```bash
-mkdir -p "$WIKI/<type>"
-# Write $WIKI/<type>/<stem>.md with frontmatter + body
+# Write $SOURCE/<stem>.md with frontmatter + body. $SOURCE already exists; no mkdir.
 ```
 
 Frontmatter shape:
 
 ```yaml
 ---
-title: <title>
-cites:
-  - <url or path>
+source_url: <url or "local file: <path>">
 source_type: <type>
-author: <author>          # optional for web/methods/decisions
+title: <title>
+author: <author>          # optional when no clear author
 retrieved: <YYYY-MM-DD>
 drive: <drive-link>       # optional — link to raw artifact in Drive
+license: <license>        # optional, for repos
 ---
 ```
 
 ## 9. Update index.md
 
-Add an entry to `$WIKI/index.md` under the appropriate `## <type>` section. Create the section if it doesn't exist.
+Add an entry to `$WIKI/index.md` under the appropriate `### <type>` heading within the `## source/` section. Create the heading if it doesn't exist.
 
-## 10. Re-index (optional)
+Entry format:
+```
+- [<title>](../source/<stem>.md) — <domain or org> · <YYYY-MM-DD>
+```
+
+## 10. Append to log.md
+
+```bash
+cat >> "$WIKI/log.md" <<EOF
+
+## <YYYY-MM-DD> — Ingested source/<stem>
+- Source: <URL or local path>
+- Type: <type>
+EOF
+```
+
+## 11. Re-index (optional)
 
 If qmd is available:
 
 ```bash
 PROJECT=$(basename "$REPO_ROOT" | sed 's/-cb-.*//; s/^cb-//')
-QMD_COLLECTION="${PROJECT}-wiki"
+QMD_COLLECTION="${PROJECT}"
 command -v qmd >/dev/null && qmd collection list --json 2>/dev/null | \
   grep -q "\"$QMD_COLLECTION\"" && qmd embed -c "$QMD_COLLECTION"
 ```
 
 Skip silently if qmd or the collection is unavailable.
 
-## 11. Commit
+## 12. Commit
 
 ```bash
 cd "$REPO_ROOT"
-git add "docs/wiki/<type>/<stem>.md" docs/wiki/index.md
-git commit -m "docs(wiki): ingest <type>/<stem>"
+git add "docs/source/<stem>.md" docs/wiki/index.md docs/wiki/log.md
+git commit -m "docs(source): ingest <stem>"
 ```
 
 ## Distillation templates
@@ -287,67 +315,40 @@ Apply the template matching the artifact's `<type>`. Distillations should be sel
 - ...
 ```
 
-### methods
+### notion / slack
 
 ```markdown
-# <method name>
+# <document or thread title>
 
-## What we did
+**Source:** #<channel> or <page-name> · <YYYY-MM-DD>
+**Participants:** <list>
+
+## Summary
 
 <1 paragraph>
 
-## Why this approach
-
-<1 paragraph: the rationale, what alternatives we considered>
-
-## Results
-
-- <metric / observation 1>
-- ...
-
-## What we learned
+## Decisions / takeaways
 
 - <takeaway 1>
 - ...
-```
 
-### decisions
+## Action items
 
-```markdown
-# <decision title>
-
-**Date:** <YYYY-MM-DD>
-**Status:** <accepted / superseded / rejected>
-
-## Context
-
-<1 paragraph: what problem we were solving>
-
-## Decision
-
-<1 paragraph: what we decided>
-
-## Rationale
-
-- <reason 1>
-- ...
-
-## Consequences
-
-- <consequence 1>
+- <person>: <action>, due <when>
 - ...
 ```
 
 ## What this skill does NOT do
 
-- **Does not save raw artifacts in the repo.** PDFs / screenshots / large files go to Drive — link to them via `drive:` in frontmatter.
+- **Does not write to `docs/wiki/`** (except `index.md` + `log.md`). Synthesis pages are hand-curated, or via `/wiki-learn` / `/wiki-query --file-back`.
+- **Does not save raw artifacts in git.** PDFs / large files go to Drive — link to them via `drive:` in frontmatter. Local `docs/raw/` cache is gitignored.
 - **Does not auto-ingest.** Approval per artifact is mandatory.
 - **Does not scan for cross-references.** Use `/wiki-lint` later to find and add them.
 
 ## Rules
 
 - **Human-gated.** Step 7's approval gate is mandatory.
-- **One page per artifact.** Don't try to combine multiple sources in one page — make separate pages and cross-link.
-- **Cite the source URL or path** in `cites:` — every wiki page must trace back to its source.
-- **`docs/wiki/` holds distilled markdown only.** Raw artifacts go to Drive.
+- **One source page per artifact.** Don't try to combine multiple sources in one page — make separate pages and cross-link.
+- **Cite the source URL or path** in `source_url:` — every page must trace back to its origin.
+- **`docs/source/` holds distilled markdown only.** Raw artifacts go to Drive (optionally cached in `docs/raw/`, gitignored).
 - If WebFetch fails, ask the user for a local copy or pasted text.

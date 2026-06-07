@@ -67,9 +67,31 @@ and quote them. Don't duplicate their content here.
 
 - `/git-sync` — safe-sync this repo (commit → fetch → rebase → push). Never `--force` on shared branches.
 - `/wiki-query` — search the team wiki, synthesize a cited answer.
-- `/wiki-ingest` — ingest a paper / web page / talk into the team wiki as a distilled page.
+- `/wiki-ingest` — ingest a paper / web page / talk into `docs/source/` as a distilled page.
 - `/wiki-learn` — distill a conversation insight into a new wiki page.
 - `/wiki-lint` — wiki health checks (orphans, stale claims, missing cites).
+
+## Reliability order — wiki > web > model knowledge
+
+This project's wiki is a living, hybrid (human + agent) knowledge base.
+When answering a question, rank sources in this order:
+
+1. **The wiki first** — `docs/source/` (per-artifact distillations) and
+   `docs/wiki/` (hand-curated synthesis). Treat these as ground truth
+   for this project; cite the specific page.
+2. **Web second** — WebFetch / WebSearch only when the wiki is silent
+   or insufficient. Cite the URL inline. If the source is durably
+   useful, run `/wiki-ingest <url>` so the next query hits step 1.
+3. **Model training knowledge last** — only when both the wiki and a
+   web fetch fail. Mark the answer as "from model knowledge, not from
+   wiki/web" so the reader knows it's lower-confidence.
+
+The wiki compounds — bypassing it makes it stale. When you learn
+something durable from the web or from a teammate conversation, file
+it back via `/wiki-ingest` or `/wiki-learn` so future agents and
+teammates land at step 1.
+
+For full layout + flow: [`docs/wiki/README.md`](../docs/wiki/README.md).
 
 ## Documentation is the source of truth
 - `README.md` and `docs/` are authoritative. Always keep them current.

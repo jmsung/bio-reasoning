@@ -1,24 +1,59 @@
-# Team wiki
+# Team knowledge layers
 
-Distilled, cited knowledge for the BioReasoning Challenge 2026 team.
+Three sibling directories under `docs/`, each with a clear job. Both
+`raw/` and `source/` are **flat** — no type subfolders, type lives in
+frontmatter (`source_type:`).
 
-This is where we capture **what we learned** — not raw artifacts (those go
-to [Drive](https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS)),
-not code (`src/`), not personal notes (use your own scratch).
+| Layer | What it holds | In git? |
+|---|---|---|
+| [`docs/raw/`](../raw/) | Native source artifacts (PDFs, HTML, .docx), flat | **gitignored** — local cache only |
+| [`docs/source/`](../source/) | One distilled markdown page per artifact, flat, with provenance frontmatter | yes |
+| [`docs/wiki/`](.) | Hand-curated synthesis: home / index / log / findings / methods / decisions / concepts | yes |
 
-## When to add a page
+## Reliability order — wiki > web > model knowledge
 
-Add a wiki page when you have **distilled, cited** knowledge another
-teammate would benefit from in a week or a month:
+When answering a question, sources rank in this order:
 
-- A paper's key claim and how it applies to our problem.
-- A method we tried, why we chose it, what we learned.
-- A decision with rationale we'll forget without writing it down.
+1. **The wiki first** (`docs/source/` + `docs/wiki/`) — cited, curated,
+   ground-truth for this project.
+2. **Web second** — WebFetch / WebSearch when the wiki is silent. Cite
+   the URL inline. If the source proves useful, ingest it via
+   `/wiki-ingest` so the next query lands at step 1.
+3. **Model knowledge last** — only when both above fail. Mark the
+   answer as "model knowledge, not from wiki/web" so the reader knows.
 
-If it's a raw PDF, put it in Drive `02-papers/`. If it's a one-off run
-output, leave it in `outputs/` and decide later whether to distill it.
+Don't skip ahead. The wiki is the team's compounding memory; bypassing
+it makes it stale.
 
-## How to add a page
+Rule of thumb:
+
+- A teammate asks "what does paper X say?" → `source/papers/<x>.md`
+- A teammate asks "what did we decide about Y?" → `wiki/decisions/<y>.md`
+- A teammate asks "what have we learned across N sources?" → `wiki/findings/<topic>.md`
+
+`source/` is regenerable from its citation; never hand-edit a distilled
+page — re-ingest instead. `wiki/` is the opposite: synthesis you wrote,
+no automatic regeneration.
+
+## When to add to which layer
+
+| You have | Goes in |
+|---|---|
+| A paper you read | `/wiki-ingest <arxiv-url>` → writes `source/<stem>.md` (type `papers` in frontmatter) |
+| A blog post or doc page | `/wiki-ingest <url>` → writes `source/<stem>.md` (type `web`) |
+| A repo worth remembering | `/wiki-ingest <github-url>` → writes `source/<stem>.md` (type `repos`) |
+| A talk or conference video | `/wiki-ingest <url>` → writes `source/<stem>.md` (type `talks`) |
+| A cross-source insight | Hand-author or `/wiki-learn` → writes `wiki/findings/<topic>.md` |
+| A method we tried + outcome | Hand-author → `wiki/methods/<name>.md` |
+| A team decision + rationale | Hand-author → `wiki/decisions/<topic>.md` |
+| An entity / concept spanning many sources | Hand-author → `wiki/concepts/<name>.md` |
+
+If a teammate would want to read it on their phone (PDF, slides,
+screenshot), it does NOT live in any of these layers — it lives in
+[Drive](https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS).
+Link to the Drive original via `drive:` in the source page's frontmatter.
+
+## How to ingest
 
 Use **`/wiki-ingest <url-or-path>`**. It reads the source, drafts a
 distilled markdown page with citations, and proposes the write under your
@@ -32,7 +67,7 @@ pages.
 
 | Source | Step 1 | Step 2 |
 |---|---|---|
-| **arXiv paper** | `/wiki-ingest <arxiv-url>` | Optionally upload PDF to Drive `02-papers/`, paste link as `drive:` in the page's frontmatter |
+| **arXiv paper** | `/wiki-ingest <arxiv-url>` | Optionally upload PDF to Drive `02-papers/`, paste link as `drive:` in the source page's frontmatter |
 | **Blog post / docs page** | `/wiki-ingest <url>` | — (no separate artifact) |
 | **Non-arXiv PDF / slides** | Upload to Drive `02-papers/`, download a local copy | `/wiki-ingest <local-path>`, add `drive:` link to frontmatter |
 | **Notion / Slack thread** | Paste relevant text into a local `.md` file | `/wiki-ingest <local-path>` |
@@ -43,12 +78,9 @@ pages.
 **Prefer URL over PDF.** WebFetch works without auth and produces clean
 markdown. Use a local PDF only when no usable URL exists.
 
-- **Wiki** = "what's in it + why we care" — distilled, in git, agent-searchable.
-- **Drive** = "the original artifact you can read in full" — PDFs, slides,
-  screenshots. Linked from the wiki via `drive:`, not searched directly.
-
-If a teammate can answer a question from the wiki page alone, ingest
-succeeded. If they need the original, they click `drive:`.
+- **`source/`** = "what's in this one artifact + why we care" — distilled, agent-searchable.
+- **`wiki/`** = synthesis across many sources — what we *think*, not what they *said*.
+- **Drive** = the original artifact you can read in full — linked from `source/` via `drive:`, not searched directly.
 
 ### Anyone can ingest
 
@@ -60,15 +92,15 @@ Not a curator role. Three guardrails keep it safe:
 
 ## How to query
 
-Use **`/wiki-query <question>`**. It searches the wiki, follows citations,
-synthesizes an answer with inline cites, and optionally files the answer
-back as a new page.
+Use **`/wiki-query <question>`**. It searches `source/` and `wiki/`,
+follows citations, synthesizes an answer with inline cites, and
+optionally files the answer back as a new page in `wiki/findings/`.
 
-**Search backend (optional):** if you have [qmd](https://github.com/jmsung/qmd)
+**Search backend (optional):** if you have [qmd](https://github.com/tobi/qmd)
 installed and a `bio-reasoning` collection registered, `/wiki-query` uses
 hybrid BM25 + vector + rerank search. Otherwise it falls back to plain
-`grep` over the wiki — works fine for a small wiki, slower for a large
-one. qmd is a personal speedup, not a team dependency.
+`grep` over `source/` and `wiki/`. qmd is a personal speedup, not a team
+dependency.
 
 ## How to keep it healthy
 
@@ -77,37 +109,43 @@ broken cites, and missing cross-references.
 
 ## Conventions
 
-- One page per concept. Filename `kebab-case.md`.
-- Frontmatter:
+- One source page per artifact. Filename `kebab-case.md`.
+- `source/` frontmatter:
+  ```yaml
+  ---
+  source_url: <url or "local file: <path>">
+  source_type: papers      # or web, repos, talks, notion, slack
+  title: <human title>
+  author: <author>
+  retrieved: <YYYY-MM-DD>
+  drive: <drive-link>      # optional — link to original artifact
+  ---
+  ```
+- `wiki/` frontmatter (looser; synthesis is hand-authored):
   ```yaml
   ---
   title: <human title>
   cites:
-    - <url or path>
-  source_type: papers      # or web, repos, talks, methods, decisions
-  retrieved: <YYYY-MM-DD>  # for fetched sources
+    - <path to source/ page or url>
   ---
   ```
 - Body: distilled summary first (3–6 lines), then sections as needed.
-- Cross-link with `[[other-page-slug]]` (resolved relative to
-  `docs/wiki/`). When you cross-link to a page in a different
-  subdirectory, also add the target to `cites:`.
+- Cross-link with `[[other-page-slug]]` (resolved relative to `docs/`).
+  When you cross-link across layers, add the target to `cites:`.
 - Update [`index.md`](index.md) when adding a page (the skills do this).
 
-## Layout
+## Wiki subdirectories (synthesis)
 
 ```
 docs/wiki/
-├── README.md      # this file — conventions
+├── README.md      # this file
 ├── home.md        # project orientation, entry point for queries
-├── index.md       # catalog of all pages
-├── papers/        # distilled paper summaries
-├── web/           # web-source distillations
-├── repos/         # repo summaries
-├── talks/         # talk distillations
-├── methods/       # methods we tried, with rationale
+├── index.md       # catalog of source/ AND wiki/ pages
+├── log.md         # append-only history of ingests + queries
+├── findings/      # cross-source synthesis answering specific questions
+├── methods/       # methods we tried, with rationale + outcome
 ├── decisions/     # decisions with rationale
-└── findings/      # cross-cutting synthesis answering specific questions
+└── concepts/      # entity / concept pages spanning multiple sources
 ```
 
 Subdirectories grow as needed — don't pre-create empty ones.
