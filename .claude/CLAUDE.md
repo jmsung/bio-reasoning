@@ -57,11 +57,21 @@ functions across scripts.
 |---|---|
 | [`README.md`](../README.md) | Project entry point, team, philosophy, getting started |
 | [`docs/challenge.md`](../docs/challenge.md) | Challenge summary, per-track detail, entry decision |
+| [`docs/roadmap.md`](../docs/roadmap.md) | Single living plan — priority-ordered Todo + completed milestones |
+| [`docs/development.md`](../docs/development.md) | Setup, R&D workflow (brainstorm → roadmap → branch → PR → merge), conventions |
+| [`docs/architecture.md`](../docs/architecture.md) | System design — data flow, components, per-track architectural notes |
+| [`docs/foundation-models.md`](../docs/foundation-models.md) | Track C open-weights candidates + comparisons + pick |
+| [`docs/kaggle-rules.md`](../docs/kaggle-rules.md) | Per-track submission format, limits, gotchas |
 | [`docs/where-things-live.md`](../docs/where-things-live.md) | Repo / Drive / Kaggle map |
 | [`docs/wiki/`](../docs/wiki/) | Distilled team knowledge — see [README](../docs/wiki/README.md) |
 
 When the user asks "where does X live / how does Y work", check these first
 and quote them. Don't duplicate their content here.
+
+**Roadmap convention:** when a PR lands work that completes a `docs/roadmap.md`
+item, the **same PR** must check the box. The roadmap should never lag merged
+work. **Team R&D flow:** see [`docs/development.md`](../docs/development.md) —
+brainstorm → roadmap → branch → PR → merge.
 
 ## Team skills (available in `.claude/skills/`)
 
