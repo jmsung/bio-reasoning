@@ -53,7 +53,7 @@ uv run mypy                            # type check (config in pyproject.toml)
 
 If any step fails, print the failure verbatim and stop. Do not push.
 
-### 4. Quality gate — 5 reviews in parallel
+### 4. Quality gate — 4 reviews in parallel
 
 Run these as parallel subagents (they're independent reports):
 
@@ -63,7 +63,15 @@ Run these as parallel subagents (they're independent reports):
 | Security audit | `@security-audit` agent | secrets, leaks, injection, auth/authz (HARD gate — reads project CLAUDE.md for scope) |
 | Docs status | `@docs-review` agent | README + `docs/` drift vs the code changes; auto-fixes committed locally |
 | Wiki health | `/wiki-lint` | orphans, broken cites, missing cross-refs in `knowledge/wiki/` |
-| Distill | `@distill` agent | extracts findings + reproduction recipe into the teammate's own `mb/` |
+
+(`@distill` is opt-in via `/worktree-done` or manual invocation — not run
+per-PR. It's compounding-value-when-present, not essential-per-PR.)
+
+**Why a mix of `/skill` and `@agent`?** Forced by what exists in the harness:
+`/wiki-lint` has no agent form; `@docs-review` has no skill form. For
+`code-review` and `security` (both available as either), the skill form is
+used when interactive findings benefit from the user reviewing inline; the
+agent form is used when parallel speed and a harder gate matter (security).
 
 Aggregate the findings into one block grouped by source. Two outcomes:
 
@@ -136,7 +144,7 @@ Print:
 PR opened: <URL>
 Branch:    <branch>
 Checks:    pre-commit ✓ pytest ✓ mypy ✓
-Reviews:   code ✓ security ✓ docs ✓ wiki ✓ distill ✓
+Reviews:   code ✓ security ✓ docs ✓ wiki ✓
 Roadmap:   ticked items <N, M> with (#<PR_NUM>) (or "none — non-roadmap PR")
 
 Next: review in GitHub, then Squash-merge in the UI.
