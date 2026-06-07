@@ -75,6 +75,16 @@ brainstorm → roadmap → branch → PR → merge.
 
 ## Team skills (available in `.claude/skills/`)
 
+Dev pipeline (run in this order across a branch's life):
+
+- `/dev-setup` — one-time after `git clone`: `uv sync`, install pre-commit hooks, verify `gh` + `kaggle` auth, check `.env`.
+- `/pr-open` — gated push + PR creation: pre-commit / pytest / mypy / `/code-review` → push → `gh pr create` → tick matching `roadmap.md` items with `(#N)`. Stops at human squash-merge.
+- `/pr-merge` — post-merge cleanup: verify, archive `mb/active/<slug>.md`, prune worktree, delete branch.
+
+See [`knowledge/wiki/decisions/0001-pr-workflow.md`](../knowledge/wiki/decisions/0001-pr-workflow.md) for the 3-gate model (pre-commit → `/pr-open` → squash UI).
+
+Other:
+
 - `/git-sync` — safe-sync this repo (commit → fetch → rebase → push). Never `--force` on shared branches.
 - `/wiki-query` — search the team wiki, synthesize a cited answer.
 - `/wiki-ingest` — ingest a paper / web page / talk into `knowledge/source/` as a distilled page.

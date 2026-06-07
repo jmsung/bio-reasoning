@@ -5,13 +5,22 @@ read this once end-to-end before opening a PR.
 
 ## Setup
 
-Python is managed with [`uv`](https://docs.astral.sh/uv/).
+Python is managed with [`uv`](https://docs.astral.sh/uv/). The fast path is
+**`/dev-setup`** in Claude Code — one skill that does everything below.
 
 ```bash
-uv sync                 # install deps from pyproject.toml + uv.lock
-cp .env.example .env    # fill in API keys (Together AI / Fireworks for
-                        # GPT-OSS-120B; Kaggle for data download)
-uv run pytest           # smoke-test that the env works
+/dev-setup              # in Claude Code — does uv sync, pre-commit install,
+                        # and verifies gh + kaggle auth + .env
+```
+
+Or manually:
+
+```bash
+uv sync                       # install deps from pyproject.toml + uv.lock
+uv run pre-commit install     # wire the pre-commit hook (one-time)
+cp .env.example .env          # then fill in API keys (Together AI /
+                              # Fireworks for GPT-OSS-120B; Kaggle for data)
+uv run pytest                 # smoke-test that the env works
 ```
 
 Run any command in the project env with `uv run <cmd>`. Don't `pip install`
@@ -35,15 +44,23 @@ merged history in sync.
 3. **Branch + implement.** Use `/worktree-start <type>/<slug>` to get an
    isolated worktree and a branch tracking file. Iterate in small commits.
    TDD where it applies (new pure functions; data transforms with clear I/O).
-4. **PR for review.** Open the PR against `main`. **In the same PR,
-   check the box in `roadmap.md`** for the item you landed — the plan must
-   not lag merged work. Tag a teammate for review on anything non-trivial.
-5. **Merge into main.** Squash or merge per your preference; either is
-   fine. Delete the branch.
+   Every `git commit` runs the **pre-commit hook** (`.pre-commit-config.yaml`)
+   — black, ruff lint, mypy on `src/`, plus hygiene checks. Fix what it
+   flags; don't bypass with `--no-verify`.
+4. **Open the PR.** Run **`/pr-open`** in Claude Code. It runs the full
+   pre-PR gate (pre-commit sweep, pytest, mypy, `/code-review`), pushes
+   the branch, opens the PR, and **ticks the matching `roadmap.md` item
+   with `(#N)`**. No manual box-checking required.
+5. **Squash-merge in GitHub.** Squash is the only merge type allowed
+   (enforced in repo settings). Review in the UI, then click "Squash and
+   merge". The remote branch auto-deletes. Then run **`/pr-merge`** to
+   archive the tracking file, delete the local branch, and prune the
+   worktree.
 
 For agent-driven work, the same loop is wrapped by the
 [`/goal` → `/act` → `/commit`](.claude/skills/) skills — same shape, the
-agent just handles the mechanics.
+agent just handles the mechanics. Background and rationale for the
+PR-only flow: [`knowledge/wiki/decisions/0001-pr-workflow.md`](../knowledge/wiki/decisions/0001-pr-workflow.md).
 
 ## Conventions
 
@@ -73,14 +90,16 @@ Never force-push to `main`. Don't skip hooks (`--no-verify`).
 
 ### PRs
 
-- Open against `main`.
+- Open against `main` via `/pr-open` (runs checks + creates the PR).
 - At least one teammate review for non-trivial changes.
 - The PR body should explain the **why** — the diff shows the what.
-- If the PR lands a roadmap item, check the box in `roadmap.md` in the
-  **same PR**.
+- If the PR lands a roadmap item, `/pr-open` ticks the box automatically
+  in the form `- [x] (#N) Item`. No manual edit needed.
 - If the PR changes workflow, API, file layout, data schema, or commands,
   update the relevant docs in the **same PR**. Stale docs are worse than
   missing docs.
+- Only **squash-merge** is enabled in repo settings. The remote branch is
+  deleted automatically on merge.
 
 ### Code
 

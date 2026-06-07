@@ -8,8 +8,10 @@ Workflow: see [`development.md`](development.md) — brainstorm → roadmap → 
 
 ## Convention
 
-When a PR lands work that completes a roadmap item, the **same PR** must
-check the box here. The roadmap should never lag behind merged work.
+When a PR lands work that completes a roadmap item, `/pr-open` ticks the
+box and prefixes the PR number — e.g. `- [x] (#3) EDA on training data`.
+No manual edit needed; the roadmap stays in sync with merged work
+mechanically.
 
 If the scope of an item changes during implementation, edit the item in the
 same PR. If a new item is needed, add it (priority-ordered) in the PR that
