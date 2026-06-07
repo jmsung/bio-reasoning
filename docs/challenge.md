@@ -158,8 +158,8 @@ approach lands the right tools.
 
 | Dimension | Track A (prompt-only) | Track B (agentic tool-use) | Track C (fine-tuning) |
 |---|---|---|---|
-| Task | 3-class direction (`up`/`down`/`none`) | identical | identical (unconfirmed; data gated) |
-| Data | `train.csv` 7,705 rows + `test.csv` 1,813 rows | byte-identical to A | likely identical (TBD) |
+| Task | 3-class direction (`up`/`down`/`none`) | identical | identical |
+| Data | `train.csv` 7,705 rows + `test.csv` 1,813 rows | byte-identical to A | byte-identical to A |
 | Base model | GPT-OSS-120B (fixed) | GPT-OSS-120B (fixed) | any open model < 10B (you train it) |
 | Modeling moves | prompt engineering only | tool design + agent architecture | fine-tuning technique |
 | Inference cost | 1 call × 3 samples per row | up to 250 tool calls per row | depends on chosen model |
@@ -185,25 +185,34 @@ Notes:
 
 ## Entry decision
 
-**Recommendation: enter Track A and Track B. Skip Track C.**
+**Primary focus: Track B (agentic tool-use).**
+**Active baseline: Track A (prompt-only).**
+**Optional / opportunistic: Track C (fine-tuning).**
+
+All three tracks share the same data byte-for-byte (confirmed
+2026-06-06), so the entry barrier is low — the team has joined all
+three Kaggle competitions to preserve optionality.
 
 Rationale:
 
-- **A + B share data and evaluation.** One data pipeline, one eval
-  harness, two submissions. Marginal cost of doing both ≈ the tool /
-  agent design work, which is exactly the practice we want.
-- **B aligns with the project's stated philosophy.** From `.claude/CLAUDE.md`:
-  "This project is a sandbox for **agentic engineering**". Track B is
-  literally that.
-- **A is the unavoidable baseline.** If we can't outperform a careful
-  prompt on this task, our agent design isn't earning its complexity. A
-  doubles as the control we measure B against, beyond what Kaggle's
-  leaderboard tells us.
-- **C is off-pattern.** Fine-tuning a < 10B model is a different
-  exercise — supervised learning on a curated dataset, GPU bookkeeping,
-  HF training stack. Useful skill, wrong project. The current top
-  score (0.611 vs 0.65) also suggests the FT route has less near-term
-  upside.
+- **Track B is the project's purpose.** From `.claude/CLAUDE.md`: "This
+  project is a sandbox for **agentic engineering**." Track B is
+  literally that — design tools, design agents, watch them reason.
+- **Track A is the unavoidable baseline.** If our agent (B) can't beat
+  careful prompting (A), the agent isn't earning its complexity. A is
+  the control we measure B against — necessary regardless of the
+  leaderboard.
+- **A + B share everything except the modeling layer.** One data
+  pipeline, one eval harness, two submissions. Marginal cost of doing
+  both ≈ the tool / agent design work itself, which is exactly the
+  practice we want.
+- **Track C is opt-in, not committed.** Fine-tuning a < 10B model is a
+  different exercise (supervised learning, GPU bookkeeping, HF training
+  stack). Top leaderboard 0.611 vs 0.65 on A/B suggests less near-term
+  headroom. We've joined to keep the option open; we'll only spend
+  effort here if (a) someone on the team has bandwidth, (b) we have a
+  specific hypothesis a small FT could test, and (c) A and B work is
+  stable. Not the default path.
 
 Pending confirmation from Bing and Joo before this is final.
 
