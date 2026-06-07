@@ -48,6 +48,7 @@ _(none yet — record what we tried and why)_
 
 - [0001 — PR-only workflow with squash-merge](decisions/0001-pr-workflow.md) — 2026-06-06
 - [0002 — When to use skill form vs agent form](decisions/0002-skill-vs-agent-convention.md) — 2026-06-06
+- [0003 — Personal vs team skill/agent layering](decisions/0003-personal-team-skill-layering.md) — 2026-06-06
 
 ### Concepts
 
