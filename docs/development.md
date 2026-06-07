@@ -48,9 +48,11 @@ merged history in sync.
    — black, ruff lint, mypy on `src/`, plus hygiene checks. Fix what it
    flags; don't bypass with `--no-verify`.
 4. **Open the PR.** Run **`/pr-open`** in Claude Code. It runs the full
-   pre-PR gate (pre-commit sweep, pytest, mypy, `/code-review`), pushes
-   the branch, opens the PR, and **ticks the matching `roadmap.md` item
-   with `(#N)`**. No manual box-checking required.
+   pre-PR gate (pre-commit sweep, pytest, mypy, then 4 parallel reviewer
+   agents: `@code-review`, `@security-audit`, `@docs-review`,
+   `@wiki-lint`), pushes the branch, opens the PR, and **ticks the
+   matching `roadmap.md` item with `(#N)`**. No manual box-checking
+   required.
 5. **Squash-merge in GitHub.** Squash is the only merge type allowed
    (enforced in repo settings). Review in the UI, then click "Squash and
    merge". The remote branch auto-deletes. Then run **`/pr-merge`** to
@@ -58,9 +60,9 @@ merged history in sync.
    worktree.
 
 For agent-driven work, the same loop is wrapped by the
-[`/goal` → `/act` → `/commit`](.claude/skills/) skills — same shape, the
-agent just handles the mechanics. Background and rationale for the
-PR-only flow: [`knowledge/wiki/decisions/0001-pr-workflow.md`](../knowledge/wiki/decisions/0001-pr-workflow.md).
+`/goal` → `/act` → `/commit` harness skills — same shape, the agent just
+handles the mechanics. Background and rationale for the PR-only flow:
+[`knowledge/wiki/decisions/0001-pr-workflow.md`](../knowledge/wiki/decisions/0001-pr-workflow.md).
 
 ## Conventions
 

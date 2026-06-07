@@ -129,7 +129,7 @@ Next:         /worktree-start <type>/<slug> to begin the next branch.
 
 ## What this skill does NOT do
 
-- **Does not merge.** Step 2 is read-only verification — humans merge in GitHub.
+- **Does not auto-merge silently.** Step 2 may run `gh pr merge --squash` only after an explicit `y` from the user. On `n`, or when the PR is already `MERGED`, the merge step is skipped.
 - **Does not force-delete the branch** without confirming PR state first.
 - **Does not push.** Remote branch deletion is handled by `delete_branch_on_merge`.
 - **Does not modify `main` history.** Only fast-forward pull.
@@ -138,7 +138,7 @@ Next:         /worktree-start <type>/<slug> to begin the next branch.
 
 Stop and surface to the user when:
 - No PR exists for the branch (probably `/pr-open` was never run).
-- PR state is `OPEN` (merge it first) or `CLOSED` (deliberate abandon — `/pr-merge` is the wrong tool).
+- PR state is `OPEN` and user answers `n` to the auto-merge prompt, or `CLOSED` (deliberate abandon — `/pr-merge` is the wrong tool).
 - `pull --ff-only origin main` fails.
 - Worktree has uncommitted changes.
 - `git branch -d` refuses *and* PR state is not clearly `MERGED`.

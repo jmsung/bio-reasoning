@@ -3,7 +3,7 @@ title: When to use skill form vs agent form
 date: 2026-06-06
 status: accepted
 cites:
-  - 0001-pr-workflow.md
+  - decisions/0001-pr-workflow.md
 ---
 
 # 0002 — Skill form vs agent form

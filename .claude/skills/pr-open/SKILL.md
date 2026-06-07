@@ -77,9 +77,9 @@ bulk review.
 
 Aggregate the findings into one block grouped by source. Two outcomes:
 
-- **No blocking issues / user accepts as-is** → continue to step 4.
+- **No blocking issues / user accepts as-is** → continue to step 5.
 - **Issues to fix** → ask the user to address (with you or manually).
-  After fixes are committed, return to step 2.
+  After fixes are committed, return to step 3.
 
 Severity bar for "blocking":
 - Code review: any CONFIRMED bug or unhandled correctness finding.
@@ -89,7 +89,7 @@ Severity bar for "blocking":
 
 User can override informational findings; never override security.
 
-### 4. Push the branch
+### 5. Push the branch
 
 ```bash
 git -C "$REPO" push -u origin "$BRANCH"
@@ -98,7 +98,7 @@ git -C "$REPO" push -u origin "$BRANCH"
 If push is rejected (non-fast-forward), abort and surface — never
 `--force` from this skill.
 
-### 5. Open the PR
+### 6. Open the PR
 
 Extract `PR_TITLE` and `PR_BODY` from `mb/active/<slug>.md` (between the
 `<!-- PR_TITLE -->` and `<!-- PR_BODY -->` markers). If either is empty,
@@ -114,7 +114,7 @@ PR_NUM=$(gh pr view --json number -q .number 2>/dev/null)
   Parse `PR_NUM` from the URL `gh` prints.
 - **Existing PR** → skip creation; just continue.
 
-### 6. Tick matching roadmap items with (#N)
+### 7. Tick matching roadmap items with (#N)
 
 Read `docs/roadmap.md`. Identify which `- [ ]` items this PR closes —
 this is a judgment call:
@@ -128,9 +128,9 @@ this is a judgment call:
 
 If no items match (skill PR, refactor, infrastructure), skip silently.
 
-### 7. Commit + push the roadmap edit
+### 8. Commit + push the roadmap edit
 
-If step 6 made any changes:
+If step 7 made any changes:
 
 ```bash
 git -C "$REPO" add docs/roadmap.md
@@ -138,7 +138,7 @@ git -C "$REPO" commit -m "docs(roadmap): tick item(s) closed by #$PR_NUM"
 git -C "$REPO" push origin "$BRANCH"
 ```
 
-### 8. Report
+### 9. Report
 
 Print:
 

@@ -51,7 +51,7 @@ If qmd is not available or no collection is registered:
 
 1. Read `$WIKI/index.md` to get the page catalog.
 2. Identify candidate pages relevant to the question using titles, descriptions, and directory structure.
-3. `grep -r` across `$WIKI/**/*.md` for question keywords to surface pages the index might not list yet.
+3. `grep -r` across BOTH `$WIKI/**/*.md` and `$REPO_ROOT/knowledge/source/**/*.md` for question keywords — the wiki layer indexes the source layer, so search both.
 4. Read each candidate page to gather relevant content.
 
 ### Follow cites (both paths)
@@ -70,7 +70,7 @@ If qmd is not available or no collection is registered:
 Ask the user: "File this answer into the wiki?"
 
 If yes:
-1. Determine the appropriate location — `findings/` for cross-cutting synthesis, or a topic subdirectory (`papers/`, `methods/`, `decisions/`).
+1. Determine the appropriate location in `$WIKI/` — `findings/` for cross-cutting synthesis, `methods/` for methods we tried, `decisions/` for decisions with rationale, `concepts/` for cross-source entity pages. (Source layer `knowledge/source/` is flat and per-artifact — file-back never writes there; use `/wiki-ingest` to add a source page.)
 2. Create the page with frontmatter:
    ```yaml
    ---

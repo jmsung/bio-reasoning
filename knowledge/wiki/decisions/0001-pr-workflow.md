@@ -2,10 +2,12 @@
 title: PR-only workflow with squash-merge
 date: 2026-06-06
 status: accepted
-cites:
-  - ../../../docs/development.md
-  - ../../../docs/roadmap.md
 ---
+
+<!-- Body links to docs/development.md and docs/roadmap.md (outside the
+     wiki tree). Wiki `cites:` are wiki-root-relative per @wiki-lint;
+     extra-wiki references stay in the body. -->
+
 
 # 0001 — PR-only workflow with squash-merge
 
@@ -22,7 +24,7 @@ Three layered gates enforce quality before code reaches `main`:
 | Gate | When | What runs |
 |---|---|---|
 | **Pre-commit hook** | every `git commit` | black, ruff (lint), mypy on `src/`, hygiene checks (trailing-whitespace, EOF, large files, etc.) — config in `.pre-commit-config.yaml` |
-| **`/pr-open` skill** | branch → PR | full lint + typecheck + tests; then a 4-review quality gate run in parallel (`/code-review`, `/security-review`, `/wiki-lint`, `docs-review` agent); then push + `gh pr create` + tick matching roadmap items with `(#N)`. Security findings are HARD blocks; other findings are surfaced for review. |
+| **`/pr-open` skill** | branch → PR | full lint + typecheck + tests; then a 4-agent quality gate run in parallel (`@code-review`, `@security-audit`, `@docs-review`, `@wiki-lint`); then push + `gh pr create` + tick matching roadmap items with `(#N)`. Security findings are HARD blocks; other findings are surfaced for review. |
 | **Human squash-merge** | PR → main | reviewer clicks "Squash and merge" in GitHub UI (the only enabled merge type) |
 
 Three skills support the flow:
