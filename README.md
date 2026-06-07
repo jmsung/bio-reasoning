@@ -21,6 +21,14 @@ Likely entering A and/or B.
 uv sync
 ```
 
+## Where things live
+
+Team work happens in three places: **this repo**, the **shared Drive**,
+and **Kaggle**. See [`docs/where-things-live.md`](docs/where-things-live.md)
+for the full map and a "what goes where" cheatsheet. Distilled team
+knowledge lives in [`docs/wiki/`](docs/wiki/) — see its
+[README](docs/wiki/README.md) for the four `/wiki-*` skills.
+
 ## Layout
 
 - `src/bio_reasoning/` — library code
