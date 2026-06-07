@@ -89,14 +89,11 @@ agent trivially; an agent wrapping a skill is awkward).
 
 ## Application — `/pr-open` quality gate
 
-The team-shared `/pr-open` skill (this project) should follow this rule:
-spawn 4 agents in parallel — `@code-review`, `@security-audit`,
-`@docs-review`, `@wiki-lint` — not the current mix of `/code-review`
-skill + agents + `/wiki-lint` skill.
-
-Implementation cost: write `~/.claude/agents/wiki-lint.md` (thin wrapper
-around the lint logic). Then switch `/pr-open`'s gate to all-agents.
-Tracked separately — not done in this decision record.
+**Done in this branch.** The team-shared `/pr-open` skill now follows
+this rule: spawn 4 agents in parallel — `@code-review`,
+`@security-audit`, `@docs-review`, `@wiki-lint`. The new `@wiki-lint`
+agent lives at `.claude/agents/wiki-lint.md` (team-shared, repo-level,
+not personal harness), so every teammate has it on clone.
 
 ## Open questions
 
@@ -114,6 +111,5 @@ Tracked separately — not done in this decision record.
   debate.
 - Any mixed `/foo` + `@foo` duplicates surfaced in a future audit are
   flagged for consolidation.
-- The team-shared `/pr-open` will eventually be conformed (write
-  `@wiki-lint` agent, drop `/code-review` skill call, use `@code-review`
-  agent). Not blocking — current mix works, just not idiomatic.
+- `/pr-open` was conformed in the same branch that established this
+  decision (see "Application" above).

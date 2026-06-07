@@ -53,25 +53,27 @@ uv run mypy                            # type check (config in pyproject.toml)
 
 If any step fails, print the failure verbatim and stop. Do not push.
 
-### 4. Quality gate — 4 reviews in parallel
+### 4. Quality gate — 4 agents in parallel
 
-Run these as parallel subagents (they're independent reports):
+Spawn all four as parallel subagents in a single message (the Agent tool
+runs them concurrently). Each returns one structured report.
 
-| Review | Tool / Agent | What it catches |
+| Agent | Role | Gate |
 |---|---|---|
-| Code review | `/code-review` (default effort) | bugs, reuse, simplification, efficiency in the diff |
-| Security audit | `@security-audit` agent | secrets, leaks, injection, auth/authz (HARD gate — reads project CLAUDE.md for scope) |
-| Docs status | `@docs-review` agent | README + `docs/` drift vs the code changes; auto-fixes committed locally |
-| Wiki health | `/wiki-lint` | orphans, broken cites, missing cross-refs in `knowledge/wiki/` |
+| `@code-review` | bugs, reuse, simplification, efficiency in the diff | soft (review-only) |
+| `@security-audit` | secrets, leaks, injection, auth/authz; reads project CLAUDE.md for scope | **HARD** (any finding blocks push) |
+| `@docs-review` | README + `docs/` drift vs the code changes; auto-fixes committed locally | soft (fixes itself) |
+| `@wiki-lint` | orphans, broken cites, body-link gaps in `knowledge/wiki/` | soft (review-only) |
 
-(`@distill` is opt-in via `/worktree-done` or manual invocation — not run
-per-PR. It's compounding-value-when-present, not essential-per-PR.)
+`@distill` is opt-in (run separately when the branch warrants it) — not
+included in the per-PR gate.
 
-**Why a mix of `/skill` and `@agent`?** Forced by what exists in the harness:
-`/wiki-lint` has no agent form; `@docs-review` has no skill form. For
-`code-review` and `security` (both available as either), the skill form is
-used when interactive findings benefit from the user reviewing inline; the
-agent form is used when parallel speed and a harder gate matter (security).
+**Why all agents, no skills?** Per
+[`0002-skill-vs-agent-convention.md`](../../../knowledge/wiki/decisions/0002-skill-vs-agent-convention.md):
+quality-gate orchestrators spawn parallel reviewer agents. Agents give
+~3× faster wall-clock (true parallelism), isolated context (no
+pollution back into your conversation), and a uniform report shape for
+bulk review.
 
 Aggregate the findings into one block grouped by source. Two outcomes:
 
