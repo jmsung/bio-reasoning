@@ -1,0 +1,59 @@
+# Pre-commit hooks for bio-reasoning-2026.
+#
+# Setup (once per clone):
+#   uv sync
+#   uv run pre-commit install        # picks up default_install_hook_types below
+#
+# Two stages fire:
+#   - pre-commit: hooks below — format, lint, hygiene, mypy
+#   - pre-push:   refuse direct push to main unless it's a PR squash-merge
+#
+# To run all pre-commit hooks against the whole repo on demand:
+#   uv run pre-commit run --all-files
+#
+# Layered gates: pre-commit (here) → /pr-open (full checks + 4 review
+# agents) → human squash-merge (GitHub UI or /pr-merge). See
+# knowledge/wiki/decisions/0001-pr-workflow.md.
+
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (src only)
+        entry: uv run mypy
+        language: system
+        types: [python]
+        files: ^src/bio_reasoning/
+        pass_filenames: false
+
+      - id: no-direct-push-to-main
+        name: Refuse direct push to main (must be PR squash-merge)
+        stages: [pre-push]
+        language: script
+        entry: scripts/git-hooks/no-direct-push-to-main.sh
+        pass_filenames: false
+        always_run: true

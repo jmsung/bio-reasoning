@@ -29,7 +29,8 @@ GitHub: https://github.com/jmsung/bio-reasoning
 ├── configs/              one YAML per experiment
 ├── notebooks/            exploration (numbered: 01-eda.ipynb, …)
 ├── tests/                pytest
-├── docs/                 team-facing docs (this file, challenge.md, design notes, decisions)
+├── docs/                 team-authored project docs (this file, challenge.md, roadmap, conventions)
+├── knowledge/            ingested + distilled external knowledge — managed by `/wiki-*` skills
 ├── data/                 gitignored except READMEs — local working copies only
 ├── models/               gitignored — local checkpoints
 ├── outputs/              gitignored — local run artifacts

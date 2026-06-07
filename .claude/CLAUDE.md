@@ -57,17 +57,38 @@ functions across scripts.
 |---|---|
 | [`README.md`](../README.md) | Project entry point, team, philosophy, getting started |
 | [`docs/challenge.md`](../docs/challenge.md) | Challenge summary, per-track detail, entry decision |
+| [`docs/roadmap.md`](../docs/roadmap.md) | Single living plan — priority-ordered Todo + completed milestones |
+| [`docs/development.md`](../docs/development.md) | Setup, R&D workflow (brainstorm → roadmap → branch → PR → merge), conventions |
+| [`docs/architecture.md`](../docs/architecture.md) | System design — data flow, components, per-track architectural notes |
+| [`docs/foundation-models.md`](../docs/foundation-models.md) | Track C open-weights candidates + comparisons + pick |
+| [`docs/kaggle-rules.md`](../docs/kaggle-rules.md) | Per-track submission format, limits, gotchas |
 | [`docs/where-things-live.md`](../docs/where-things-live.md) | Repo / Drive / Kaggle map |
-| [`docs/wiki/`](../docs/wiki/) | Distilled team knowledge — see [README](../docs/wiki/README.md) |
+| [`knowledge/wiki/`](../knowledge/wiki/) | Distilled team knowledge — see [README](../knowledge/wiki/README.md) |
 
 When the user asks "where does X live / how does Y work", check these first
 and quote them. Don't duplicate their content here.
 
+**Roadmap convention:** when a PR lands work that completes a `docs/roadmap.md`
+item, the **same PR** must check the box. The roadmap should never lag merged
+work. **Team R&D flow:** see [`docs/development.md`](../docs/development.md) —
+brainstorm → roadmap → branch → PR → merge.
+
 ## Team skills (available in `.claude/skills/`)
+
+Dev pipeline (run in this order across a branch's life):
+
+- `/dev-setup` — one-time after `git clone`: `uv sync`, install pre-commit hooks, verify `gh` + `kaggle` auth, check `.env`.
+- `/commit` — local commit: runs checks, reads the `gcm` block from the tracking file (or prompts), stages, commits. Never pushes.
+- `/pr-open` — gated push + PR creation: rebase → pre-commit / pytest / mypy → 4 parallel reviewer agents (`@code-review`, `@security-audit`, `@docs-review`, `@wiki-lint`) → push → `gh pr create` → tick matching `roadmap.md` items with `(#N)`. Stops at human squash-merge.
+- `/pr-merge` — post-merge cleanup: verify PR merged (or `gh pr merge --squash` on confirm if still open), sync main, archive `mb/active/<slug>.md`, prune worktree, delete branch.
+
+See [`knowledge/wiki/decisions/0001-pr-workflow.md`](../knowledge/wiki/decisions/0001-pr-workflow.md) for the 3-gate model (pre-commit → `/pr-open` → squash UI).
+
+Other:
 
 - `/git-sync` — safe-sync this repo (commit → fetch → rebase → push). Never `--force` on shared branches.
 - `/wiki-query` — search the team wiki, synthesize a cited answer.
-- `/wiki-ingest` — ingest a paper / web page / talk into `docs/source/` as a distilled page.
+- `/wiki-ingest` — ingest a paper / web page / talk into `knowledge/source/` as a distilled page.
 - `/wiki-learn` — distill a conversation insight into a new wiki page.
 - `/wiki-lint` — wiki health checks (orphans, stale claims, missing cites).
 
@@ -76,8 +97,8 @@ and quote them. Don't duplicate their content here.
 This project's wiki is a living, hybrid (human + agent) knowledge base.
 When answering a question, rank sources in this order:
 
-1. **The wiki first** — `docs/source/` (per-artifact distillations) and
-   `docs/wiki/` (hand-curated synthesis). Treat these as ground truth
+1. **The wiki first** — `knowledge/source/` (per-artifact distillations) and
+   `knowledge/wiki/` (hand-curated synthesis). Treat these as ground truth
    for this project; cite the specific page.
 2. **Web second** — WebFetch / WebSearch only when the wiki is silent
    or insufficient. Cite the URL inline. If the source is durably
@@ -91,7 +112,7 @@ something durable from the web or from a teammate conversation, file
 it back via `/wiki-ingest` or `/wiki-learn` so future agents and
 teammates land at step 1.
 
-For full layout + flow: [`docs/wiki/README.md`](../docs/wiki/README.md).
+For full layout + flow: [`knowledge/wiki/README.md`](../knowledge/wiki/README.md).
 
 ## Documentation is the source of truth
 - `README.md` and `docs/` are authoritative. Always keep them current.

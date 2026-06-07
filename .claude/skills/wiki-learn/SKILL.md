@@ -3,7 +3,7 @@ name: wiki-learn
 description: Distill conversation insights into the team wiki — turn exploration and Q&A into compounding knowledge.
 ---
 
-Distill insights from the current conversation into the team wiki at `docs/wiki/`. Turns exploratory Q&A, research, and study sessions into permanent, searchable pages.
+Distill insights from the current conversation into the team wiki at `knowledge/wiki/`. Turns exploratory Q&A, research, and study sessions into permanent, searchable pages.
 
 This is the conversation → wiki compounding loop. Without it, knowledge gained through conversation is lost when the session ends.
 
@@ -13,12 +13,12 @@ Steps:
 
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
-  echo "Not inside a git checkout — /wiki-learn needs the repo root to find docs/wiki/." >&2
+  echo "Not inside a git checkout — /wiki-learn needs the repo root to find knowledge/wiki/." >&2
   exit 1
 }
-WIKI="$REPO_ROOT/docs/wiki"
+WIKI="$REPO_ROOT/knowledge/wiki"
 [ -d "$WIKI" ] || {
-  echo "docs/wiki/ does not exist. See $WIKI/README.md for setup." >&2
+  echo "knowledge/wiki/ does not exist. See $WIKI/README.md for setup." >&2
   exit 1
 }
 ```
@@ -119,7 +119,7 @@ Wiki-learn complete:
 
 ```bash
 cd "$REPO_ROOT"
-git add docs/wiki/
+git add knowledge/wiki/
 git commit -m "docs(wiki): learn <session topic>
 
 New pages: <list or \"none\">

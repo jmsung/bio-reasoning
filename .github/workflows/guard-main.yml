@@ -1,0 +1,31 @@
+name: Guard main from direct push
+
+# Path B free-tier enforcement (see knowledge/wiki/decisions/0001-pr-workflow.md).
+# Free-tier private repos can't block pushes server-side, so this workflow
+# *fails loudly* on any commit pushed to main that doesn't look like a PR
+# squash-merge. The pre-push hook in .pre-commit-config.yaml is the
+# client-side belt; this is the server-side suspenders.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  verify-squash-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Verify HEAD is a PR squash-merge
+        run: |
+          msg=$(git log -1 --pretty=%s)
+          echo "HEAD subject: '$msg'"
+          if [[ ! "$msg" =~ \(\#[0-9]+\)$ ]]; then
+            echo "::error::Direct push to main detected (commit subject does not end with '(#NNN)')."
+            echo "Expected GitHub squash-merge format: 'Title (#NNN)'."
+            echo "Open a PR via /pr-open and merge it, then this guard passes."
+            exit 1
+          fi
+          echo "OK: subject ends with PR-number marker."
