@@ -34,7 +34,9 @@ Three skills support the flow:
 - `/pr-open` — runs the PR-time gate above.
 - `/pr-merge` — after the human squash-merges in GitHub: verify, archive
   the `mb/active/<slug>.md` tracking file, prune the worktree, delete
-  the local branch.
+  the local branch. Layout-aware — in a plain `git clone` (no umbrella /
+  no worktree) the archive + worktree-prune steps are skipped and `main`
+  is checked out in place.
 
 ## Why
 
