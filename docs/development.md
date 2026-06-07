@@ -57,7 +57,9 @@ merged history in sync.
    (enforced in repo settings). Review in the UI, then click "Squash and
    merge". The remote branch auto-deletes. Then run **`/pr-merge`** to
    archive the tracking file, delete the local branch, and prune the
-   worktree.
+   worktree. `/pr-merge` auto-detects layout — in a plain `git clone`
+   (no umbrella / no worktree) it switches back to `main` in place and
+   skips the archive + worktree-prune steps.
 
 For agent-driven work, the same loop is wrapped by the
 `/goal` → `/act` → `/commit` harness skills — same shape, the agent just

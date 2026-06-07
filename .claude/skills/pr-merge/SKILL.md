@@ -43,9 +43,17 @@ SLUG="${BRANCH//\//-}"
 
 # Layout detection — drives the conditional steps below.
 if [ -f "$REPO/.git" ]; then
-  LAYOUT=worktree                # linked worktree (.git is a pointer file)
-  UMBRELLA="$(dirname "$REPO")"
-  BRANCH_FILE="$UMBRELLA/mb/active/$SLUG.md"
+  # .git is a file pointer. Could be a linked worktree OR a submodule;
+  # only treat as worktree if it points into a `worktrees/` dir.
+  if grep -q '^gitdir: .*/worktrees/' "$REPO/.git"; then
+    LAYOUT=worktree
+    UMBRELLA="$(dirname "$REPO")"
+    BRANCH_FILE="$UMBRELLA/mb/active/$SLUG.md"
+  else
+    echo "$REPO/.git is a gitfile but not a linked worktree (submodule?)." >&2
+    echo "/pr-merge does not support this layout." >&2
+    exit 1
+  fi
 elif [ -d "$REPO/.git" ]; then
   LAYOUT=plain                   # main checkout in a regular clone
   UMBRELLA=""                    # no umbrella in plain mode
@@ -106,6 +114,12 @@ Mandatory human gate: the skill never merges without explicit `y`.
 if [ "$LAYOUT" = "plain" ]; then
   # Plain clone: this clone IS the main checkout. Switch branches here.
   CB_ROOT="$REPO"
+  # Refuse to switch branches with uncommitted changes — would lose work.
+  if ! git -C "$REPO" diff --quiet || ! git -C "$REPO" diff --cached --quiet; then
+    echo "Uncommitted changes on $BRANCH — commit or stash before /pr-merge." >&2
+    git -C "$REPO" status --short >&2
+    exit 1
+  fi
 else
   # Linked worktree: find a sibling worktree with main checked out.
   CB_ROOT=$(git -C "$REPO" worktree list --porcelain | \
@@ -176,12 +190,12 @@ remove's exit code.
 ### 6. Delete the local branch
 
 ```bash
-git -C "$CB_ROOT" branch -d "$BRANCH"
+# We already verified PR state == MERGED in step 2 (or auto-merged it),
+# so GitHub is the source of truth. The local branch tip is the
+# pre-squash commit — NOT an ancestor of main's squash-merge commit —
+# so `git branch -d` would refuse. Use `-D` directly.
+git -C "$CB_ROOT" branch -D "$BRANCH"
 ```
-
-If `-d` refuses ("not fully merged" — happens when the squash hash
-differs from the local branch tip), retry with `-D` only after
-confirming the PR was merged in step 2.
 
 The remote branch is auto-deleted by GitHub (`delete_branch_on_merge: true`).
 
@@ -220,8 +234,9 @@ Stop and surface to the user when:
 - PR state is `OPEN` and user answers `n` to the auto-merge prompt, or `CLOSED` (deliberate abandon — `/pr-merge` is the wrong tool).
 - `pull --ff-only origin main` fails twice (after the retry).
 - Worktree mode and the worktree has uncommitted changes.
-- `git branch -d` refuses *and* PR state is not clearly `MERGED`.
-- Layout detection fails (`$REPO/.git` is neither file nor directory).
+- Plain mode and the working tree has uncommitted changes (step 3 guard).
+- Layout detection: `$REPO/.git` is a gitfile but doesn't point into `worktrees/` (likely a submodule — unsupported).
+- Layout detection: `$REPO/.git` is neither file nor directory.
 
 ## Idempotency
 
