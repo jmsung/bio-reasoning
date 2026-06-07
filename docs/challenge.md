@@ -221,13 +221,159 @@ Pending confirmation from Bing and Joo before this is final.
 - **Final submission deadline:** 2026-07-22 07:00:00 UTC (all three tracks).
 - Workshop: ICLR 2026 (date TBD from MLGenX schedule).
 
-## Eligibility
+## Rules and logistics
 
-The overview page states the challenge "will follow a good-faith policy
-regarding cheating" but does not specify team size limits or participant
-restrictions. Track-specific constraints (base model, parameter limits,
-token budgets) live in the per-track sections. General eligibility to be
-confirmed from Kaggle and updated here.
+### Eligibility
+
+Overview page: "will follow a good-faith policy regarding cheating." No
+explicit team-size limit found yet; Kaggle's per-competition default
+applies — confirm from each Track's rules tab before merging teams.
+
+### Per-track constraints
+
+| | Track A (prompt-only) | Track B (agentic) | Track C (fine-tuning) |
+|---|---|---|---|
+| Base model | GPT-OSS-120B (fixed) | GPT-OSS-120B (fixed) | any open model, **≤ 10B total params** |
+| Tools | none — single LLM call | ≤ 100 tools, ≤ 250 calls per row | none |
+| Prompt tokens | ≤ 4,096 | ≤ 16,384 | n/a |
+| Samples per question | 3 | n/a | n/a |
+| Traces | not required | **required** (audit) | n/a |
+| Fine-tuning | forbidden | forbidden | any technique |
+
+Sources: challenge overview, Track A Kaggle forum (organizer reply,
+2026-05-11), Track C Kaggle forum (organizer reply, 2026-05-27).
+
+### Rule clarifications (from organizer forum replies)
+
+- **Track A "prompt-only" scope.** "Generally speaking, there are not
+  constraints placed on how the prompt is constructed" except the
+  4,096-token cap and the rule that "the prompt cannot directly include
+  the expected outputs." Using external scripts / automated methods for
+  prompt optimization is allowed and *encouraged* to be shared. What is
+  **not** allowed: running another model on the test rows and stuffing
+  its predictions into the prompt.
+- **Track C 10B limit is TOTAL params, not effective.** Gemma E4B (4B
+  effective, 8B total) is allowed. Params dedicated to non-text
+  modalities (e.g. audio in E4B) can be removed and excluded from the
+  count.
+- **GPT-OSS-120B access:** organizers confirm querying it through an API
+  (Together AI, Fireworks, etc.) is fine — no need to run locally —
+  "as long as you use the correct model and sampling parameters."
+- **No traditional-ML-only submissions.** Track A is for LLM-prompted
+  predictions; non-LLM pipelines (TF-IDF / SVD / boosting) violate the
+  rules. Organizers will audit top solutions for compliance.
+
+### Reference implementation
+
+Genentech publishes a reference repo with example submissions and the
+scripts to generate them:
+
+- https://github.com/genentech/bioreasoningchallenge
+
+Treat this as the canonical "how submissions are produced" guide. Read
+before writing our own pipeline.
+
+## Data
+
+All three tracks ship the **same** `train.csv` + `test.csv`. The task is
+3-class direction prediction (`up` / `down` / `none`) for a `(perturbation,
+target gene)` pair in macrophages.
+
+### Files
+
+| File | Rows | Schema | Where it lives locally |
+|---|---|---|---|
+| `train.csv` | 7,705 | `id, pert, gene, label` | `data/raw/<track>/` (gitignored) |
+| `test.csv` | 1,813 | `id, pert, gene` | `data/raw/<track>/` (gitignored) |
+
+`id = "<pert>_<gene>"`.
+
+### Splits (train vs test)
+
+| Dimension | Train unique | Test unique | Overlap |
+|---|---|---|---|
+| Perturbations | 386 | 96 | **0** |
+| Target genes | 1,570 | 636 | **0** |
+
+Dual-OOD: every test row pairs an unseen perturbation with an unseen
+target gene. Memorization cannot help.
+
+### Label distribution (train)
+
+| Class | Count | Share |
+|---|---|---|
+| `none` | 4,260 | 55.3% |
+| `up` | 2,359 | 30.6% |
+| `down` | 1,086 | 14.1% |
+
+Majority-class baseline ≈ 0.553. Current leaderboard tops ≈ 0.65.
+
+### Provenance and license
+
+- **Curated by Genentech (BRAID team)** for the challenge.
+- Underlying biology: macrophage perturbation experiments. Specific assay
+  / cell line not stated on Kaggle's data tab as of 2026-06-06 — confirm
+  from the data tab or the Genentech GitHub repo before publication.
+- **License:** not bundled with the CSVs; subject to each Kaggle
+  competition's rules — confirm before redistribution.
+
+### Access
+
+- Kaggle competition page (per track) → accept rules → `kaggle
+  competitions download -c <slug>`.
+- All three tracks must be joined separately for data access (the user
+  has joined all three as of 2026-06-06).
+- Raw CSVs live under `data/raw/<track>/` and are gitignored. We
+  never commit competition data.
+
+## Submission format
+
+### File shape
+
+Inferred from `test.csv` columns and the convention of Kaggle community
+competitions:
+
+```csv
+id,label
+Slc35b1_Pdia6,none
+Rprd2_9930111J21Rik2,down
+...
+```
+
+One row per test `id`, label ∈ `{up, down, none}`. Confirm the exact
+header and any required dtypes against each Track's Kaggle submission
+page before the first submit — Kaggle's evaluator rejects header
+mismatches silently into "format error" leaderboard entries.
+
+No `sample_submission.csv` is bundled in the competition zip; the
+reference implementation at
+[genentech/bioreasoningchallenge](https://github.com/genentech/bioreasoningchallenge)
+should be the source of truth for the canonical format.
+
+### Submission cadence
+
+- Submissions are **generated locally** (Kaggle notebooks are not the
+  expected workflow per organizer reply, 2026-05-15).
+- Kaggle's daily-submission cap applies per track. The exact number isn't
+  exposed via the CLI — check each competition's submission page.
+- Use the Kaggle CLI:
+  ```bash
+  kaggle competitions submit -c <track-slug> -f submission.csv -m "<message>"
+  ```
+
+### Final-submission selection
+
+Kaggle community competitions typically let teams pick which of their
+submissions count for the private leaderboard. Verify the count and the
+selection deadline (usually same as the final-submission deadline,
+2026-07-22 07:00:00 UTC) from each Track's rules tab.
+
+### Track B traces
+
+Track B requires submission of **traces** of tool calls alongside the
+prediction CSV. Format and upload mechanism not yet inspected — confirm
+from Track B's rules tab and the reference repo before our first Track B
+submission.
 
 ## Organizers
 
@@ -238,9 +384,12 @@ others.
 ## References
 
 - Challenge overview: https://genentech.github.io/BioReasoningChallenge/
+- Reference implementation: https://github.com/genentech/bioreasoningchallenge
 - Track A (Kaggle): https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-a
 - Track B (Kaggle): https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b
+- Track C (Kaggle): https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-c
 - Workshop: MLGenX @ ICLR 2026
 
-_Overview fetched 2026-06-06. Re-check before any decision that depends on
-timeline or eligibility._
+_Overview + data fetched 2026-06-06. Re-check before any decision that
+depends on timeline, eligibility, or rule details — organizer replies on
+Kaggle forums supersede the static overview page._
