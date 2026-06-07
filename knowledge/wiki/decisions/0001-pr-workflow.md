@@ -80,29 +80,65 @@ Expected output:
 }
 ```
 
-## Caveat — branch protection deferred
+## No-direct-push enforcement — free-tier "Path B"
 
-We would also like to enforce **"no direct push to `main`"** via branch
-protection rules (`PUT /repos/.../branches/main/protection`) or via the
-newer Rulesets endpoint (`POST /repos/.../rulesets`).
+We would prefer to enforce **"no direct push to `main`"** via GitHub
+branch protection (`PUT /repos/.../branches/main/protection`) or the
+newer Rulesets endpoint. Both are **gated to GitHub Pro on private
+repos**, and ours is private + free. The classic endpoint returns
+`HTTP 403: Upgrade to GitHub Pro or make this repository public`.
 
-Both are **gated to GitHub Pro on private repositories**. Our repo is
-private (`gh api /repos/jmsung/bio-reasoning -q .visibility` → `private`),
-and we don't have Pro. The classic endpoint returns:
+We don't want to make the repo public during the challenge (competitors
+would see our methodology) and don't want to pay for Pro. So we use
+**Path B** — client-side block + server-side loud-fail:
 
-```
-HTTP 403: Upgrade to GitHub Pro or make this repository public to
-enable this feature.
-```
+### Client-side: pre-push hook (refuses the push)
 
-Until either (a) we make the repo public, or (b) someone upgrades to
-Pro, **no-direct-push is enforced by team discipline** — through this
-document, `docs/development.md`, and the team's habit of always going
-through `/pr-open`.
+`.pre-commit-config.yaml` declares a pre-push hook that runs on every
+`git push`. For pushes targeting `main`, it inspects each commit being
+pushed and refuses if any commit subject doesn't end with `(#NNN)` —
+the GitHub squash-merge marker.
 
-Making the repo public is a real trade-off — competitors on the
-BioReasoning Challenge can see our methodology. We are not making that
-trade now; we revisit after the challenge.
+Script: `scripts/git-hooks/no-direct-push-to-main.sh`.
+
+Installed by `/dev-setup` (via `uv run pre-commit install`, which picks
+up `default_install_hook_types: [pre-commit, pre-push]` in the config
+and installs both hook types). Every teammate's clone gets it.
+
+Bypass exists (`git push --no-verify`) but is documented as "don't,
+except true emergencies". Lightweight discipline + visible-bypass-trail.
+
+### Server-side: GitHub Actions guard (fails the workflow)
+
+`.github/workflows/guard-main.yml` runs on every push to `main`. It
+checks the HEAD commit's subject; if it doesn't end with `(#NNN)`, the
+workflow fails with a loud red ❌ on the commit and a notification
+email.
+
+Free private repos can't reject pushes server-side (only paid plans
+can), so this is informational — but a failing CI on `main` is hard to
+ignore and creates a paper trail.
+
+### Why "(#NNN)" as the marker
+
+GitHub's squash-merge automatically formats the merged commit subject as
+`<PR title> (#<PR number>)`. Both the pre-push hook and the Actions
+guard look for this suffix as proof "this commit came from a merged PR,
+not a direct push".
+
+If the team adopts a different merge format later, both checks need to
+update — they're hard-coded to this regex.
+
+### When this gets replaced
+
+Two upgrade paths replace Path B with a real server-side block:
+
+1. **Make the repo public** when the challenge ends and we write up
+   results. Classic branch protection becomes free.
+2. **Upgrade to GitHub Pro** ($4/mo) if we want enforcement before going
+   public.
+
+Either unlocks: `gh api -X PUT /repos/jmsung/bio-reasoning/branches/main/protection` with PR-required + no-force-push + no-deletion. At that point Path B can stay (belt-and-suspenders) or be removed.
 
 ## Consequences
 
