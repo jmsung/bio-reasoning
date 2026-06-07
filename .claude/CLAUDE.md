@@ -78,8 +78,9 @@ brainstorm → roadmap → branch → PR → merge.
 Dev pipeline (run in this order across a branch's life):
 
 - `/dev-setup` — one-time after `git clone`: `uv sync`, install pre-commit hooks, verify `gh` + `kaggle` auth, check `.env`.
-- `/pr-open` — gated push + PR creation: pre-commit / pytest / mypy / `/code-review` → push → `gh pr create` → tick matching `roadmap.md` items with `(#N)`. Stops at human squash-merge.
-- `/pr-merge` — post-merge cleanup: verify, archive `mb/active/<slug>.md`, prune worktree, delete branch.
+- `/commit` — local commit: runs checks, reads the `gcm` block from the tracking file (or prompts), stages, commits. Never pushes.
+- `/pr-open` — gated push + PR creation: rebase → pre-commit / pytest / mypy → 4 parallel reviewer agents (`@code-review`, `@security-audit`, `@docs-review`, `@wiki-lint`) → push → `gh pr create` → tick matching `roadmap.md` items with `(#N)`. Stops at human squash-merge.
+- `/pr-merge` — post-merge cleanup: verify PR merged (or `gh pr merge --squash` on confirm if still open), sync main, archive `mb/active/<slug>.md`, prune worktree, delete branch.
 
 See [`knowledge/wiki/decisions/0001-pr-workflow.md`](../knowledge/wiki/decisions/0001-pr-workflow.md) for the 3-gate model (pre-commit → `/pr-open` → squash UI).
 

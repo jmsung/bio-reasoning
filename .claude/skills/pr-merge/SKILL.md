@@ -75,15 +75,33 @@ Mandatory human gate: the skill never merges without explicit `y`.
 ### 3. Fetch + checkout main
 
 ```bash
-# Switch to main inside the umbrella's cb checkout (NOT the worktree).
-CB_ROOT=$(git -C "$REPO" worktree list --porcelain | awk '/^worktree/{print $2; exit}')
+# Find the cb checkout that has `main` checked out — robust against
+# worktree order. Falls back to derivation from the umbrella layout
+# if no worktree has main checked out yet.
+CB_ROOT=$(git -C "$REPO" worktree list --porcelain | \
+  awk '/^worktree/{p=$2} /^branch refs\/heads\/main$/{print p; exit}')
+if [ -z "$CB_ROOT" ]; then
+  # Universal layout: $REPO is a worktree under <umbrella>/cb-<slug>/;
+  # the main cb checkout is at <umbrella>/cb/.
+  CB_ROOT="$(dirname "$REPO")/cb"
+fi
+[ -d "$CB_ROOT/.git" ] || [ -f "$CB_ROOT/.git" ] || {
+  echo "Could not locate the cb-git's main checkout (tried: $CB_ROOT)." >&2; exit 1
+}
+
 git -C "$CB_ROOT" fetch origin
 git -C "$CB_ROOT" checkout main
-git -C "$CB_ROOT" pull --ff-only origin main
+# Brief retry on ff-only failure: GitHub returns from gh pr merge
+# before the new commit is fully replicated to the user's remote view.
+git -C "$CB_ROOT" pull --ff-only origin main || {
+  sleep 2
+  git -C "$CB_ROOT" pull --ff-only origin main
+} || {
+  echo "pull --ff-only failed twice — main has diverged unexpectedly." >&2
+  echo "Resolve manually; do NOT force." >&2
+  exit 1
+}
 ```
-
-If `pull --ff-only` fails (main has diverged unexpectedly), surface and
-stop — do not force.
 
 ### 4. Archive the tracking file
 
@@ -94,16 +112,29 @@ git -C "$UMBRELLA/mb" mv "active/$SLUG.md" "completed/$SLUG.md"
 git -C "$UMBRELLA/mb" commit -m "mb($SLUG): archive — PR #$(gh pr view --json number -q .number) merged"
 ```
 
-### 5. Prune the worktree
+### 5. Prune the worktree (CWD-critical)
+
+**Why this is delicate:** the Bash tool's CWD persists between calls.
+If CWD is inside the worktree when `git worktree remove` deletes it,
+every subsequent Bash call fails with "Path does not exist" — no
+recovery within the session. So the `cd` MUST be a STANDALONE call,
+never chained with `git worktree remove`.
 
 ```bash
-WORKTREE=$(git -C "$REPO" rev-parse --show-toplevel)
-cd "$CB_ROOT"           # leave the worktree first or `worktree remove` refuses
+# Sub-step 5a — standalone cd, nothing else in this call.
+cd "$CB_ROOT" && pwd        # verify output shows the main cb checkout
+```
+
+```bash
+# Sub-step 5b — only after 5a confirms we're on main checkout.
+WORKTREE="$REPO"
 git worktree remove "$WORKTREE"
 ```
 
 If the worktree has uncommitted changes (shouldn't, post-merge), abort
-and let the user resolve.
+and let the user resolve. Do NOT verify removal with `git worktree list`
+afterward — that's another Bash call from the new CWD; trust the
+remove's exit code instead.
 
 ### 6. Delete the local branch
 

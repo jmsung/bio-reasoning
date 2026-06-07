@@ -31,6 +31,16 @@ Find the branch's tracking file at `mb/active/<slug>.md` (slug =
 Verify every `# Goals` entry is `[x]`. If any `[ ]` remain, list them
 and abort: "Unfinished goals — finish or `/revise` before opening PR."
 
+Verify working tree is clean:
+
+```bash
+[ -z "$(git -C "$REPO" status --porcelain)" ] || {
+  git -C "$REPO" status --short
+  echo "Uncommitted changes — commit or stash before /pr-open." >&2
+  exit 1
+}
+```
+
 ### 2. Rebase on main
 
 ```bash
@@ -110,8 +120,10 @@ If a PR already exists for this branch (re-open or update flow):
 PR_NUM=$(gh pr view --json number -q .number 2>/dev/null)
 ```
 
-- **No existing PR** → `gh pr create --title "<PR_TITLE>" --body "<PR_BODY>"`.
-  Parse `PR_NUM` from the URL `gh` prints.
+- **No existing PR** → `gh pr create --title "<PR_TITLE>" --body-file <(printf '%s' "$PR_BODY")`.
+  Then `PR_NUM=$(gh pr view --json number -q .number)`. If `PR_NUM`
+  is empty after creation, abort: "PR created but number not
+  resolvable — check `gh pr list` manually."
 - **Existing PR** → skip creation; just continue.
 
 ### 7. Tick matching roadmap items with (#N)
