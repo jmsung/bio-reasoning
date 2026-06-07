@@ -22,7 +22,7 @@ Three layered gates enforce quality before code reaches `main`:
 | Gate | When | What runs |
 |---|---|---|
 | **Pre-commit hook** | every `git commit` | black, ruff (lint), mypy on `src/`, hygiene checks (trailing-whitespace, EOF, large files, etc.) — config in `.pre-commit-config.yaml` |
-| **`/pr-open` skill** | branch → PR | full lint + typecheck + tests + `/code-review`, then push + `gh pr create` + tick matching roadmap items with `(#N)` |
+| **`/pr-open` skill** | branch → PR | full lint + typecheck + tests; then a 4-review quality gate run in parallel (`/code-review`, `/security-review`, `/wiki-lint`, `docs-review` agent); then push + `gh pr create` + tick matching roadmap items with `(#N)`. Security findings are HARD blocks; other findings are surfaced for review. |
 | **Human squash-merge** | PR → main | reviewer clicks "Squash and merge" in GitHub UI (the only enabled merge type) |
 
 Three skills support the flow:

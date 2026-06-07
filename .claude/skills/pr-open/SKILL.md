@@ -42,14 +42,30 @@ uv run mypy                            # type check (config in pyproject.toml)
 
 If any step fails, print the failure verbatim and stop. Do not push.
 
-### 3. /code-review
+### 3. Quality gate — 4 reviews in parallel
 
-Invoke `/code-review` at default effort against the branch diff. Surface
-findings to the user. Two outcomes:
+Run these in parallel (they're independent reports):
 
-- **No issues / user accepts as-is** → continue to step 4.
+| Review | Tool | What it catches |
+|---|---|---|
+| Code review | `/code-review` (default effort) | bugs, reuse, simplification, efficiency in the diff |
+| Security audit | `/security-review` | secrets, leaks, injection, auth/authz mistakes in the diff |
+| Wiki health | `/wiki-lint` | orphans, broken cites, missing cross-refs in `knowledge/wiki/` |
+| Docs status | `docs-review` agent | README + `docs/` drift vs the code changes |
+
+Aggregate the findings into one block grouped by source. Two outcomes:
+
+- **No blocking issues / user accepts as-is** → continue to step 4.
 - **Issues to fix** → ask the user to address (with you or manually).
   After fixes are committed, return to step 2.
+
+Severity bar for "blocking":
+- Code review: any CONFIRMED bug or unhandled correctness finding.
+- Security: any leaked secret, auth bypass, or injection sink (HARD block — never push).
+- Wiki: broken cites or orphans that touch a page this PR modifies (otherwise informational).
+- Docs: any stale claim that contradicts the merged behavior (e.g., command renamed but README still shows old form).
+
+User can override informational findings; never override security.
 
 ### 4. Push the branch
 
@@ -107,7 +123,8 @@ Print:
 ```
 PR opened: <URL>
 Branch:    <branch>
-Checks:    pre-commit ✓ pytest ✓ mypy ✓ code-review ✓
+Checks:    pre-commit ✓ pytest ✓ mypy ✓
+Reviews:   code ✓ security ✓ wiki ✓ docs ✓
 Roadmap:   ticked items <N, M> with (#<PR_NUM>) (or "none — non-roadmap PR")
 
 Next: review in GitHub, then Squash-merge in the UI.
@@ -126,7 +143,10 @@ Next: review in GitHub, then Squash-merge in the UI.
 
 Stop and surface to the user when:
 - Tracking file is missing or has unfinished goals.
-- Any check (pre-commit / pytest / mypy / code-review) fails.
+- Any check (pre-commit / pytest / mypy) fails.
+- Any quality review (code / security / wiki / docs) surfaces a blocking
+  finding per the severity bar above. Security findings are HARD blocks
+  and cannot be overridden.
 - `git push` is rejected.
 - The roadmap-match step is ambiguous (no clear correspondence between PR
   summary and any roadmap item — ask, don't guess).
