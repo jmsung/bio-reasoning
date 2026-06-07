@@ -1,0 +1,45 @@
+# Pre-commit hooks for bio-reasoning-2026.
+#
+# Setup (once per clone):
+#   uv sync
+#   uv run pre-commit install
+#
+# Then every `git commit` runs these hooks on staged files. To run
+# against the whole repo on demand:
+#   uv run pre-commit run --all-files
+#
+# Layered gates: pre-commit (here) → /pr-open (full checks + code-review)
+# → human squash-merge in GitHub UI. See knowledge/wiki/decisions/0001-pr-workflow.md.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (src only)
+        entry: uv run mypy
+        language: system
+        types: [python]
+        files: ^src/bio_reasoning/
+        pass_filenames: false

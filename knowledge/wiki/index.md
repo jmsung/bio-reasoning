@@ -46,7 +46,7 @@ _(none yet — record what we tried and why)_
 
 ### Decisions
 
-_(none yet)_
+- [0001 — PR-only workflow with squash-merge](decisions/0001-pr-workflow.md) — 2026-06-06
 
 ### Concepts
 
