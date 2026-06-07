@@ -111,8 +111,9 @@ before first submit.
 | 4 | Jeki Wan Taufik | 0.628 |
 | 5 | Álvaro | 0.615 |
 
-23 entries total. Headroom over baseline (~0.10) suggests prompting
-alone gets meaningful signal — the question is how much.
+23 leaderboard entries (of 26 joined teams). Headroom over baseline
+(~0.10) suggests prompting alone gets meaningful signal — the question
+is how much.
 
 ## Track B — (multi-)agentic tool-use
 
@@ -149,7 +150,7 @@ the Track B evaluation tab before relying.
 | 4 | Álvaro | 0.612 |
 | 5 | Tian Luyi | 0.606 |
 
-12 entries total. Top score is essentially tied with Track A's top —
+12 leaderboard entries (of 12 joined teams). Top score is essentially tied with Track A's top —
 suggests that, at the current state of the leaderboard, agentic tool-use
 is not yet pulling ahead of careful prompting. Headroom for whichever
 approach lands the right tools.
@@ -170,7 +171,7 @@ approach lands the right tools.
 | Reward | $2,000 USD | $2,000 USD | $2,000 USD |
 | Fit with project philosophy | Strong baseline; high signal per effort | Direct fit — "agentic engineering sandbox" | Off-pattern (we'd be fine-tuning, not orchestrating agents) |
 | Effort to enter | Low — prompt + submit | Medium — tool design + traces | High — GPU, FT pipeline |
-| Entries to date | 26 teams | 12 teams | 14 teams |
+| Teams joined to date | 26 | 12 | 14 |
 
 Notes:
 - Tracks A and B compete on the **same task with the same data** — the
