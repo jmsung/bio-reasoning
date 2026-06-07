@@ -6,11 +6,12 @@ Testing whether LLMs and agentic systems can serve as useful computational engin
 
 ## Challenge
 
-Three tracks (see https://genentech.github.io/BioReasoningChallenge/):
+Predict perturbation outcomes in macrophages using LLMs / agentic systems.
+Three tracks (prompt-only, agentic tool-use, fine-tuning). Canonical
+summary, per-track detail, and entry decision live in
+[`docs/challenge.md`](docs/challenge.md).
 
-- **Track A** — Prompt-only (no tools, single call). Fixed base: GPT-OSS-120B. Max 4,096 prompt tokens, 3 samples per question.
-- **Track B** — (Multi-)agentic tool-use. Fixed base: GPT-OSS-120B. Max 100 tools, 250 calls, 16,384 prompt tokens. Traces required.
-- **Track C** — Fine-tuning (reasoning, no tools). Open model < 10B params; any FT technique.
+Overview: https://genentech.github.io/BioReasoningChallenge/
 
 Likely entering A and/or B.
 
@@ -19,6 +20,14 @@ Likely entering A and/or B.
 ```bash
 uv sync
 ```
+
+## Where things live
+
+Team work happens in three places: **this repo**, the **shared Drive**,
+and **Kaggle**. See [`docs/where-things-live.md`](docs/where-things-live.md)
+for the full map and a "what goes where" cheatsheet. Distilled team
+knowledge lives in [`docs/wiki/`](docs/wiki/) — see its
+[README](docs/wiki/README.md) for the four `/wiki-*` skills.
 
 ## Layout
 
