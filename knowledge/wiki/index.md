@@ -37,8 +37,7 @@ _(none yet)_
 
 ### Findings
 
-_(cross-source synthesis answering specific questions — populated as
-`/wiki-query --file-back` runs accumulate)_
+- [Track A EDA — data structure and predictive signal](findings/track-a-eda.md) — 2026-06-08
 
 ### Methods
 
