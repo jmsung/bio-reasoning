@@ -21,23 +21,34 @@ discovers it.
 
 Ordered by priority — understand → plan → build.
 
-1. [ ] **EDA on training data** — Perturb-seq distributions, class balance,
-   missingness; audit augmentation candidates (PerturbQA, Tahoe-100M).
-2. [ ] **Survey Kaggle approaches** — prior Perturb-seq / cellular response
+1. [x] (#4) **EDA on training data** — Perturb-seq distributions, class
+   balance, missingness, train/test overlap, and GO / functional
+   predictive-signal analysis.
+2. [ ] **Audit augmentation candidates** — PerturbQA, Tahoe-100M (and other
+   external Perturb-seq sources) as potential training augmentation.
+   (split out of the original EDA item)
+3. [ ] **Port Track-A EDA scripts into the repo** — move the GO-annotation /
+   enrichment / interaction scripts into `scripts/`, repoint to `data/raw/`,
+   add the `mygene` dep, resolve the GO-cache (>500 KB) location. (follow-up
+   from #4)
+4. [ ] **Survey Kaggle approaches** — prior Perturb-seq / cellular response
    winners + the current competition's public notebooks, Discussions, and
    shared writeups from other teams.
-3. [ ] **Literature survey + `/wiki-ingest`** — agent harness, meta-learning,
-   gene perturbation, scRNA-seq prediction (ongoing; runs in parallel with 1–2).
-4. [ ] **Foundation model survey for Track C** — open <10B candidates (Qwen,
+5. [ ] **Literature survey + `/wiki-ingest`** — agent harness, meta-learning,
+   gene perturbation, scRNA-seq prediction (ongoing; runs in parallel with 1–4).
+6. [ ] **Foundation model survey for Track C** — open <10B candidates (Qwen,
    Llama, Gemma, …). Tracks A/B are locked to GPT-OSS-120B.
-5. [ ] **Draft track-specific approach plans + per-member action plan** —
+7. [ ] **Draft track-specific approach plans + per-member action plan** —
    A: prompt engineering, B: agent + tool design, C: FT recipe; architecture
    decisions; who owns what.
-6. [ ] **Wire up GPT-OSS-120B inference** (Together AI / Fireworks API per
+8. [ ] **Wire up GPT-OSS-120B inference** (Together AI / Fireworks API per
    organizer reply).
-7. [ ] **Build A/B shared data pipeline** (`data/raw/<track>/` → train/test
+9. [ ] **Build A/B shared data pipeline** (`data/raw/<track>/` → train/test
    loaders).
-8. [ ] **First Track A submission baseline** (majority-class + a naive prompt).
+10. [ ] **First Track A submission baseline** (majority-class + a naive prompt).
+11. [ ] **Fix local pre-commit bootstrap** — Microsoft Store Python breaks
+    `virtualenv` seeding; switch to a non-Store Python (`uv python install`)
+    so `/dev-setup` + pre-commit hooks run. (dev-env; discovered in #4)
 
 ## Completed
 
