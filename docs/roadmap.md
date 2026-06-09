@@ -27,6 +27,10 @@ Ordered by priority — understand → plan → build.
 2. [ ] **Audit augmentation candidates** — PerturbQA, Tahoe-100M (and other
    external Perturb-seq sources) as potential training augmentation.
    (split out of the original EDA item)
+   - test housekeeping-perturbation cell-type-invariance on Track A data
+     (transferability hypothesis — see [[housekeeping-transfer-hypothesis]])
+   - enumerate Tahoe's 50-line panel; flag myeloid/monocytic lines (THP-1,
+     U937, …) closest to macrophages
 3. [ ] **Port Track-A EDA scripts into the repo** — move the GO-annotation /
    enrichment / interaction scripts into `scripts/`, repoint to `data/raw/`,
    add the `mygene` dep, resolve the GO-cache (>500 KB) location. (follow-up

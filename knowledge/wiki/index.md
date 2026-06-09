@@ -39,6 +39,7 @@ _(none yet)_
 ### Findings
 
 - [Track A EDA — data structure and predictive signal](findings/track-a-eda.md) — 2026-06-08
+- [Housekeeping-perturbation transferability — augmentation lead](findings/housekeeping-transfer-hypothesis.md) — 2026-06-08
 
 ### Methods
 
