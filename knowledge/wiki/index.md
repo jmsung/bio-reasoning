@@ -14,6 +14,7 @@ Files live flat under `knowledge/source/`. Type lives in each page's
 
 ### Papers
 
+- [PerturbQA — Contextualizing perturbation experiments through language](../source/2025-wu-perturbqa.md) — arxiv.org · 2025 (ICLR)
 - [Tahoe-100M — Giga-Scale Single-Cell Perturbation Atlas](../source/2025-zhang-tahoe-100m.md) — biorxiv.org · 2025
 
 ### Web
