@@ -47,7 +47,7 @@ _(none yet)_
 
 ### Methods
 
-_(none yet — record what we tried and why)_
+- [Assessing external Perturb-seq datasets — compute plan & tooling](methods/perturb-seq-data-assessment.md) — 2026-06-08
 
 ### Decisions
 
