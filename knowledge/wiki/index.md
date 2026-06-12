@@ -14,7 +14,12 @@ Files live flat under `knowledge/source/`. Type lives in each page's
 
 ### Papers
 
-_(none yet — add via `/wiki-ingest <arxiv-url>`)_
+- [PerturbQA — Contextualizing perturbation experiments through language](../source/2025-wu-perturbqa.md) — arxiv.org · 2025 (ICLR)
+- [Tahoe-100M — Giga-Scale Single-Cell Perturbation Atlas](../source/2025-zhang-tahoe-100m.md) — biorxiv.org · 2025
+- [Replogle 2022 — Genome-scale Perturb-seq (CRISPRi, K562/RPE1)](../source/2022-replogle-genome-scale-perturb-seq.md) — Cell · 2022
+- [Papalexi 2021 — ECCITE-seq immune checkpoints (THP-1)](../source/2021-papalexi-eccite-seq-immune-checkpoints.md) — Nat Genet · 2021
+- [Dixit 2016 — original Perturb-seq (mouse dendritic cells)](../source/2016-dixit-perturb-seq.md) — Cell · 2016
+- [scPerturb 2024 — harmonized single-cell perturbation data](../source/2024-peidli-scperturb.md) — Nat Methods · 2024
 
 ### Web
 
@@ -38,10 +43,11 @@ _(none yet)_
 ### Findings
 
 - [Track A EDA — data structure and predictive signal](findings/track-a-eda.md) — 2026-06-08
+- [Housekeeping-perturbation transferability — augmentation lead](findings/housekeeping-transfer-hypothesis.md) — 2026-06-08
 
 ### Methods
 
-_(none yet — record what we tried and why)_
+- [Assessing external Perturb-seq datasets — compute plan & tooling](methods/perturb-seq-data-assessment.md) — 2026-06-08
 
 ### Decisions
 
