@@ -46,8 +46,176 @@ uv sync                 # install deps
 cp .env.example .env    # add API keys (Together AI / Fireworks for GPT-OSS-120B; Kaggle)
 ```
 
+For this repo's current multi-provider testing flow, a repo-local virtualenv is
+also supported:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -e .
+python -m pip install anthropic openai python-dotenv pandas scikit-learn "dspy>=3.1.3" "azure-identity>=1.23.0" vllm
+```
+
 Data is pulled from Kaggle, not committed. See `data/README.md` for
 download instructions once `scripts/prepare_data.py` is wired up.
+
+## Script organization
+
+The repo is currently organized around three execution layers:
+
+### 1. Main challenge runners
+- `scripts/track_a_prompt_only.py` — main Track A runner
+- `scripts/track_b_agentic.py` — main Track B runner
+
+These are the scripts to evolve toward full challenge submissions.
+
+### 2. Track B tools
+- `scripts/tools/` — local and external tool implementations used by Track B
+
+Recommended rule: keep reusable tool logic in `scripts/tools/`, not embedded
+inside agent runner scripts.
+
+### 3. Smoke / validation scripts
+- `scripts/smoke/provider_smoke.py` — quick provider ping
+- `scripts/smoke/track_schema_smoke.py` — minimal Track A / Track B schema validation
+- `scripts/smoke/common.py` — shared provider-selection + request helpers
+
+Recommended rule: keep smoke tests lightweight, provider-aware, and focused on
+connectivity + output schema rather than full evaluation quality.
+
+## Provider configuration
+
+Provider selection is controlled by `.env` via:
+
+```env
+BIOREASONING_LLM_PROVIDER=openai_compatible  # or: openai, azure_openai, anthropic
+```
+
+Supported modes currently include:
+
+- `openai_compatible` — local vLLM / GPT-OSS or other OpenAI-compatible endpoints
+- `openai` — OpenAI-hosted models
+- `azure_openai` — Azure OpenAI or Azure AI Foundry / OpenAI-compatible endpoints
+- `anthropic` — Anthropic-hosted models
+
+The smoke scripts also accept a `--provider` override:
+
+```bash
+--provider gpt_oss
+--provider openai
+--provider azure
+--provider anthropic
+```
+
+## Smoke tests
+
+### Quick provider ping
+
+```bash
+. .venv/bin/activate
+python scripts/smoke/provider_smoke.py --provider azure --prompt 'Reply with exactly: smoke test ok'
+```
+
+### Track A schema smoke test
+
+```bash
+. .venv/bin/activate
+python scripts/smoke/track_schema_smoke.py --provider azure --track a --rows 1 --max-tokens 64
+```
+
+### Track B schema smoke test
+
+```bash
+. .venv/bin/activate
+python scripts/smoke/track_schema_smoke.py --provider azure --track b --rows 1 --max-tokens 64
+```
+
+Outputs are written to:
+
+- `outputs/smoke/track_a_<provider>_smoke_submission.csv`
+- `outputs/smoke/track_b_<provider>_smoke_submission.csv`
+
+## Local GPT-OSS-120B setup
+
+Tracks A and B in the official challenge use GPT-OSS-120B via a local vLLM
+server.
+
+### What is already verified in this repo
+
+- `vllm` is installed in `.venv`
+- the local vLLM OpenAI API server CLI is available
+- Azure smoke tests are passing
+- provider-aware smoke scripts are ready to test GPT-OSS once the server is up
+
+### What is still required on this machine
+
+To pull `openai/gpt-oss-120b`, this node still needs a Hugging Face token.
+Current status on this machine during validation:
+
+- CUDA-visible GPU present: `NVIDIA GB10`
+- disk available: ~660 GB free on `/`
+- Hugging Face token: **not configured yet**
+
+Without HF auth, the model download cannot start.
+
+### Recommended serve command
+
+```bash
+. .venv/bin/activate
+export HF_HOME=${HF_HOME:-$HOME/.cache/huggingface}
+python -m vllm.entrypoints.openai.api_server \
+  --model openai/gpt-oss-120b \
+  --port 8000 \
+  --enforce-eager \
+  --no-enable-prefix-caching
+```
+
+If you need tensor parallelism across multiple GPUs, add:
+
+```bash
+  --tensor-parallel-size 2
+```
+
+### After the local server starts
+
+Run GPT-OSS smoke tests with:
+
+```bash
+. .venv/bin/activate
+BIOREASONING_LLM_PROVIDER=openai_compatible \
+BIOREASONING_OPENAI_API_BASE=http://localhost:8000/v1 \
+BIOREASONING_OPENAI_MODEL=openai/gpt-oss-120b \
+python scripts/smoke/provider_smoke.py --provider gpt_oss --max-tokens 64
+```
+
+```bash
+. .venv/bin/activate
+BIOREASONING_LLM_PROVIDER=openai_compatible \
+BIOREASONING_OPENAI_API_BASE=http://localhost:8000/v1 \
+BIOREASONING_OPENAI_MODEL=openai/gpt-oss-120b \
+python scripts/smoke/track_schema_smoke.py --provider gpt_oss --track a --rows 1 --max-tokens 64
+```
+
+```bash
+. .venv/bin/activate
+BIOREASONING_LLM_PROVIDER=openai_compatible \
+BIOREASONING_OPENAI_API_BASE=http://localhost:8000/v1 \
+BIOREASONING_OPENAI_MODEL=openai/gpt-oss-120b \
+python scripts/smoke/track_schema_smoke.py --provider gpt_oss --track b --rows 1 --max-tokens 64
+```
+
+### Recommended next cleanup
+
+As the repo matures, the cleanest layout is:
+
+- `scripts/run/` — primary Track A / Track B runners
+- `scripts/tools/` — Track B tools
+- `scripts/smoke/` — provider and schema smoke tests
+- `src/bio_reasoning/utils/` — reusable provider clients / config
+
+That keeps submission logic, tools, smoke tests, and reusable library code
+separated cleanly.
 
 ## Canonical docs
 
