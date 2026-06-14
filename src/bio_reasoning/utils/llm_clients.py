@@ -10,7 +10,7 @@ from openai import OpenAI
 
 from .azure_openai_client import build_azure_openai_client, load_azure_openai_config
 
-ProviderName = Literal["openai_compatible", "openai", "anthropic", "azure_openai"]
+ProviderName = Literal["openai_compatible", "ollama", "openai", "anthropic", "azure_openai"]
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,7 @@ class ProviderConfig:
 
 def get_provider_name() -> ProviderName:
     provider = os.getenv("BIOREASONING_LLM_PROVIDER", "openai_compatible").strip().lower()
-    allowed = {"openai_compatible", "openai", "anthropic", "azure_openai"}
+    allowed = {"openai_compatible", "ollama", "openai", "anthropic", "azure_openai"}
     if provider not in allowed:
         raise ValueError(
             "BIOREASONING_LLM_PROVIDER must be one of "
@@ -55,6 +55,13 @@ def load_provider_config() -> ProviderConfig:
             model=os.getenv("BIOREASONING_OPENAI_MODEL", "gpt-4.1-mini"),
             api_key=os.getenv("OPENAI_API_KEY", ""),
             api_base=os.getenv("BIOREASONING_OPENAI_API_BASE") or None,
+        )
+    if provider == "ollama":
+        return ProviderConfig(
+            provider=provider,
+            model=os.getenv("BIOREASONING_OLLAMA_MODEL", os.getenv("BIOREASONING_OPENAI_MODEL", "gpt-oss:120b")),
+            api_key=os.getenv("BIOREASONING_OLLAMA_API_KEY", "ollama"),
+            api_base=os.getenv("BIOREASONING_OLLAMA_API_BASE", "http://localhost:11434/v1"),
         )
     return ProviderConfig(
         provider=provider,

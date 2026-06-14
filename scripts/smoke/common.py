@@ -24,6 +24,7 @@ from bio_reasoning.utils import build_client, get_provider_name, load_provider_c
 PROVIDER_ALIASES = {
     "gpt_oss": "openai_compatible",
     "openai_compatible": "openai_compatible",
+    "ollama": "ollama",
     "openai": "openai",
     "azure": "azure_openai",
     "azure_openai": "azure_openai",

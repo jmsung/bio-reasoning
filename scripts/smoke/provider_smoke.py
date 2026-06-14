@@ -11,7 +11,7 @@ def main() -> None:
     parser.add_argument(
         "--provider",
         default=None,
-        choices=["gpt_oss", "openai_compatible", "openai", "azure", "azure_openai", "anthropic"],
+        choices=["gpt_oss", "openai_compatible", "ollama", "openai", "azure", "azure_openai", "anthropic"],
         help="Provider override. Defaults to BIOREASONING_LLM_PROVIDER from env.",
     )
     parser.add_argument("--prompt", default="Reply with exactly: smoke test ok")
