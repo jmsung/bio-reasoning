@@ -25,3 +25,9 @@ Append-only history of ingests and queries.
 ## 2026-06-08 — Ingested source/2024-peidli-scperturb
 - Source: https://www.nature.com/articles/s41592-023-02144-y
 - Type: papers
+
+## 2026-07-06 — Ingested source/2026-kim-pbio-agent
+- Source: https://openreview.net/forum?id=5GIEGTv9y4 (code: https://github.com/icecream126/pbioagent_lincsqa)
+- Type: papers
+- raw: `raw/2026-kim-pbio-agent.md` (gitignored, README; paper PDF gated)
+- source: `source/2026-kim-pbio-agent.md` (in git, distilled, hash 6996cfa65a75)
