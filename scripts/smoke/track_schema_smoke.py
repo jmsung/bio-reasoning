@@ -6,12 +6,12 @@ import re
 from pathlib import Path
 
 import pandas as pd
-
 from common import ROOT, run_chat_completion
+
 from mlgenx import format_prompt, parse_answer
 
-TRACK_A_SAMPLE = ROOT / "data" / "raw" / "sample_submission_track_a.csv"
-TRACK_B_SAMPLE = ROOT / "data" / "raw" / "sample_submission_track_b.csv"
+TRACK_A_SAMPLE = ROOT / "configs" / "sample_submissions" / "track_a_sample_submission.csv"
+TRACK_B_SAMPLE = ROOT / "configs" / "sample_submissions" / "track_b_sample_submission.csv"
 TRACK_B_SYSTEM_PROMPT = ROOT / "configs" / "track_b_system_prompt.txt"
 SEEDS = [42, 43, 44]
 
@@ -41,7 +41,9 @@ def validate_schema(output_df: pd.DataFrame, sample_path: Path) -> list[str]:
     return list(sample_df.columns)
 
 
-def build_track_a_rows(df: pd.DataFrame, provider: str | None, max_tokens: int, reasoning_effort: str) -> pd.DataFrame:
+def build_track_a_rows(
+    df: pd.DataFrame, provider: str | None, max_tokens: int, reasoning_effort: str
+) -> pd.DataFrame:
     rows_out = []
     for _, row in df.iterrows():
         prompt = append_answer_tag(format_prompt(row["pert"], row["gene"]))
@@ -68,7 +70,8 @@ def build_track_a_rows(df: pd.DataFrame, provider: str | None, max_tokens: int, 
             {
                 "id": row["id"],
                 "prediction_up": sum(seed_payloads[s]["prediction_up"] for s in SEEDS) / len(SEEDS),
-                "prediction_down": sum(seed_payloads[s]["prediction_down"] for s in SEEDS) / len(SEEDS),
+                "prediction_down": sum(seed_payloads[s]["prediction_down"] for s in SEEDS)
+                / len(SEEDS),
                 "prediction_up_seed42": seed_payloads[42]["prediction_up"],
                 "prediction_down_seed42": seed_payloads[42]["prediction_down"],
                 "prediction_up_seed43": seed_payloads[43]["prediction_up"],
@@ -86,7 +89,9 @@ def build_track_a_rows(df: pd.DataFrame, provider: str | None, max_tokens: int, 
     return pd.DataFrame(rows_out)
 
 
-def build_track_b_rows(df: pd.DataFrame, provider: str | None, max_tokens: int, reasoning_effort: str) -> pd.DataFrame:
+def build_track_b_rows(
+    df: pd.DataFrame, provider: str | None, max_tokens: int, reasoning_effort: str
+) -> pd.DataFrame:
     system_prompt = TRACK_B_SYSTEM_PROMPT.read_text().strip()
     rows_out = []
     for _, row in df.iterrows():
@@ -117,7 +122,9 @@ def build_track_b_rows(df: pd.DataFrame, provider: str | None, max_tokens: int, 
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Smoke test Track A/B schema against a selected provider.")
+    parser = argparse.ArgumentParser(
+        description="Smoke test Track A/B schema against a selected provider."
+    )
     parser.add_argument("--track", required=True, choices=["a", "b"])
     parser.add_argument(
         "--provider",
@@ -147,7 +154,9 @@ def main() -> None:
     column_order = validate_schema(output_df, sample_path)
     output_df = output_df[column_order]
 
-    output_path = args.output_dir / f"track_{args.track}_{(args.provider or 'env')}_smoke_submission.csv"
+    output_path = (
+        args.output_dir / f"track_{args.track}_{(args.provider or 'env')}_smoke_submission.csv"
+    )
     output_df.to_csv(output_path, index=False)
     print(
         json.dumps(
