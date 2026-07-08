@@ -40,6 +40,9 @@ Ordered by priority — understand → plan → build.
    shared writeups from other teams.
 5. [ ] **Literature survey + `/wiki-ingest`** — agent harness, meta-learning,
    gene perturbation, scRNA-seq prediction (ongoing; runs in parallel with 1–4).
+   - PBio-Agent (LINCSQA) ingested; adaptation to our Track A/B worked out in
+     [[pbio-agent-for-tracks]] — KG-reasoning agents + `none`-abstain judge.
+     Prototype candidate for Track B.
 6. [ ] **Foundation model survey for Track C** — open <10B candidates (Qwen,
    Llama, Gemma, …). Tracks A/B are locked to GPT-OSS-120B.
 7. [ ] **Draft track-specific approach plans + per-member action plan** —
