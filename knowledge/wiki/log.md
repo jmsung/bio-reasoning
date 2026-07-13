@@ -32,6 +32,23 @@ Append-only history of ingests and queries.
 - raw: `raw/2026-kim-pbio-agent.md` (gitignored, README; paper PDF gated)
 - source: `source/2026-kim-pbio-agent.md` (in git, distilled, hash 6996cfa65a75)
 
+## 2026-07-13 — Ingested 14 perturbation-prediction papers (batch)
+Search-and-ingest for macrophage gene-perturbation-prediction (Track A/B/C). 16 candidates found; 2 skipped as duplicates of existing pages (SUMMER = 2025-wu-perturbqa; "Progressive Multi-Agent Reasoning" = 2026-kim-pbio-agent). 14 new source pages:
+- source/2025-phillips-synthpert-reasoning-traces (arXiv 2509.25346)
+- source/2026-fawkes-kg-reasoning-llm-perturbation-predictors (arXiv 2606.08816)
+- source/2026-yuan-plausibility-not-prediction-llm-perturbation (arXiv 2606.01042)
+- source/2025-li-llms-meet-virtual-cell-survey (arXiv 2510.07706)
+- source/2025-ahlmann-eltze-dl-perturbation-vs-linear (Nat Methods, 10.1038/s41592-025-02772-6)
+- source/2025-wei-scperturbench-generalizable-perturbation (Nat Methods, 10.1038/s41592-025-02980-0)
+- source/2024-wu-perturbench (arXiv 2408.10609)
+- source/2026-xu-cellbench-ls (bioRxiv 10.64898/2026.04.01.714123)
+- source/2023-roohani-gears (Nat Biotechnol, 10.1038/s41587-023-01905-6)
+- source/2026-zhang-cistranscell (arXiv 2606.13713)
+- source/2026-yu-scdfm (arXiv 2602.07103)
+- source/2025-traxler-macrophage-crispr-timeseries (Cell Systems, 10.1016/j.cels.2025.101346)
+- source/2025-binan-crispr-spatial-macrophage-circuits (Cell, 10.1016/j.cell.2025.02.012)
+- source/2026-jiang-d-spin (Cell, S0092-8674(26)00463-0)
+
 ## 2026-07-15 — Wiki-learn: TabPFN for Track A/B
 - Insights filed: 1
 - New pages: findings/tabpfn-for-perturbation-tracks.md

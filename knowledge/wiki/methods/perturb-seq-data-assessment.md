@@ -63,3 +63,13 @@ individual cells — and pseudobulk is laptop-sized even when the raw data is no
 **Species caveat:** most candidates are human (K562/THP-1/RPE1); our Track A data
 is mouse → ortholog mapping needed before cross-dataset comparison. Dixit (mouse)
 is the exception.
+
+- **Possible bridge — UCE (Universal Cell Embedding).** A candidate way around the
+  ortholog-mapping step: UCE grounds gene identity in **ESM2 protein embeddings**,
+  giving a **species-agnostic, zero-shot** cell/gene representation across 8 species
+  (knowledge-base `domains/bio-foundation-models/source/2026-rosen-universal-cell-embedding.md`).
+  It embeds cells into one shared latent space, so human external Perturb-seq and
+  mouse macrophages could in principle be compared/borrowed without an explicit
+  ortholog map. **Caveat:** UCE is a *representation* model, not a perturbation
+  predictor — it does not model knockdown direction; use it only as a cross-species
+  feature/bridge for the augmentation lead, not as the predictor itself. Untested here.
