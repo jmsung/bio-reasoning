@@ -74,10 +74,22 @@ and reward biological reasoning that generalizes across both axes.
 
 ### Evaluation
 
-Metric not visible in the bundled files. Public-leaderboard top score
-≈ **0.65** (vs majority-class baseline 0.553), consistent with accuracy
-or a similar [0, 1] classification metric. Confirm from the Kaggle
-evaluation tab before relying on this for tuning.
+The metric is **`mean(AUROC_de, AUROC_dir)`**, *not accuracy* — confirmed
+from the vendored official scorer
+[`src/bio_reasoning/eval/kaggle_metric_track_a.py`](../src/bio_reasoning/eval/kaggle_metric_track_a.py):
+
+- **AUROC_de** ranks none-vs-DE by `prediction_up + prediction_down`.
+- **AUROC_dir** ranks up-vs-down by `prediction_up / (prediction_up + prediction_down)`
+  over DE-positive rows only.
+
+Consequences: predictions must be **graded** (`prediction_up`,
+`prediction_down` floats), not hard labels; a constant "predict none" scores
+≈ **0.5**, not 0.553 — the 0.553 majority-class figure is an *accuracy*
+reference and does **not** apply to this metric. Submissions also carry
+per-seed predictions, reasoning traces, and token counts, and Track A caps
+**prompt tokens at 4,096**. Public-leaderboard top ≈ 0.65 is on this AUROC
+scale. Our leak-free evidence-prior floor is ≈ 0.53 (direction carries the
+signal; DE-vs-none is flat) — see the Track A prior baseline.
 
 ### Submission format
 
@@ -137,8 +149,8 @@ prediction target is the same; only the modeling rules differ.
 
 ### Evaluation and submission
 
-Same metric and submission shape as Track A (`id,label`). Confirm against
-the Track B evaluation tab before relying.
+Same `mean(AUROC_de, AUROC_dir)` metric and graded-prediction submission
+shape as Track A (see Track A Evaluation above).
 
 ### Leaderboard snapshot (2026-06-06)
 
