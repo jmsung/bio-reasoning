@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from openai import OpenAI
 
@@ -8,7 +9,7 @@ from openai import OpenAI
 def build_openai_client() -> OpenAI:
     api_key = os.getenv("BIOREASONING_OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
     api_base = os.getenv("BIOREASONING_OPENAI_API_BASE") or None
-    kwargs = {"api_key": api_key}
+    kwargs: dict[str, Any] = {"api_key": api_key}
     if api_base:
         kwargs["base_url"] = api_base
     return OpenAI(**kwargs)
