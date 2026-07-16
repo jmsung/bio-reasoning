@@ -20,6 +20,38 @@ def _group(name: str, seed: int, k: int) -> int:
     return int(h, 16) % k
 
 
+def _unit(name: str, seed: int) -> float:
+    """Deterministic value in [0, 1) for a name (stable across runs/machines)."""
+    h = hashlib.md5(f"{seed}:{name}".encode()).hexdigest()
+    return (int(h, 16) % 10_000) / 10_000.0
+
+
+def holdout_split(
+    df: pd.DataFrame,
+    seed: int = 0,
+    pert_frac: float = 0.4,
+    gene_frac: float = 0.4,
+    pert_col: str = "pert",
+    gene_col: str = "gene",
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return a single ``(train_idx, val_idx)`` dual-OOD held-out partition.
+
+    Perturbations and genes are independently hashed to ``[0, 1)``. Val rows have
+    both a pert in the bottom ``pert_frac`` **and** a gene in the bottom
+    ``gene_frac``; train rows have both a pert **and** a gene above their
+    thresholds. Rows held out on exactly one axis are dropped (they would leak),
+    so val is ~``pert_frac * gene_frac`` of the data and train ~the complement
+    product. Mirrors the real test split's zero pert/gene overlap; stable given
+    ``seed``.
+    """
+    pert_u = df[pert_col].map(lambda x: _unit(str(x), seed)).to_numpy()
+    gene_u = df[gene_col].map(lambda x: _unit(str(x), seed)).to_numpy()
+    idx = np.arange(len(df))
+    val_mask = (pert_u < pert_frac) & (gene_u < gene_frac)
+    train_mask = (pert_u >= pert_frac) & (gene_u >= gene_frac)
+    return idx[train_mask], idx[val_mask]
+
+
 def doubly_disjoint_folds(
     df: pd.DataFrame,
     k: int = 5,
