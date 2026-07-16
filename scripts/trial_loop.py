@@ -10,6 +10,10 @@ best variant are refreshed after every trial.
 - Loop (``--grid``): drive propose → run → reflect over a few-shot grid until the
   proposer converges (``run_loop`` + ``make_grid_proposer``).
 
+``--track a`` (default) is prompt-only. ``--track b`` reuses the identical
+split/score/reflect/archive harness via an agent row predictor; wiring the real
+DSPy agent runner is the follow-up (mb backlog ``track-b-on-top-of-a``).
+
 Fitness is the OOD-val mean; the honest floor to beat is the evidence prior ≈ 0.533.
 A trustworthy number needs the FULL val partition (~1276 rows) — ``--val-n`` caps rows
 for a cheap plumbing smoke only, and a capped run's score is a mirage (do not record it
@@ -32,7 +36,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from bio_reasoning.trial_loop.archive import archive, load_trials
-from bio_reasoning.trial_loop.loop import run_loop, run_variant
+from bio_reasoning.trial_loop.loop import make_prompt_row_predictor, run_loop, run_variant
 from bio_reasoning.trial_loop.reflect import make_grid_proposer
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 from bio_reasoning.utils.openai_compat import post_chat_completion
@@ -91,6 +95,7 @@ def _report(rec: TrialRecord) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--train-csv", type=Path, default=DEFAULT_TRAIN_CSV)
+    ap.add_argument("--track", choices=["a", "b"], default="a", help="a=prompt-only, b=agentic.")
     ap.add_argument("--variant-id", help="Single-variant mode: stable id (required unless --grid).")
     ap.add_argument("--grid", help="Loop mode: comma-sep n_few_shot values, e.g. '0,2,4,8'.")
     ap.add_argument("--max-trials", type=int, default=None, help="Cap loop iterations.")
@@ -109,6 +114,17 @@ def main() -> None:
     args = ap.parse_args()
     if not args.grid and not args.variant_id:
         ap.error("--variant-id is required unless --grid is given")
+    if args.track == "b":
+        # Track B drives the same loop via an agent row predictor. Wiring the real
+        # DSPy ReAct agent_fn requires extracting a reusable agent runner from
+        # scripts/track_b_agentic.py (its agent lives inside main()); that + the
+        # spend run are the follow-up (mb backlog: track-b-on-top-of-a).
+        raise SystemExit(
+            "--track b: the loop seam + agent row predictor are ready and tested, but the "
+            "real agent_fn is not wired yet. Next step: extract build_react_agent()/predict_row() "
+            "from scripts/track_b_agentic.py and pass make_agent_row_predictor(agent_fn). "
+            "See mb backlog 'track-b-on-top-of-a'."
+        )
 
     df = pd.read_csv(args.train_csv)
     if args.val_n is not None:
@@ -125,7 +141,7 @@ def main() -> None:
 
     template = args.prompt_template.read_text() if args.prompt_template else None
     cost = {"prompt_tokens": 0.0, "completion_tokens": 0.0, "usd": 0.0}
-    infer_fn = _build_infer_fn(args, cost)
+    row_predictor = make_prompt_row_predictor(_build_infer_fn(args, cost))
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     trials_path = args.output_dir / "trials.jsonl"
@@ -150,7 +166,7 @@ def main() -> None:
         run_loop(
             df,
             make_grid_proposer(candidates),
-            infer_fn,
+            row_predictor,
             max_trials=args.max_trials,
             on_trial=persist,
             **kw,
@@ -162,7 +178,7 @@ def main() -> None:
             n_few_shot=args.n_few_shot,
             seeds=tuple(args.seeds),
         )
-        persist(run_variant(df, variant, infer_fn, **kw), [])
+        persist(run_variant(df, variant, row_predictor, **kw), [])
 
     print(f"[trial-loop] archive → {args.output_dir}")
 

@@ -8,7 +8,14 @@ from bio_reasoning.trial_loop.archive import (
     render_leaderboard,
     write_trials,
 )
-from bio_reasoning.trial_loop.loop import predict_variant, run_loop, run_variant, sample_examples
+from bio_reasoning.trial_loop.loop import (
+    make_agent_row_predictor,
+    make_prompt_row_predictor,
+    predict_variant,
+    run_loop,
+    run_variant,
+    sample_examples,
+)
 from bio_reasoning.trial_loop.reflect import Proposer, best_trial, make_grid_proposer, reflect
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
@@ -19,6 +26,8 @@ __all__ = [
     "run_variant",
     "run_loop",
     "sample_examples",
+    "make_prompt_row_predictor",
+    "make_agent_row_predictor",
     "reflect",
     "best_trial",
     "make_grid_proposer",

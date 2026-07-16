@@ -1,4 +1,4 @@
-"""Offline tests for the trial-loop core (no network; injected infer_fn)."""
+"""Offline tests for the trial-loop core (no network; injected row predictors)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,14 @@ import pandas as pd
 
 from bio_reasoning.eval.split import holdout_split
 from bio_reasoning.eval.track_a_score import evaluate
-from bio_reasoning.trial_loop.loop import predict_variant, run_loop, run_variant, sample_examples
+from bio_reasoning.trial_loop.loop import (
+    make_agent_row_predictor,
+    make_prompt_row_predictor,
+    predict_variant,
+    run_loop,
+    run_variant,
+    sample_examples,
+)
 from bio_reasoning.trial_loop.reflect import make_grid_proposer
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
@@ -42,7 +49,9 @@ def test_run_variant_scores_val_rows_matching_evaluate() -> None:
     def fake(prompts, seed):
         return [_UP if i % 2 == 0 else _DOWN for i in range(len(prompts))]
 
-    rec = run_variant(df, variant, fake, seed=0, pert_frac=1.0, gene_frac=1.0)
+    rec = run_variant(
+        df, variant, make_prompt_row_predictor(fake), seed=0, pert_frac=1.0, gene_frac=1.0
+    )
 
     val_labels = df["label"].to_numpy()
     up = np.array([1.0 if i % 2 == 0 else 0.0 for i in range(len(df))])
@@ -64,7 +73,9 @@ def test_predict_variant_averages_across_seeds() -> None:
         ans = _UP if seed == 1 else _DOWN
         return [ans] * len(prompts)
 
-    _, up, down = predict_variant(df, variant, fake, seed=0, pert_frac=1.0, gene_frac=1.0)
+    _, up, down = predict_variant(
+        df, variant, make_prompt_row_predictor(fake), seed=0, pert_frac=1.0, gene_frac=1.0
+    )
     # seed1 → (1,0), seed2 → (0,1); mean → (0.5, 0.5).
     assert np.allclose(up, 0.5)
     assert np.allclose(down, 0.5)
@@ -100,7 +111,7 @@ def test_run_loop_drives_grid_to_convergence() -> None:
     hist = run_loop(
         df,
         make_grid_proposer(cands),
-        fake,
+        make_prompt_row_predictor(fake),
         pert_frac=1.0,
         gene_frac=1.0,
         on_trial=lambda rec, h: persisted.append(rec.variant.id),
@@ -120,8 +131,31 @@ def test_run_loop_respects_max_trials() -> None:
     def fake(prompts, seed):
         return [_UP] * len(prompts)
 
-    hist = run_loop(df, endless, fake, pert_frac=1.0, gene_frac=1.0, max_trials=3)
+    hist = run_loop(
+        df, endless, make_prompt_row_predictor(fake), pert_frac=1.0, gene_frac=1.0, max_trials=3
+    )
     assert [r.variant.id for r in hist] == ["v0", "v1", "v2"]
+
+
+def test_agent_row_predictor_drives_same_loop() -> None:
+    """A Track B-style agent_fn drives the identical scoring path (make_agent_row_predictor)."""
+    df = _frame()
+    variant = Variant(id="agent", seeds=(1,))
+
+    # Fake agent: graded (up, down) per (pert, gene) — here, up for even gene index.
+    def fake_agent(pert, gene, seed):
+        return (0.9, 0.1) if int(gene[1:]) % 2 == 0 else (0.2, 0.8)
+
+    rec = run_variant(
+        df, variant, make_agent_row_predictor(fake_agent), seed=0, pert_frac=1.0, gene_frac=1.0
+    )
+
+    rows = df.to_dict("records")
+    pairs = np.array([fake_agent(r["pert"], r["gene"], 1) for r in rows], dtype=float)
+    exp = evaluate(df["label"].to_numpy(), pairs[:, 0], pairs[:, 1])
+    assert rec.metrics["n_val"] == len(df)
+    for k in ("auroc_de", "auroc_dir", "mean"):
+        assert _eq(rec.metrics[k], exp[k])
 
 
 def test_trial_record_json_round_trip() -> None:
