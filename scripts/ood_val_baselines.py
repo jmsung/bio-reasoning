@@ -30,8 +30,8 @@ CACHE = ROOT / "data/interim/pert_go_category.json"
 K = 5
 SEED = 0
 
-# Track B's own numbers (see mb finding project_track_b_lb_0488): a 60-row CV
-# read 0.675, the realized public LB was 0.488 — a 0.187 inflation gap.
+# Track B's own numbers: a 60-row CV read 0.675, the realized public LB was
+# 0.488 — a 0.187 inflation gap.
 TRACK_B_CV = 0.675
 TRACK_B_LB = 0.488
 
