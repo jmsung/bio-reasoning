@@ -52,7 +52,7 @@ Ordered by priority — understand → plan → build.
    organizer reply).
 9. [ ] **Build A/B shared data pipeline** (`data/raw/<track>/` → train/test
    loaders).
-10. [ ] **First Track A submission baseline** (majority-class + a naive prompt).
+10. [x] **First Track A submission baseline** (majority-class + a naive prompt). Track A evidence prior on the LB (0.529, PR #9); `track_a_prompt_only.py` schema-verified.
 11. [ ] **Fix local pre-commit bootstrap** — Microsoft Store Python breaks
     `virtualenv` seeding; switch to a non-Store Python (`uv python install`)
     so `/dev-setup` + pre-commit hooks run. (dev-env; discovered in #4)
