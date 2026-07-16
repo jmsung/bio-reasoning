@@ -47,6 +47,17 @@ def test_shared_term_count_is_last_column(tmp_path, monkeypatch, write_go_cache)
     assert shared[1] == 1  # Il6{cytokine,inflammation} ∩ Gb{cytokine} = 1
 
 
+def test_min_df_backs_off_when_vocab_would_be_empty(tmp_path, monkeypatch, write_go_cache):
+    _no_network(monkeypatch)
+    # Every term appears once → min_df=3 would empty the vocab; must not crash.
+    pc = write_go_cache({"Pa": ["ta"], "Pb": ["tb"]}, name="pert.json")
+    gc = write_go_cache({"Ga": ["tx"], "Gb": ["ty"]}, name="gene.json")
+    f = GoPairFeaturizer(pc, gc, min_df=3).fit(["Pa", "Pb"], ["Ga", "Gb"])
+    X = f.transform(["Pa"], ["Ga"])
+    assert X.shape == (1, f.n_features_)
+    assert f.n_features_ > 1  # backed off to min_df=1, vocab non-empty
+
+
 def test_unseen_symbol_at_transform_drops_unknown_terms(tmp_path, monkeypatch, write_go_cache):
     _no_network(monkeypatch)
     pc = write_go_cache({**PERT_GO, "New": ["ribosome", "novel_term"]}, name="pert.json")

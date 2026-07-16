@@ -10,7 +10,8 @@ Finding: blending two-stage direction beats floor-to-prior for every weight in
 (0, 1) — direction AUROC rises ~0.01, mean from ~0.565 to ~0.571 — while the DE
 axis is left to the (stronger) submission.
 
-Run: uv run --group eval python scripts/track_b_two_stage_ood_val.py
+Run: uv run --group eval python scripts/track_b_two_stage_ood_val.py \
+       --floored-sub <floored-agent-ood-val>.csv
 """
 
 from __future__ import annotations
@@ -30,15 +31,14 @@ ROOT = Path(__file__).resolve().parents[1]
 TRAIN = ROOT / "data/raw/track_a/train.csv"
 PERT_CACHE = ROOT / "data/interim/pert_go_category.json"
 GENE_CACHE = ROOT / "data/interim/gene_go_bp.json"
-# Saved agent OOD-val submission, already floored to prior (mean 0.5636).
-DEFAULT_SUB = ROOT.parent / "mb/findings/solutions/track-b-floor-to-prior-OODval0.563607.csv"
 SEED = 0
 WEIGHTS = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0]
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--floored-sub", type=Path, default=DEFAULT_SUB)
+    # The floored agent OOD-val submission (private mb/ artifact); pass explicitly.
+    ap.add_argument("--floored-sub", type=Path, required=True)
     ap.add_argument("--train", type=Path, default=TRAIN)
     args = ap.parse_args()
 

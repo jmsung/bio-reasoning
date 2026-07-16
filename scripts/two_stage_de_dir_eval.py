@@ -16,6 +16,7 @@ Run: uv run --group eval python scripts/two_stage_de_dir_eval.py
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -38,7 +39,7 @@ SEED = 0
 PRIOR_FLOOR = 0.533
 
 
-def _featurizers() -> dict[str, callable]:
+def _featurizers() -> dict[str, Callable[[], object]]:
     return {
         "char-ngram": CharNgramFeaturizer,
         "GO-term": lambda: GoPairFeaturizer(PERT_CACHE, GENE_CACHE),

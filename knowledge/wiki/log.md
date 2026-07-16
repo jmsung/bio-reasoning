@@ -2,6 +2,15 @@
 
 Append-only history of ingests and queries.
 
+## 2026-07-16 — Update: two-stage direction blend beats the "blend exhausted" claim
+- Updated pages: findings/track-b-abstention-failure.md — the earlier "blend
+  exhausted" verdict was about the *raw α·agent+(1−α)·prior* blend. A *different*
+  lever — rank-blending the two-stage GO-term model's **direction** into
+  floor-to-prior — lifted Kaggle **LB 0.568 → 0.578** (branch two-stage-de-dir).
+  Corrected the Takeaway: the DE ceiling is evidence-bound, but the direction
+  axis still lifts with an orthogonal learned signal.
+- Related: Track A two-stage GO-term model LB **0.561** (vs prior 0.529).
+
 ## 2026-07-16 — Wiki-learn: Track B floor-to-prior confirmed, blend exhausted
 - Insights filed: 2
 - Updated pages: findings/track-b-abstention-failure.md ("Fix direction" →

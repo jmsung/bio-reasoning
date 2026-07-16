@@ -50,12 +50,22 @@ class GoPairFeaturizer:
             load_go_terms(genes, self.gene_cache),
         )
 
+    def _fit_vocab(self, docs: list[str]) -> CountVectorizer:
+        """Fit a binary term vectorizer, backing off to min_df=1 on empty vocab.
+
+        With ``min_df>1`` a small fold whose terms are all rare raises "empty
+        vocabulary"; fall back so the featurizer degrades gracefully instead of
+        crashing.
+        """
+        try:
+            return CountVectorizer(token_pattern=_TOKEN, min_df=self.min_df, binary=True).fit(docs)
+        except ValueError:
+            return CountVectorizer(token_pattern=_TOKEN, min_df=1, binary=True).fit(docs)
+
     def fit(self, perts, genes) -> "GoPairFeaturizer":
         pterms, gterms = self._terms(perts, genes)
-        self._cvp = CountVectorizer(token_pattern=_TOKEN, min_df=self.min_df, binary=True)
-        self._cvg = CountVectorizer(token_pattern=_TOKEN, min_df=self.min_df, binary=True)
-        self._cvp.fit([_doc(pterms[str(p)]) for p in perts])
-        self._cvg.fit([_doc(gterms[str(g)]) for g in genes])
+        self._cvp = self._fit_vocab([_doc(pterms[str(p)]) for p in perts])
+        self._cvg = self._fit_vocab([_doc(gterms[str(g)]) for g in genes])
         self.n_features_ = len(self._cvp.vocabulary_) + len(self._cvg.vocabulary_) + 1
         return self
 

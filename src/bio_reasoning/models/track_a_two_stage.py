@@ -25,21 +25,31 @@ from sklearn.linear_model import LogisticRegression
 from bio_reasoning.features.pair_features import CharNgramFeaturizer
 
 
-def _default_head() -> ClassifierMixin:
+def _default_head() -> LogisticRegression:
     return LogisticRegression(max_iter=1000, C=1.0)
 
 
-def _proba_pos(clf: ClassifierMixin, X, fallback: float) -> np.ndarray:
-    """P(class == True) from a fitted binary classifier, robust to single-class.
+def _fit_head(head: ClassifierMixin, X, y: np.ndarray):
+    """Fit a binary head, or return the constant P(True) if ``y`` is single-class.
 
-    If the training target had only one class, ``classes_`` has length 1 and
-    ``predict_proba`` returns a single column; fall back to that class's value.
+    sklearn classifiers raise on a single-class target; a fold can be all-`none`
+    (DE head) or all one direction (DIR head). In that case there is nothing to
+    learn — the answer is a constant, so short-circuit to ``float(class)``.
     """
-    proba = clf.predict_proba(X)
-    classes = list(clf.classes_)
+    if len(np.unique(y)) < 2:
+        return float(y[0]) if len(y) else 0.5
+    return clone(head).fit(X, y)
+
+
+def _proba_pos(head, X) -> np.ndarray:
+    """P(class == True) from a fitted head or a constant produced by ``_fit_head``."""
+    if isinstance(head, float):
+        return np.full(X.shape[0], head)
+    proba = head.predict_proba(X)
+    classes = list(head.classes_)
     if True in classes:
         return proba[:, classes.index(True)]
-    return np.full(X.shape[0], fallback)
+    return np.full(X.shape[0], 0.5)
 
 
 class TwoStageDEDIR:
@@ -63,18 +73,18 @@ class TwoStageDEDIR:
         X = self.featurizer.transform(perts, genes)
 
         de_y = labels != "none"
-        self.de_ = clone(self.de_head).fit(X, de_y)
+        self.de_ = _fit_head(self.de_head, X, de_y)
 
         m = de_y
         # DIR head sees only DE-positive rows — direction is undefined for none.
-        self.dir_ = clone(self.dir_head).fit(X[m], labels[m] == "up")
+        self.dir_ = _fit_head(self.dir_head, X[m], labels[m] == "up")
         return self
 
     def predict(self, perts, genes) -> tuple[np.ndarray, np.ndarray]:
         """Return ``(pred_up, pred_down)`` aligned to the input pairs."""
         X = self.featurizer.transform(perts, genes)
-        p_de = _proba_pos(self.de_, X, fallback=0.5)
-        p_up = _proba_pos(self.dir_, X, fallback=0.5)
+        p_de = _proba_pos(self.de_, X)
+        p_up = _proba_pos(self.dir_, X)
         up = p_de * p_up
         down = p_de * (1.0 - p_up)
         return up, down

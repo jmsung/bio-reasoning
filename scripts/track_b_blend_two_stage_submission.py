@@ -11,7 +11,7 @@ free.
 
 Usage:
     uv run --group eval python scripts/track_b_blend_two_stage_submission.py \\
-        --in  mb/findings/solutions/track-b-floor-to-prior-LB0.568000.csv \\
+        --in  <floored-track-b-submission>.csv \\
         --out submissions/track_b_blend_two_stage.csv
 """
 

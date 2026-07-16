@@ -56,14 +56,14 @@ Ordered by priority — understand → plan → build.
 11. [ ] **Fix local pre-commit bootstrap** — Microsoft Store Python breaks
     `virtualenv` seeding; switch to a non-Store Python (`uv python install`)
     so `/dev-setup` + pre-commit hooks run. (dev-env; discovered in #4)
-12. [ ] **Track A two-stage GO-term model** — learned P(DE)·P(up|DE) heads over
+12. [x] **Track A two-stage GO-term model** — learned P(DE)·P(up|DE) heads over
     GO:BP term features for the perturbation *and* the target gene (the axis the
     evidence prior ignores). Beats the prior on the leak-free dual-OOD CV
     (~0.56 vs 0.534). Char-ngram/string-stat features were at chance — symbols
     are arbitrary; GO terms transfer across unseen perts/genes. Submission:
     `scripts/track_a_two_stage_submission.py`. **LB 0.561** (2026-07-16) vs prior
     0.529 — +0.032, OOD-val↔LB gap ~0.00. New Track A best.
-13. [ ] **Track B two-stage direction blend** — rank-blend the two-stage model's
+13. [x] **Track B two-stage direction blend** — rank-blend the two-stage model's
     direction into the floor-to-prior submission (DE magnitude kept). Lifts
     OOD-val 0.5647 → 0.5712, beating the champion for every blend weight in
     (0,1). Submission: `scripts/track_b_blend_two_stage_submission.py`; eval:

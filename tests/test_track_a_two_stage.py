@@ -61,3 +61,19 @@ def test_predict_returns_aligned_arrays():
     m = TwoStageDEDIR().fit(tr.pert, tr.gene, tr.label.to_numpy())
     up, down = m.predict(["Pnew"], ["Gnew"])
     assert up.shape == down.shape == (1,)
+
+
+def test_single_class_fold_does_not_crash():
+    # A fold with no DE rows (all 'none') would crash a bare classifier fit;
+    # the DE head must short-circuit to the constant P(DE)=0.
+    tr = _signal_df(30, seed=3)
+    labels = np.array(["none"] * len(tr))
+    m = TwoStageDEDIR().fit(tr.pert, tr.gene, labels)
+    up, down = m.predict(tr.pert, tr.gene)
+    assert np.allclose(up + down, 0.0)  # P(DE)=0 everywhere
+
+    # All DE rows one direction ('up') → DIR head is single-class → P(up|DE)=1.
+    labels2 = np.where(np.arange(len(tr)) % 2 == 0, "up", "none")
+    m2 = TwoStageDEDIR().fit(tr.pert, tr.gene, labels2)
+    up2, down2 = m2.predict(tr.pert, tr.gene)
+    assert np.all(down2 <= up2 + 1e-9)  # never predicts down when train had none
