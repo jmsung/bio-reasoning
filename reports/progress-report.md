@@ -1,6 +1,6 @@
 # BioReasoning Challenge 2026 — Progress Report
 
-*Maintained per-PR via `/worktree-done` (step 5e proposes report-worthy additions on each merge).*
+*Updated as branches land — the merge workflow proposes report-worthy additions per PR.*
 *Last updated: 2026-07-15.*
 
 ## Goal
