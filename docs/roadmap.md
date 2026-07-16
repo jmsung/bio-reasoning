@@ -62,6 +62,11 @@ Ordered by priority — understand → plan → build.
     (~0.56 vs 0.534). Char-ngram/string-stat features were at chance — symbols
     are arbitrary; GO terms transfer across unseen perts/genes. Submission:
     `scripts/track_a_two_stage_submission.py`.
+13. [ ] **Track B two-stage direction blend** — rank-blend the two-stage model's
+    direction into the floor-to-prior submission (DE magnitude kept). Lifts
+    OOD-val 0.5647 → 0.5712, beating the champion for every blend weight in
+    (0,1). Submission: `scripts/track_b_blend_two_stage_submission.py`; eval:
+    `scripts/track_b_two_stage_ood_val.py`. Awaits an LB confirm (current 0.568).
 
 ## Completed
 
