@@ -54,8 +54,8 @@ def fetch_string_partners(symbols: list[str]) -> dict[str, set[str]]:
         except Exception as e:  # noqa: BLE001
             print("STRING fetch err", i, repr(e), flush=True)
             rows = []
-        for e in rows:
-            out.setdefault(e["preferredName_A"], set()).add(e["preferredName_B"])
+        for row in rows:
+            out.setdefault(row["preferredName_A"], set()).add(row["preferredName_B"])
         time.sleep(1)
     STRING_CACHE.parent.mkdir(parents=True, exist_ok=True)
     STRING_CACHE.write_text(json.dumps({k: sorted(v) for k, v in out.items()}))
@@ -72,6 +72,7 @@ def build_submission(train: pd.DataFrame, test: pd.DataFrame, partners) -> pd.Da
     r = np.divide(up, s_de, out=np.full_like(up, 0.5), where=s_de > 0)
 
     pnb, gnb = build_neighbor_graph(test[["pert", "gene"]].astype(str), partners, train)
+    # min_support=3 tuned on OOD-val (feat/de-retrieval); don't lower without re-validating.
     nb = neighbor_channel(test[["pert", "gene"]].astype(str), train, pnb, gnb, min_support=3)
 
     fu, fd = fuse([Channel("model", s_de=s_de, r=r), Channel("neighbour", s_de=None, r=nb.r)])

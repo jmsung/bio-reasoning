@@ -69,6 +69,12 @@ Ordered by priority — understand → plan → build.
     (0,1). Submission: `scripts/track_b_blend_two_stage_submission.py`; eval:
     `scripts/track_b_two_stage_ood_val.py`. **LB 0.578** (2026-07-16, w=0.7) vs
     floor-to-prior 0.568 — +0.010, LB > OOD-val. New Track B best.
+14. [x] **Track A neighbour-direction fusion** — fuse the SUMMER-style
+    neighbour-retrieval direction (STRING-neighbour label borrowing, leak-free) into
+    the two-stage GO submission via `fuse()`; DE kept, direction blended.
+    `scripts/track_a_de_dir_submission.py` (feat/de-retrieval finding: DE-AUROC ~chance
+    but DIR 0.651 vs 0.58). **LB 0.585** (2026-07-16) vs two-stage 0.561 — +0.024, and
+    beats the prior overall best 0.578; OOD-val predicted +0.027. **New Track A + overall best.**
 
 ## Completed
 
