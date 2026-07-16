@@ -217,6 +217,8 @@ def main() -> None:
     ap.add_argument("--timeout", type=int, default=120)
     ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "trial-loop")
     args = ap.parse_args()
+    if args.track == "b" and not args.grid and not args.variant_id:
+        args.variant_id = "jsagent"  # standing name for the Track B agent
     if not args.grid and not args.variant_id:
         ap.error("--variant-id is required unless --grid is given")
 
