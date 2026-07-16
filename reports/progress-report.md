@@ -24,7 +24,8 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
 | **Track B — agent harness (v1)** | multi-agent tool-use (direction-prior + GO-evidence tools) on `gpt-oss-120b` | local CV **0.675** → LB **0.488** | **did not transfer** — the agent abstained on ~72% of rows, submitting `0/0`; ties collapse the rank metric to ~random. Local CV was inflated ~0.19 over LB. |
 | **Track B — floor-to-prior (v2)** | v1 predictions, every `(0,0)` tie floored to the graded prior (no re-inference) | **0.568** (Kaggle LB) | **first Track B above the floor** — removing the 72% ties recovers the 0.529 prior; the 506 agent-signal rows add **+0.039** on top. Reasoning helps once it can't delete the prior. |
 | **Track A — two-stage GO (v2)** | learned `P(DE)·P(up\|DE)` heads over GO:BP term features for the perturbation *and* the target gene | **0.561** (Kaggle LB; OOD-val ~0.56) | **new Track A best** (+0.032 over the 0.529 prior); GO functional features carry it — our char-ngram / gene-name string features scored at chance (but see caveat: the public field reaches ~0.693 with gene-name n-grams, so name structure *is* exploitable — we haven't captured it) |
-| **Track B — DIR-blend (v3)** | rank-blends the two-stage model's direction into the floored submission (w=0.7) | **0.578** (Kaggle LB; OOD-val 0.571) | **new Track B best** (+0.010 over the 0.568 floor-to-prior champion); the direction signal generalized to the full test set |
+| **Track B — DIR-blend (v3)** | rank-blends the two-stage model's direction into the floored submission (w=0.7) | **0.578** (Kaggle LB; OOD-val 0.571) | new Track B best (+0.010 over the 0.568 floor-to-prior champion); the direction signal generalized to the full test set |
+| **Track A — neighbour-DIR fusion (v4)** | fuse the neighbour-retrieval direction (STRING-neighbour label borrowing, leak-free) into the two-stage GO submission via `fuse()`; DE kept, direction blended | **0.585** (Kaggle LB) | **new Track A + overall best** (+0.024 over two-stage 0.561, past the 0.578 Track B); DE stayed ~chance across 4 channel families — the retrieval signal lives in *direction* |
 | Public leaderboard (top) | — | A ≈ 0.693 / B ≈ 0.752 | on the same AUROC scale — **we remain well below the field** |
 
 **Two findings drive the plan:**
@@ -36,6 +37,18 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
    abstention, guaranteeing ≥ the 0.529 floor), and **score, don't label** (emit a continuous
    DE-likelihood — only order matters for AUROC). And measurement must move onto a **dual-OOD
    validation split** that reproduces the real train/test disjointness, so CV stops lying.
+
+## Update (feat/de-dir-submission — landed)
+
+Fused the neighbour-retrieval **direction** signal into the two-stage Track A submission.
+**Kaggle LB 0.585** (2026-07-16) — +0.024 over the two-stage 0.561 and past the prior overall
+best 0.578. The dual-OOD gate predicted +0.027; the board delivered +0.024 (gap ~0.003) — the
+split is predictive for the direction axis too. Backstory: three curated-edge/network DE channels
+were ruled out at ~chance (`feat/de-detector`), then neighbour-retrieval was revealed as a
+**direction** lever, not a DE one (DIR-AUROC 0.651 vs the ~0.58 blend; `feat/de-retrieval`), now
+LB-confirmed. DE-vs-none stayed near-chance across four channel families — direction is where the
+external-signal gains are. Pure feature channel, no LLM/Bing dependency. Next: stack the same
+direction fusion onto the Track B blend (0.578).
 
 ## Update (feat/ood-val-split — landed)
 
