@@ -1,7 +1,7 @@
 # BioReasoning Challenge 2026 — Progress Report
 
 *Updated as branches land — the merge workflow proposes report-worthy additions per PR.*
-*Last updated: 2026-07-15.*
+*Last updated: 2026-07-16.*
 
 ## Goal
 
@@ -22,6 +22,7 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
 | Majority class | predict `none` (55.3%) | ≈ 0.553 | reference only (metric is AUROC, not accuracy) |
 | **Track A — evidence prior** | functional-category direction prior (no LLM) | **0.529** (Kaggle LB; CV 0.534) | our real floor; ~0 CV↔LB gap; **direction carries the signal, DE-vs-none is nearly flat** |
 | **Track B — agent harness (v1)** | multi-agent tool-use (direction-prior + GO-evidence tools) on `gpt-oss-120b` | local CV **0.675** → LB **0.488** | **did not transfer** — the agent abstained on ~72% of rows, submitting `0/0`; ties collapse the rank metric to ~random. Local CV was inflated ~0.19 over LB. |
+| **Track B — floor-to-prior (v2)** | v1 predictions, every `(0,0)` tie floored to the graded prior (no re-inference) | **0.568** (Kaggle LB) | **first Track B above the floor** — removing the 72% ties recovers the 0.529 prior; the 506 agent-signal rows add **+0.039** on top. Reasoning helps once it can't delete the prior. |
 | Public leaderboard (top) | — | ≈ 0.65 | on the same AUROC scale |
 
 **Two findings drive the plan:**
@@ -45,6 +46,18 @@ pinned *why* a naive CV inflates: a **fixed** predictor cannot leak across CV sc
 random-row CV and collapses to **0.500** under dual-OOD. This is the mechanism behind Track B's
 0.675 CV → 0.488 LB, and confirms the dual-OOD split (not naive CV) is the honest fitness
 surface for anything trained or tuned.
+
+## Update (floor-to-prior — landed)
+
+The "never emit `0/0`" fix is in and measured. `floor_to_prior` replaces any `(0,0)`
+tie with the perturbation's graded category prior; applied to the PR #13 submission
+(1,307/1,813 = 72% of rows floored, 0 ties remain) it scores **Kaggle LB 0.568** — the
+first Track B result above the 0.529 prior floor (+0.039), and +0.080 over the raw
+agent's 0.488. It confirms the diagnosis: the prior is recovered by removing the ties,
+and the agent's 506 signal-carrying rows add real lift on top. Full LB ladder now
+measured: **hard A/B/C 0.507 → graded-but-over-abstaining 0.488 → floor-to-prior 0.568**.
+Next lever: blend `α·agent + (1−α)·prior`; the authoritative re-measure on the dual-OOD
+split is a follow-up (it needs agent inference on the val rows, not just the prior).
 
 ## Approach
 
