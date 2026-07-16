@@ -217,10 +217,10 @@ def main() -> None:
     ap.add_argument("--timeout", type=int, default=120)
     ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "trial-loop")
     args = ap.parse_args()
-    if args.track == "b" and not args.grid and not args.variant_id:
-        args.variant_id = "jsagent"  # standing name for the Track B agent
     if not args.grid and not args.variant_id:
-        ap.error("--variant-id is required unless --grid is given")
+        # 'jsagent' (Jongmin Sung's agent) is our official agent name for BOTH tracks;
+        # single-variant runs default to it. The grid uses descriptive fs*/go* ids.
+        args.variant_id = "jsagent"
 
     df = pd.read_csv(args.train_csv)
     if args.val_n is not None:
