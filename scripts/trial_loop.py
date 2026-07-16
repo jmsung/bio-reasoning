@@ -150,17 +150,30 @@ def _build_track_b_predictor(df, args):
     lm = tba.build_openrouter_lm(args.max_tokens, args.max_retries)
     react = tba.build_react_agent(lm, args.max_iters)
 
-    # Lightweight progress: agent runs are slow (~seconds/row); a silent multi-hour
-    # run is hard to trust, so print a heartbeat every 50 rows.
-    done = {"n": 0}
+    # Resumable per-row cache: agent runs are slow + expensive, so a kill/timeout
+    # must not waste completed rows. Cached (pert,gene,seed) → (up,down) returns
+    # instantly; a relaunch resumes for free. Saved every 25 new rows.
+    import json
+
+    cache_path = args.output_dir / "trackb_row_cache.json"
+    row_cache: dict = json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    done = {"n": 0, "hit": 0}
     lock = threading.Lock()
 
     def agent_fn(pert: str, gene: str, seed: int) -> tuple[float, float]:
+        key = f"{pert}__{gene}__{seed}"
+        with lock:
+            if key in row_cache:
+                done["hit"] += 1
+                return tuple(row_cache[key])  # type: ignore[return-value]
         pair = tba.predict_row(react, pert, gene)
         with lock:
+            row_cache[key] = list(pair)
             done["n"] += 1
-            if done["n"] % 50 == 0:
-                print(f"[track-b] {done['n']} rows done", flush=True)
+            if done["n"] % 25 == 0:
+                cache_path.write_text(json.dumps(row_cache))
+            if (done["n"] + done["hit"]) % 50 == 0:
+                print(f"[track-b] {done['n']} new / {done['hit']} cached", flush=True)
         return pair
 
     return make_agent_row_predictor(agent_fn, concurrency=args.concurrency)
