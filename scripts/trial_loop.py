@@ -153,12 +153,17 @@ def _build_track_b_predictor(df, args):
     # Resumable per-row cache: agent runs are slow + expensive, so a kill/timeout
     # must not waste completed rows. Cached (pert,gene,seed) → (up,down) returns
     # instantly; a relaunch resumes for free. Saved every 25 new rows.
+    import atexit
     import json
 
     cache_path = args.output_dir / "trackb_row_cache.json"
     row_cache: dict = json.loads(cache_path.read_text()) if cache_path.exists() else {}
     done = {"n": 0, "hit": 0}
     lock = threading.Lock()
+
+    # Flush the tail rows the every-25 checkpoint misses (incl. clean completion),
+    # so a relaunch never re-runs already-computed agent rows.
+    atexit.register(lambda: cache_path.write_text(json.dumps(row_cache)) if done["n"] else None)
 
     def agent_fn(pert: str, gene: str, seed: int) -> tuple[float, float]:
         key = f"{pert}__{gene}__{seed}"
