@@ -1,0 +1,58 @@
+---
+title: Neighbour-retrieval fails the DE axis but is a robust direction lever (+0.027 mean)
+status: measured
+cites:
+  - findings/curated-edges-fail-de-axis.md
+  - findings/track-a-eda.md
+  - findings/competitor-landscape.md
+---
+
+# Neighbour-retrieval fails the DE axis but is a robust direction lever (+0.027 mean)
+
+[[../home]] | [[../index]]
+
+**Status: measured — from the `feat/de-retrieval` branch, 2026-07-16.**
+
+Bottom line: label-borrowing from STRING neighbours — for an unseen (pert, gene),
+average the *measured labels* of TRAIN rows whose pert or gene is a STRING neighbour
+— **does nothing for DE** (AUROC_de 0.498 ± 0.006, dead chance, 4th confirmation
+that the DE axis resists pair-external signal; [[curated-edges-fail-de-axis]]) but
+is a **robust direction lever**: neighbour `r` scores DIR-AUROC **0.651 ± 0.047**
+(seeds 0–4, all ≥ 0.58) vs the current ~0.58, and fusing it into the two-stage GO
+model lifts the OOD-val **mean +0.027 ± 0.009** (all 5 seeds positive), entirely on
+AUROC_dir. Leak-free (val pert/gene held out; own pair excluded) and ~98–100%
+coverage — retrieval solves the coverage problem the curated edges had.
+
+## Why it splits DE from direction
+
+- **DE (does *this* pair respond at all) is pair-specific** — a neighbour pert/gene
+  has its own DE pattern that does not transfer to whether *this* pair is DE. Every
+  pair-external channel tried (curated edges, network proximity, neighbour labels)
+  lands at chance on DE.
+- **Direction (up vs down, given DE) *does* transfer** — related TFs/genes push in
+  correlated directions, so a neighbour's up/down tendency is predictive. This is
+  the signal the two-stage GO model only partially captures (~0.58); neighbour
+  retrieval reads it more directly (~0.65).
+
+## Measurement (dual-OOD `holdout_split`, seeds 0–4)
+
+| | neighbour channel | current two-stage | fused |
+|---|---|---|---|
+| AUROC_de | 0.498 ± 0.006 | ~0.50–0.53 | unchanged |
+| AUROC_dir | **0.651 ± 0.047** | ~0.58 | ~0.63–0.72 |
+| mean | — | baseline | **+0.027 ± 0.009** |
+
+Reproduce: `scripts/de_retrieval_dir_validation.py` (multi-seed DIR) and
+`scripts/de_retrieval_head_to_head.py` (fusion vs two-stage). Channel:
+`bio_reasoning.features.neighbor_retrieval`; validated through the `fuse()`/`cfa_gate()`
+harness ([[curated-edges-fail-de-axis]] describes the harness).
+
+## Caveats & next
+
+- The +0.027 is measured against the two-stage GO **model**, not the live-LB-0.578
+  floor-to-prior + DIR-blend pipeline. The lift on the *actual* submission needs
+  neighbour-`r` wired into that pipeline (test-set inference + a Kaggle submission)
+  to confirm — it could shrink if the 0.578 blend already captures part of the
+  direction signal. Pure feature channel, no LLM/Bing dependency, directly submittable.
+- DE remains the unsolved rank-1 bottleneck; the only untried DE family is model-based
+  token-logprob self-consistency (needs a logprob endpoint).
