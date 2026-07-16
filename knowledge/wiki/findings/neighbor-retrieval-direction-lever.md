@@ -23,6 +23,24 @@ model lifts the OOD-val **mean +0.027 ± 0.009** (all 5 seeds positive), entirel
 AUROC_dir. Leak-free (val pert/gene held out; own pair excluded) and ~98–100%
 coverage — retrieval solves the coverage problem the curated edges had.
 
+## The retrieval KEY decides whether DIR transfers (family-retrieval, 2026-07-16)
+
+Not every retrieval key inherits this DIR lever. `feat/family-retrieval-baseline`
+tried the same label-borrowing idea with a **char/prefix gene-family key** (neighbours
+= TRAIN rows sharing a `family_key` = symbol minus trailing numeric index, e.g. `Rpl*`,
+`Ifit*`) instead of a labeled-pair graph neighbour. Result (multi-seed OOD-val,
+`scripts/family_retrieval_eval.py`): DE-AUROC **0.502 ± 0.027** (chance — the 5th dead
+DE channel) *and* DIR-AUROC **0.519 ± 0.061** (chance too), 42% coverage, CFA gate
+rejects 0/5 seeds, fusing *lowers* the mean (fused 0.519 < incumbent char two-stage
+0.522).
+
+So the DIR lever is **not** a generic property of "borrow neighbour labels" — it is a
+property of the **key**. Labeled-pair graph neighbours (STRING/GO) put biologically
+co-regulated genes next to each other, so their up/down tendency transfers. A char/prefix
+string-family key groups genes by *naming convention*, which does not track co-regulated
+direction on real OOD symbols — it carries neither DE nor DIR. When designing a retrieval
+channel, spend the design effort on the neighbour key, not the borrowing mechanism.
+
 ## Why it splits DE from direction
 
 - **DE (does *this* pair respond at all) is pair-specific** — a neighbour pert/gene
