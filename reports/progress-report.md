@@ -20,13 +20,19 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
 | Approach | Method | Score | Notes |
 |---|---|---|---|
 | Majority class | predict `none` (55.3%) | ≈ 0.553 | reference only (metric is AUROC, not accuracy) |
-| **Track A — evidence prior** | functional-category direction prior (no LLM) | **0.529** (Kaggle LB; CV 0.534) | ~0 CV↔LB gap validates the split; **direction carries the signal, DE-vs-none is nearly flat** |
-| **Track B — agent harness** | multi-agent tool-use (direction-prior + GO-evidence tools) on `gpt-oss-120b` | **CV 0.675** | clears the prior floor; to be re-scored on the honest dual-OOD split |
+| **Track A — evidence prior** | functional-category direction prior (no LLM) | **0.529** (Kaggle LB; CV 0.534) | our real floor; ~0 CV↔LB gap; **direction carries the signal, DE-vs-none is nearly flat** |
+| **Track B — agent harness (v1)** | multi-agent tool-use (direction-prior + GO-evidence tools) on `gpt-oss-120b` | local CV **0.675** → LB **0.488** | **did not transfer** — the agent abstained on ~72% of rows, submitting `0/0`; ties collapse the rank metric to ~random. Local CV was inflated ~0.19 over LB. |
 | Public leaderboard (top) | — | ≈ 0.65 | on the same AUROC scale |
 
-**Key empirical finding:** the direction axis (up vs down) carries real, functionally-grounded
-signal; the DE-vs-none axis is close to flat. Optimization effort should be split across the
-two sub-metrics rather than chasing an aggregate.
+**Two findings drive the plan:**
+1. **The direction axis carries the signal; DE-vs-none is nearly flat** — split optimization
+   effort across the two sub-metrics, don't chase the aggregate.
+2. **Local CV badly over-states leaderboard performance** (Track B: 0.675 CV → 0.488 LB). The
+   agent's over-abstention (emitting `0/0`) deletes the prior's signal and creates rank ties.
+   The fix is twofold: **never emit `0/0`** (fall back to the direction prior on every would-be
+   abstention, guaranteeing ≥ the 0.529 floor), and **score, don't label** (emit a continuous
+   DE-likelihood — only order matters for AUROC). And measurement must move onto a **dual-OOD
+   validation split** that reproduces the real train/test disjointness, so CV stops lying.
 
 ## Approach
 
@@ -47,19 +53,24 @@ two sub-metrics rather than chasing an aggregate.
 
 ## Plan (to 2026-07-22)
 
-- **Now:** build the dual-OOD validation split (the loop's fitness signal) and re-score the
-  0.675 honestly.
-- **Then:** stand up the trial loop against that split; optimize Track A prompts first.
-- **Then:** extend the loop to Track B; the current highest-value lever is the agent's
-  **over-abstention** (it calls ~90% `none` vs a ~55% true DE rate) — loosening the abstain
-  policy should recover direction/DE signal.
+- **Now:** build the dual-OOD validation split (the loop's fitness signal); it exists to close
+  the CV↔LB gap that inflated Track B by ~0.19.
+- **First Track B fix (cheapest, highest value):** never emit `0/0` — fall back to the direction
+  prior on every would-be abstention. This alone should recover ≥ 0.529 (the bar is "stop
+  deleting the prior"). Then blend `α·agent + (1−α)·prior` (never-worse-than-prior by
+  construction, α tuned on the OOD split).
+- **Then:** stand up the trial loop against the OOD split; optimize Track A prompts, and evolve
+  Track B toward **scoring, not labeling** (continuous DE-likelihood, killing the tie-mass
+  failure at the root).
 - **Close:** submission discipline → final selection.
 
 ## Risks & mitigations
 
 - **Model access** → mitigated: the fixed `gpt-oss-120b` is reachable now via a hosted
   OpenAI-compatible endpoint; a local GPU box is a scale/backup path.
-- **Validation ≠ leaderboard** → mitigated by the dual-OOD split that mirrors the real test
-  structure; we track the LB−val gap on every submission.
-- **Agent over-abstention** → the leading Track B iteration; addressed by relaxing the abstain
-  threshold and validating against the current best.
+- **Validation ≠ leaderboard** → *realized* on Track B (0.675 CV → 0.488 LB). Mitigated going
+  forward by the dual-OOD split that mirrors the real test structure; we track the LB−val gap on
+  every submission and never trust CV alone.
+- **Agent over-abstention** → *realized* (72% of rows `0/0` collapsed the LB to ~random).
+  Addressed by a hard "never emit `0/0`, fall back to the prior" rule, a prior-blend floor, and a
+  scoring-not-labeling reframe — validated on the OOD split.
