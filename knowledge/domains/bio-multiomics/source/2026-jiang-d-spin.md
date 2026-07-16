@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://www.sciencedirect.com/science/article/pii/S0092867426004630
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-multiomics
+domains: [bio-multiomics]
 title: D-SPIN constructs regulatory network models from scRNA-seq that reveal organizing principles of perturbation response
-author: Jiang et al.
+authors: [Jiang et al.]
 year: 2026
-retrieved: 2026-07-13
+doi: TODO
+source_url: https://www.sciencedirect.com/science/article/pii/S0092867426004630
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # D-SPIN constructs regulatory network models from scRNA-seq that reveal organizing principles of perturbation response
 
 **Authors:** Jialong Jiang, Sisi Chen, Tiffany Tsou, Christopher S. McGinnis, Tahmineh Khazaei, Qin Zhu, Jong H. Park, Inna-Marie Strazhnik, Jost Vielmetter, Yingying Gong, John Hanna, Eric D. Chow, David A. Sivak, Zev J. Gartner, Matt Thomson

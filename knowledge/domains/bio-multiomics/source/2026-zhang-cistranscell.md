@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://arxiv.org/abs/2606.13713
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-multiomics
+domains: [bio-multiomics]
 title: "CisTransCell: Single-Cell Perturbation Prediction via Gene Function, Regulatory Control, and Cellular Context"
-author: Wei Zhang et al.
+authors: [Wei Zhang et al.]
 year: 2026
-retrieved: 2026-07-13
+doi: 10.48550/arXiv.2606.13713
+source_url: https://arxiv.org/abs/2606.13713
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # CisTransCell: Single-Cell Perturbation Prediction via Gene Function, Regulatory Control, and Cellular Context
 
 **Authors:** Wei Zhang, Xun Jiang, Yuesi Xi, Ming Tang

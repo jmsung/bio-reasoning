@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://arxiv.org/abs/2510.07706
-source_type: papers
-title: Large Language Models Meet Virtual Cell: A Survey
-author: Krinos Li et al.
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-foundation-models
+domains: [bio-foundation-models, bio-multiomics]
+title: "Large Language Models Meet Virtual Cell: A Survey"
+authors: [Krinos Li et al.]
 year: 2025
-retrieved: 2026-07-13
+doi: 10.48550/arXiv.2510.07706
+source_url: https://arxiv.org/abs/2510.07706
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # Large Language Models Meet Virtual Cell: A Survey
 
 **Authors:** Krinos Li, Xianglu Xiao, Shenglong Deng, Lucas He, Zijun Zhong, Yuanjie Zou, Zhonghao Zhan, Zheng Hui, Weiye Bao, Guang Yang

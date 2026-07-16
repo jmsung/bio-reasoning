@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://www.cell.com/cell/fulltext/S0092-8674(25)00197-7
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-multiomics
+domains: [bio-multiomics]
 title: Simultaneous CRISPR screening and spatial transcriptomics reveal intracellular, intercellular, and functional transcriptional circuits
-author: Binan et al.
+authors: [Binan et al.]
 year: 2025
-retrieved: 2026-07-13
+doi: 10.1016/j.cell.2025.02.012
+source_url: https://www.cell.com/cell/fulltext/S0092-8674(25)00197-7
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # Simultaneous CRISPR screening and spatial transcriptomics reveal intracellular, intercellular, and functional transcriptional circuits
 
 **Authors:** Loïc Binan, Aiping Jiang, Serwah A. Danquah, Vera Valakh, Brooke Simonton, Jon Bezney, Robert T. Manguso, Kathleen B. Yates, Ralda Nehme, Brian Cleary, Samouil L. Farhi

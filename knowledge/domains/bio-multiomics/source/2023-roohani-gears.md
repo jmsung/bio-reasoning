@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://www.nature.com/articles/s41587-023-01905-6
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-multiomics
+domains: [bio-multiomics]
 title: Predicting transcriptional outcomes of novel multigene perturbations with GEARS
-author: Roohani et al.
+authors: [Roohani et al.]
 year: 2023
-retrieved: 2026-07-13
+doi: 10.1038/s41587-023-01905-6
+source_url: https://www.nature.com/articles/s41587-023-01905-6
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # Predicting transcriptional outcomes of novel multigene perturbations with GEARS
 
 **Authors:** Yusuf Roohani, Kexin Huang, Jure Leskovec

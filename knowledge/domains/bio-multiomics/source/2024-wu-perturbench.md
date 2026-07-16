@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://arxiv.org/abs/2408.10609
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-multiomics
+domains: [bio-multiomics]
 title: "PerturBench: Benchmarking Machine Learning Models for Cellular Perturbation Analysis"
-author: Yan Wu et al.
+authors: [Yan Wu et al.]
 year: 2024
-retrieved: 2026-07-13
+doi: 10.48550/arXiv.2408.10609
+source_url: https://arxiv.org/abs/2408.10609
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # PerturBench: Benchmarking Machine Learning Models for Cellular Perturbation Analysis
 
 **Authors:** Yan Wu, Esther Wershof, Sebastian M. Schmon, Marcel Nassar, Błażej Osiński, Ridvan Eksi, Zichao Yan, Rory Stark, Kun Zhang, Thore Graepel

@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://www.nature.com/articles/s41592-025-02772-6
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-multiomics
+domains: [bio-multiomics]
 title: Deep-learning-based gene perturbation effect prediction does not yet outperform simple linear baselines
-author: Ahlmann-Eltze et al.
+authors: [Ahlmann-Eltze et al.]
 year: 2025
-retrieved: 2026-07-13
+doi: 10.1038/s41592-025-02772-6
+source_url: https://www.nature.com/articles/s41592-025-02772-6
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # Deep-learning-based gene perturbation effect prediction does not yet outperform simple linear baselines
 
 **Authors:** Constantin Ahlmann-Eltze, Wolfgang Huber, Simon Anders

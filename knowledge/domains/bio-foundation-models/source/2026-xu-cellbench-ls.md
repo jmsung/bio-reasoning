@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://www.biorxiv.org/content/10.64898/2026.04.01.714123v1
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-foundation-models
+domains: [bio-foundation-models, bio-multiomics]
 title: "CellBench-LS: Benchmark Evaluation of Single-cell Foundation Models for Low-supervision Scenarios"
-author: Xu et al.
+authors: [Xu et al.]
 year: 2026
-retrieved: 2026-07-13
+doi: 10.64898/2026.04.01.714123
+source_url: https://www.biorxiv.org/content/10.64898/2026.04.01.714123v1
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # CellBench-LS: Benchmark Evaluation of Single-cell Foundation Models for Low-supervision Scenarios
 
 **Authors:** Yongjie Xu, Yiyun Li, Yue Yuan, Chang Yu, Zelin Zang

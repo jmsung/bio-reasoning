@@ -20,20 +20,20 @@ Files live flat under `knowledge/source/`. Type lives in each page's
 - [Papalexi 2021 — ECCITE-seq immune checkpoints (THP-1)](../source/2021-papalexi-eccite-seq-immune-checkpoints.md) — Nat Genet · 2021
 - [Dixit 2016 — original Perturb-seq (mouse dendritic cells)](../source/2016-dixit-perturb-seq.md) — Cell · 2016
 - [scPerturb 2024 — harmonized single-cell perturbation data](../source/2024-peidli-scperturb.md) — Nat Methods · 2024
-- [SynthPert — LLM biological reasoning via synthetic reasoning traces](../source/2025-phillips-synthpert-reasoning-traces.md) — arXiv · 2025
-- [KG + Reasoning LLMs for simple transcriptomic perturbation predictors](../source/2026-fawkes-kg-reasoning-llm-perturbation-predictors.md) — arXiv · 2026
-- [Plausibility Is Not Prediction — contrastive LLM perturbation reasoning](../source/2026-yuan-plausibility-not-prediction-llm-perturbation.md) — arXiv · 2026
-- [LLMs Meet Virtual Cell — a survey](../source/2025-li-llms-meet-virtual-cell-survey.md) — arXiv · 2025
-- [DL perturbation prediction does not yet beat linear baselines](../source/2025-ahlmann-eltze-dl-perturbation-vs-linear.md) — Nat Methods · 2025
-- [Benchmarking generalizable single-cell perturbation prediction (scPerturBench)](../source/2025-wei-scperturbench-generalizable-perturbation.md) — Nat Methods · 2025
-- [PerturBench — benchmarking ML models for cellular perturbation](../source/2024-wu-perturbench.md) — arXiv · 2024
-- [CellBench-LS — single-cell foundation models in low-supervision](../source/2026-xu-cellbench-ls.md) — bioRxiv · 2026
-- [GEARS — predicting outcomes of novel multigene perturbations](../source/2023-roohani-gears.md) — Nat Biotechnol · 2023
-- [CisTransCell — perturbation prediction via function, regulation, context](../source/2026-zhang-cistranscell.md) — arXiv · 2026
-- [scDFM — distributional flow matching for perturbation prediction](../source/2026-yu-scdfm.md) — arXiv · 2026
-- [Traxler 2025 — time-series + CRISPR screen of macrophage immune regulation (mouse)](../source/2025-traxler-macrophage-crispr-timeseries.md) — Cell Systems · 2025
-- [Binan 2025 — Perturb-FISH: CRISPR + spatial in THP-1 macrophages](../source/2025-binan-crispr-spatial-macrophage-circuits.md) — Cell · 2025
-- [D-SPIN — regulatory network models of perturbation response](../source/2026-jiang-d-spin.md) — Cell · 2026
+- [SynthPert — LLM biological reasoning via synthetic reasoning traces](../domains/ai-reasoning/source/2025-phillips-synthpert-reasoning-traces.md) — arXiv · 2025
+- [KG + Reasoning LLMs for simple transcriptomic perturbation predictors](../domains/ai-reasoning/source/2026-fawkes-kg-reasoning-llm-perturbation-predictors.md) — arXiv · 2026
+- [Plausibility Is Not Prediction — contrastive LLM perturbation reasoning](../domains/ai-reasoning/source/2026-yuan-plausibility-not-prediction-llm-perturbation.md) — arXiv · 2026
+- [LLMs Meet Virtual Cell — a survey](../domains/bio-foundation-models/source/2025-li-llms-meet-virtual-cell-survey.md) — arXiv · 2025
+- [DL perturbation prediction does not yet beat linear baselines](../domains/bio-multiomics/source/2025-ahlmann-eltze-dl-perturbation-vs-linear.md) — Nat Methods · 2025
+- [Benchmarking generalizable single-cell perturbation prediction (scPerturBench)](../domains/bio-multiomics/source/2025-wei-scperturbench-generalizable-perturbation.md) — Nat Methods · 2025
+- [PerturBench — benchmarking ML models for cellular perturbation](../domains/bio-multiomics/source/2024-wu-perturbench.md) — arXiv · 2024
+- [CellBench-LS — single-cell foundation models in low-supervision](../domains/bio-foundation-models/source/2026-xu-cellbench-ls.md) — bioRxiv · 2026
+- [GEARS — predicting outcomes of novel multigene perturbations](../domains/bio-multiomics/source/2023-roohani-gears.md) — Nat Biotechnol · 2023
+- [CisTransCell — perturbation prediction via function, regulation, context](../domains/bio-multiomics/source/2026-zhang-cistranscell.md) — arXiv · 2026
+- [scDFM — distributional flow matching for perturbation prediction](../domains/bio-multiomics/source/2026-yu-scdfm.md) — arXiv · 2026
+- [Traxler 2025 — time-series + CRISPR screen of macrophage immune regulation (mouse)](../domains/bio-multiomics/source/2025-traxler-macrophage-crispr-timeseries.md) — Cell Systems · 2025
+- [Binan 2025 — Perturb-FISH: CRISPR + spatial in THP-1 macrophages](../domains/bio-multiomics/source/2025-binan-crispr-spatial-macrophage-circuits.md) — Cell · 2025
+- [D-SPIN — regulatory network models of perturbation response](../domains/bio-multiomics/source/2026-jiang-d-spin.md) — Cell · 2026
 
 ### Web
 

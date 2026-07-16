@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://arxiv.org/abs/2602.07103
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-multiomics
+domains: [bio-multiomics]
 title: "scDFM: Distributional Flow Matching Model for Robust Single-Cell Perturbation Prediction"
-author: Yu et al.
+authors: [Yu et al.]
 year: 2026
-retrieved: 2026-07-13
+doi: 10.48550/arXiv.2602.07103
+source_url: https://arxiv.org/abs/2602.07103
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # scDFM: Distributional Flow Matching Model for Robust Single-Cell Perturbation Prediction
 
 **Authors:** Chenglei Yu, Chuanrui Wang, Bangyan Liao, Tailin Wu

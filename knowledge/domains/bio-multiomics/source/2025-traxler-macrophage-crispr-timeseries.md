@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://www.cell.com/cell-systems/fulltext/S2405-4712(25)00179-6
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-multiomics
+domains: [bio-multiomics]
 title: Integrated time-series analysis and high-content CRISPR screening delineate the dynamics of macrophage immune regulation
-author: Traxler et al.
+authors: [Traxler et al.]
 year: 2025
-retrieved: 2026-07-13
+doi: 10.1016/j.cels.2025.101346
+source_url: https://www.cell.com/cell-systems/fulltext/S2405-4712(25)00179-6
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # Integrated time-series analysis and high-content CRISPR screening delineate the dynamics of macrophage immune regulation
 
 **Authors:** Peter Traxler, Stephan Reichl, Lukas Folkman, Lisa Shaw, Victoria Fife, Amelie Nemc, Djurdja Pasajlic, Anna Kusienicka, Daniele Barreca, Nikolaus Fortelny, André F. Rendeiro, Florian Halbritter, Wolfgang Weninger, Thomas Decker, Matthias Farlik, Christoph Bock

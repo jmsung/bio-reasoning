@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://www.nature.com/articles/s41592-025-02980-0
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: bio-multiomics
+domains: [bio-multiomics]
 title: Benchmarking algorithms for generalizable single-cell perturbation response prediction
-author: Zhiting Wei et al.
+authors: [Zhiting Wei et al.]
 year: 2025
-retrieved: 2026-07-13
+doi: 10.1038/s41592-025-02980-0
+source_url: https://www.nature.com/articles/s41592-025-02980-0
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # Benchmarking algorithms for generalizable single-cell perturbation response prediction
 
 **Authors:** Zhiting Wei, Yiheng Wang, Yicheng Gao, Qi Liu, et al. (bm2-lab, Bioinformatics Department, School of Life Sciences and Technology, Tongji University, Shanghai)

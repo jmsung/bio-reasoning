@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://arxiv.org/abs/2606.01042
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: ai-reasoning
+domains: [ai-reasoning, bio-multiomics]
 title: "Plausibility Is Not Prediction: Contrastive Evidence for LLM-Based Cellular Perturbation Reasoning"
-author: Yuan et al.
+authors: [Yuan et al.]
 year: 2026
-retrieved: 2026-07-13
+doi: 10.48550/arXiv.2606.01042
+source_url: https://arxiv.org/abs/2606.01042
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # Plausibility Is Not Prediction: Contrastive Evidence for LLM-Based Cellular Perturbation Reasoning
 
 **Authors:** Xinyu Yuan, Xixian Liu, Jianan Zhao, Yashi Zhang, Hongyu Guo, Jian Tang (Mila – Québec AI Institute, Université de Montréal, HEC Montréal, University of Ottawa, National Research Council of Canada, CIFAR AI Chair)

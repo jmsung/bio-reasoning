@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://arxiv.org/abs/2509.25346
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: ai-reasoning
+domains: [ai-reasoning, bio-multiomics]
 title: "SynthPert: Enhancing LLM Biological Reasoning via Synthetic Reasoning Traces for Cellular Perturbation Prediction"
-author: Phillips et al.
+authors: [Phillips et al.]
 year: 2025
-retrieved: 2026-07-13
+doi: 10.48550/arXiv.2509.25346
+source_url: https://arxiv.org/abs/2509.25346
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # SynthPert: Enhancing LLM Biological Reasoning via Synthetic Reasoning Traces for Cellular Perturbation Prediction
 
 **Authors:** Lawrence Phillips, Marc Boubnovski Martell, Aditya Misra, Josefa Lia Stoisser, Cesar A. Prada-Medina, Rory Donovan-Maiye, Kaspar Märtens

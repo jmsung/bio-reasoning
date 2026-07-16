@@ -1,12 +1,20 @@
+<!-- synced from knowledge-base — do not edit here; change upstream and re-pull -->
 ---
-source_url: https://arxiv.org/abs/2606.08816
-source_type: papers
+type: source
+kind: paper
+confidentiality: public
+visibility: global
+primary: ai-reasoning
+domains: [ai-reasoning, bio-multiomics]
 title: Knowledge Graphs and Reasoning LLMs for Finding Simple Yet Effective Transcriptomic Perturbation Predictors
-author: Fawkes et al.
+authors: [Fawkes et al.]
 year: 2026
-retrieved: 2026-07-13
+doi: 10.48550/arXiv.2606.08816
+source_url: https://arxiv.org/abs/2606.08816
+drive_file_id: TODO
+text_source: web
+ingested_by: agent
 ---
-
 # Knowledge Graphs and Reasoning LLMs for Finding Simple Yet Effective Transcriptomic Perturbation Predictors
 
 **Authors:** Jake Fawkes, Liam Hodgson, Jason Hartford
