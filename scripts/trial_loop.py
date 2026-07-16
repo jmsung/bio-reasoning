@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -67,20 +68,32 @@ def _build_infer_fn(args: argparse.Namespace, cost: dict[str, float]):
     model = os.getenv("BIOREASONING_OPENROUTER_MODEL", "openai/gpt-oss-120b")
 
     def _one(prompt: str, seed: int) -> str:
-        text, tok = post_chat_completion(
-            api_base=api_base,
-            api_key=api_key,
-            model=model,
-            prompt=prompt,
-            seed=seed,
-            max_tokens=args.max_tokens,
-            timeout_s=args.timeout,
-            reasoning_effort=args.reasoning_effort,
-        )
-        cost["prompt_tokens"] += tok["prompt_tokens"]
-        cost["completion_tokens"] += tok["completion_tokens"]
-        cost["usd"] += tok["prompt_tokens"] * PRICE_IN + tok["completion_tokens"] * PRICE_OUT
-        return text
+        # Resilience: a single bad response (rate-limit, 5xx, non-JSON/truncated body)
+        # must degrade ONE row to the uniform default, not kill a 15k-call run.
+        for attempt in range(args.max_retries + 1):
+            try:
+                text, tok = post_chat_completion(
+                    api_base=api_base,
+                    api_key=api_key,
+                    model=model,
+                    prompt=prompt,
+                    seed=seed,
+                    max_tokens=args.max_tokens,
+                    timeout_s=args.timeout,
+                    reasoning_effort=args.reasoning_effort,
+                )
+                cost["prompt_tokens"] += tok["prompt_tokens"]
+                cost["completion_tokens"] += tok["completion_tokens"]
+                cost["usd"] += (
+                    tok["prompt_tokens"] * PRICE_IN + tok["completion_tokens"] * PRICE_OUT
+                )
+                return text
+            except Exception:
+                if attempt == args.max_retries:
+                    cost["errors"] += 1
+                    return ""  # parse_answer("") → uniform (1/3, 1/3) fallback for this row
+                time.sleep(2.0 * (attempt + 1))
+        return ""
 
     def infer_fn(prompts, seed):
         with ThreadPoolExecutor(max_workers=args.concurrency) as ex:
@@ -185,7 +198,7 @@ def main() -> None:
         df = df[train_mask | df.index.isin(keep)].reset_index(drop=True)
 
     template = args.prompt_template.read_text() if args.prompt_template else None
-    cost = {"prompt_tokens": 0.0, "completion_tokens": 0.0, "usd": 0.0}
+    cost = {"prompt_tokens": 0.0, "completion_tokens": 0.0, "usd": 0.0, "errors": 0.0}
     if args.track == "a":
         row_predictor = make_prompt_row_predictor(_build_infer_fn(args, cost))
         variant_seeds = tuple(args.seeds)
@@ -232,6 +245,8 @@ def main() -> None:
         )
         persist(run_variant(df, variant, row_predictor, **kw), [])
 
+    if cost["errors"]:
+        print(f"[trial-loop] WARNING: {int(cost['errors'])} call(s) failed → uniform fallback.")
     print(f"[trial-loop] archive → {args.output_dir}")
 
 
