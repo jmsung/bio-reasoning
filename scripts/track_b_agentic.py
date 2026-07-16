@@ -6,13 +6,15 @@ to call, and iterates until it produces a final answer.  Uses DSPy's
 text-based tool calling which works with any instruction-following model
 (no native function-calling API support required).
 
-Ships with five working tools:
+Ships with these working tools:
 
   1. lookup_pert          -- what genes are affected by a perturbation?
   2. lookup_gene          -- what perturbations affect a gene?
-  3. gene_info            -- fetch gene annotations from mygene.info
-  4. protein_interactions -- fetch protein interactions from STRING DB
-  5. submit_answer        -- submit the final A/B/C answer
+  3. direction_prior      -- evidence-grounded graded direction prior (the floor)
+  4. gene_info            -- fetch gene annotations from mygene.info
+  5. protein_interactions -- fetch protein interactions from STRING DB
+  6. submit_graded        -- submit graded up/down probabilities (preferred)
+  7. submit_answer        -- submit a hard A/B/C answer (fallback)
 
 Participants should extend or replace these with their own tools.
 
@@ -139,6 +141,31 @@ def submit_answer(answer: str, reasoning: str = "") -> str:
     if answer not in ("A", "B", "C"):
         return f"Error: answer must be 'A', 'B', or 'C', got '{answer}'."
     return f"Answer recorded: {answer}"
+
+
+def _clamp_pair(up: float, down: float) -> tuple[float, float]:
+    """Clamp each score to [0,1]; renormalize if they sum above 1."""
+    up = min(max(up, 0.0), 1.0)
+    down = min(max(down, 0.0), 1.0)
+    if up + down > 1.0:
+        s = up + down
+        up, down = up / s, down / s
+    return up, down
+
+
+def submit_graded(prediction_up: float, prediction_down: float, reasoning: str = "") -> str:
+    """Submit GRADED probabilities instead of a hard A/B/C letter. Provide
+    P(up-regulated) and P(down-regulated), each in [0,1] with their sum <= 1
+    (the remainder is P(not differentially expressed)). PREFER this over
+    submit_answer: the metric is AUROC, so calibrated confidence (e.g. 0.7/0.1)
+    scores far better than a hard 1/0. Anchor these on direction_prior's graded
+    scores, then adjust up or down with mechanistic and network evidence. Call
+    exactly once when you have reached a conclusion."""
+    try:
+        up, down = _clamp_pair(float(prediction_up), float(prediction_down))
+    except (TypeError, ValueError):
+        return "Error: prediction_up and prediction_down must be numbers in [0,1]."
+    return f"Graded prediction recorded: up={up:.3f}, down={down:.3f}, none={1 - up - down:.3f}."
 
 
 def gene_info(gene_symbol: str) -> str:
@@ -462,6 +489,7 @@ def main() -> None:
         direction_prior,
         gene_info,
         protein_interactions,
+        submit_graded,
         submit_answer,
     ]
     num_distinct_tools = len(tool_list)
@@ -550,20 +578,34 @@ def main() -> None:
             trace = {"error": str(e)}
         tokens = _tokens_from_history(lm, history_before)
 
+        # Prefer the agent's graded submission (continuous scores lift AUROC);
+        # fall back to a hard A/B/C letter, then to the free-text answer.
+        graded: tuple[float, float] | None = None
         submitted = None
         for k in sorted(trace.keys() if isinstance(trace, dict) else []):
-            if k.startswith("tool_name_") and trace[k] == "submit_answer":
-                step = k.split("_")[-1]
-                args_d = trace.get(f"tool_args_{step}", {})
+            if not k.startswith("tool_name_"):
+                continue
+            step = k.split("_")[-1]
+            args_d = trace.get(f"tool_args_{step}", {})
+            if trace[k] == "submit_graded":
+                try:
+                    graded = _clamp_pair(
+                        float(args_d.get("prediction_up")),
+                        float(args_d.get("prediction_down")),
+                    )
+                except (TypeError, ValueError):
+                    graded = None
+            elif trace[k] == "submit_answer":
                 submitted = args_d.get("answer", "").strip().upper()
 
-        if submitted in ("A", "B", "C"):
-            source = submitted
+        if graded is not None:
+            pred_up, pred_down = graded
         else:
-            tag = extract_answer_tag(final_text)
-            source = tag if tag else (final_text or "")
-
-        pred_up, pred_down = parse_answer(source)
+            source = submitted if submitted in ("A", "B", "C") else None
+            if source is None:
+                tag = extract_answer_tag(final_text)
+                source = tag if tag else (final_text or "")
+            pred_up, pred_down = parse_answer(source)
 
         with cache_lock:
             cache["rows"][rid] = {
