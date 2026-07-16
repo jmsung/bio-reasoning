@@ -38,7 +38,7 @@ tokens_used, prompt_tokens, model_name
 - **Prompt-token cap: 4,096.** `tokens_used` / `prompt_tokens` are reported
   per submission.
 
-**Reference numbers:** public-LB top ≈ 0.65; our leak-free evidence-prior
+**Reference numbers:** public-LB top ≈ 0.693 (2026-07); our leak-free evidence-prior
 floor = **0.529** (LB) / 0.534 (local CV). See
 [`challenge.md`](challenge.md#evaluation) for the full metric write-up.
 
@@ -50,8 +50,50 @@ uv run kaggle competitions submit \
   -f submissions/track_a_prior_baseline.csv -m "<message>"
 ```
 
-## Track B / Track C
+## Track B — agentic tool-use
 
-Placeholder — to be filled as we read the rules pages and submit. Each will
-own: submission format, submission limits (per day / per team), external
-data / model rules, compute limits, and gotchas discovered while submitting.
+Same task, data, metric, and submission math as Track A — only the modeling
+constraints differ. Authoritative source is the Kaggle Track B "Rules" tab
+(JS-rendered, not machine-fetchable); the below is distilled from
+[`challenge.md`](challenge.md#track-b--multi-agentic-tool-use) and
+[`../knowledge/source/2026-bioreasoning-challenge-overview.md`](../knowledge/source/2026-bioreasoning-challenge-overview.md).
+
+**Constraints:**
+
+- **Fixed base model: GPT-OSS-120B** (same as A); **fine-tuning the base is forbidden**.
+- **Tools: ≤ 100 distinct tools, ≤ 250 tool calls per test row.**
+- **Prompt-token cap: 16,384** (4× Track A).
+- **No web access / no external LLMs at inference.**
+- **Traces required** — submissions must carry tool-call traces for audit / reproducibility.
+- **Allowed data augmentation (all tracks):** public perturbation datasets
+  PerturbQA, Tahoe-100M (permissively licensed).
+
+**Submission** — the same 15-column schema as Track A, plus the tool-definition /
+trace metadata (reasoning traces, `tokens_used`, tool usage, model info). One row
+per `test.csv` id (1,813).
+
+**Is an ML-model-backed tool (e.g. TabPFN) allowed? — Probably yes; confirm on the
+Rules tab.** The only model restrictions are (a) the base LLM is fixed and
+non-fine-tunable, and (b) "no external **LLMs** at inference." A frozen, in-context
+**tabular** foundation model (TabPFN / TabICL) is neither the base LLM, a fine-tune
+of it, nor an external *LLM* — it is a local computational tool, and tools are
+explicitly allowed (≤ 100). So a `tabpfn_predict(pert, gene)` tool reads as legal.
+**Caveat:** the authoritative Kaggle Track B rules tab is JS-rendered and unread
+here; the challenge-overview wording bars external *LLMs* specifically, not all
+auxiliary models. Confirm the rules tab explicitly permits offline / precomputed
+models as tools before relying on it. See
+[`tabpfn-for-perturbation-tracks`](../knowledge/wiki/findings/tabpfn-for-perturbation-tracks.md)
+and [`competitor-landscape`](../knowledge/wiki/findings/competitor-landscape.md).
+
+**Reference numbers:** public-LB top = **0.752** (cellshift.bio, 2026-07); our
+agentic attempt = **0.488** (below the 0.529 Track A floor — abstention collapse,
+PR #13, see
+[`track-b-abstention-failure`](../knowledge/wiki/findings/track-b-abstention-failure.md)).
+
+## Track C — fine-tuning
+
+- **Open model < 10B params** (e.g. Qwen3-4B-Thinking, Gemma); **any fine-tuning
+  technique** (SFT, LoRA, RL, process reward models, best-of-N).
+- **No tools, no web, no external LLMs at inference.**
+- Same task / metric / submission math as A and B.
+- **Reference:** public-LB top = **0.693** (2026-07). Not entered by us.
