@@ -87,7 +87,7 @@ Consequences: predictions must be **graded** (`prediction_up`,
 ≈ **0.5**, not 0.553 — the 0.553 majority-class figure is an *accuracy*
 reference and does **not** apply to this metric. Submissions also carry
 per-seed predictions, reasoning traces, and token counts, and Track A caps
-**prompt tokens at 4,096**. Public-leaderboard top ≈ 0.65 is on this AUROC
+**prompt tokens at 4,096**. Public-leaderboard top ≈ 0.69 (2026-07) is on this AUROC
 scale. Our leak-free evidence-prior floor is ≈ 0.53 (direction carries the
 signal; DE-vs-none is flat) — see the Track A prior baseline.
 
@@ -177,8 +177,8 @@ approach lands the right tools.
 | Modeling moves | prompt engineering only | tool design + agent architecture | fine-tuning technique |
 | Inference cost | 1 call × 3 samples per row | up to 250 tool calls per row | depends on chosen model |
 | Compute required | inference only | inference only | GPU training |
-| Top leaderboard (2026-06-06) | 0.651 | 0.652 | 0.611 |
-| Headroom over baseline (0.553) | +0.10 | +0.10 | +0.06 |
+| Top leaderboard (2026-07) | 0.693 | 0.752 | 0.693 |
+| Headroom over baseline (0.553) | +0.14 | +0.20 | +0.14 |
 | Submission cadence | Kaggle daily limit | Kaggle daily limit | Kaggle daily limit |
 | Reward | $2,000 USD | $2,000 USD | $2,000 USD |
 | Fit with project philosophy | Strong baseline; high signal per effort | Direct fit — "agentic engineering sandbox" | Off-pattern (we'd be fine-tuning, not orchestrating agents) |
@@ -190,9 +190,10 @@ Notes:
   only thing being optimized is the design of the LLM-engineering layer
   around a fixed base. Code, evaluation harness, and data loaders are
   shared.
-- Top scores on A and B are essentially tied — at the current leaderboard
-  state, agentic tool-use has not yet beaten careful prompting. This is
-  upside for whoever lands the right tools.
+- As of 2026-07 the Track B top (0.752) clearly beats the Track A top
+  (0.693) — agentic tool-use is now pulling ahead of careful prompting
+  (it was tied at the 2026-06-06 snapshot above). This is upside for
+  whoever lands the right tools.
 - Track C's lower top score is consistent with the harder problem of
   beating a 120B base with a < 10B fine-tune.
 
@@ -319,7 +320,7 @@ target gene. Memorization cannot help.
 | `up` | 2,359 | 30.6% |
 | `down` | 1,086 | 14.1% |
 
-Majority-class baseline ≈ 0.553. Current leaderboard tops ≈ 0.65.
+Majority-class baseline ≈ 0.553. Current leaderboard tops ≈ 0.69–0.75 (2026-07).
 
 ### Provenance and license
 

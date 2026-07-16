@@ -38,7 +38,7 @@ tokens_used, prompt_tokens, model_name
 - **Prompt-token cap: 4,096.** `tokens_used` / `prompt_tokens` are reported
   per submission.
 
-**Reference numbers:** public-LB top ≈ 0.65; our leak-free evidence-prior
+**Reference numbers:** public-LB top ≈ 0.693 (2026-07); our leak-free evidence-prior
 floor = **0.529** (LB) / 0.534 (local CV). See
 [`challenge.md`](challenge.md#evaluation) for the full metric write-up.
 

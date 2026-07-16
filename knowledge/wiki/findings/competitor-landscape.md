@@ -112,12 +112,15 @@ implicitly via char n-grams + `same_prefix2`/`same_suffix2` features.
    functional features the string-ML crowd ignores — the differentiated
    combination. Do the two-stage decomposition first (orthogonal, cheaper).
 5. **Score against the right ceiling.** Before spending LLM budget, replicate a
-   proper nearest-family classical baseline on our dual-OOD split (the honest
-   0.533 floor, [[track-b-abstention-failure]] and the OOD-val harness). Measure
-   the agentic system's *lift over string-ML*, not over 0.5.
+   proper nearest-family classical baseline on our dual-OOD split. Our
+   evidence-prior floor there is **0.533** on the held-out val (cf. 0.534 CV /
+   0.529 LB; [[track-b-abstention-failure]] and the OOD-val harness). Measure the
+   agentic system's *lift over string-ML*, not over 0.5.
 
 ## To verify
 
 - **Track B tool legality** — whether an ML-model-backed tool (e.g. TabPFN) is
-  permitted around the fixed base. `docs/kaggle-rules.md` Track B is currently a
-  placeholder; filling it is the sibling goal of this branch.
+  permitted around the fixed base. `docs/kaggle-rules.md` Track B now records the
+  constraints and the legality reasoning (a frozen tabular PFN is neither the
+  fixed base LLM, a fine-tune of it, nor an external *LLM* → reads as legal); the
+  one open item is confirming it on the JS-rendered Kaggle Rules tab.
