@@ -56,6 +56,12 @@ Ordered by priority — understand → plan → build.
 11. [ ] **Fix local pre-commit bootstrap** — Microsoft Store Python breaks
     `virtualenv` seeding; switch to a non-Store Python (`uv python install`)
     so `/dev-setup` + pre-commit hooks run. (dev-env; discovered in #4)
+12. [ ] **Track A two-stage GO-term model** — learned P(DE)·P(up|DE) heads over
+    GO:BP term features for the perturbation *and* the target gene (the axis the
+    evidence prior ignores). Beats the prior on the leak-free dual-OOD CV
+    (~0.56 vs 0.534). Char-ngram/string-stat features were at chance — symbols
+    are arbitrary; GO terms transfer across unseen perts/genes. Submission:
+    `scripts/track_a_two_stage_submission.py`.
 
 ## Completed
 
