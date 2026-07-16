@@ -8,6 +8,11 @@ dist/
 .ipynb_checkpoints/
 .DS_Store
 
+# test / coverage artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+
 # ML artifacts — keep the structure (READMEs and .gitkeep tracked), ignore contents
 data/raw/*
 data/processed/*

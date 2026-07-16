@@ -117,5 +117,7 @@ Never force-push to `main`. Don't skip hooks (`--no-verify`).
 ### Tests
 
 - `tests/` mirrors `src/bio_reasoning/`.
-- `uv run pytest` should pass before opening a PR.
+- `uv run pytest` should pass before opening a PR. It reports coverage for
+  `src/bio_reasoning/` by default (configured in `pyproject.toml` via
+  `pytest-cov`).
 - New pure functions or data transforms: write the test first.
