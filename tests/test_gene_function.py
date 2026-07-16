@@ -18,9 +18,8 @@ def test_classify_tie_and_empty_return_other():
     assert classify("X", ["unrelated term"]) == "other"
 
 
-def test_annotate_cache_hit_is_offline(tmp_path, monkeypatch):
-    cache = tmp_path / "go.json"
-    cache.write_text(json.dumps({"Rpl3": ["translation"], "Il6": ["cytokine"]}))
+def test_annotate_cache_hit_is_offline(write_go_cache, monkeypatch):
+    cache = write_go_cache({"Rpl3": ["translation"], "Il6": ["cytokine"]})
 
     def boom(sym):  # must not be called on a full cache hit
         raise AssertionError(f"_fetch_go_bp called for {sym}")

@@ -6,7 +6,6 @@ pipeline runs without touching the network and prints the metric lines.
 """
 
 import importlib.util
-import json
 import re
 from pathlib import Path
 
@@ -38,11 +37,12 @@ _TRAIN_ROWS = [
 ]
 
 
-def test_baseline_main_runs_offline_and_reports_metric(tmp_path, monkeypatch, capsys):
+def test_baseline_main_runs_offline_and_reports_metric(
+    tmp_path, monkeypatch, capsys, write_go_cache
+):
     train = tmp_path / "train.csv"
     pd.DataFrame(_TRAIN_ROWS, columns=["pert", "gene", "label"]).to_csv(train, index=False)
-    cache = tmp_path / "pert_go_category.json"
-    cache.write_text(json.dumps(_GO_CACHE))
+    cache = write_go_cache(_GO_CACHE, name="pert_go_category.json")
 
     monkeypatch.setattr(baseline, "TRAIN", train)
     monkeypatch.setattr(baseline, "CACHE", cache)
