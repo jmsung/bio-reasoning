@@ -48,7 +48,7 @@ class TFRegulonFeaturizer:
     ) -> None:
         self._sign: dict[tuple[str, str], int] = {}
         self._tfs: set[str] = set()
-        for s, t, w in zip(edges[source_col], edges[target_col], edges[weight_col], strict=False):
+        for s, t, w in zip(edges[source_col], edges[target_col], edges[weight_col], strict=True):
             s, t = str(s), str(t)
             self._sign[(s, t)] = 1 if float(w) >= 0 else -1
             self._tfs.add(s)

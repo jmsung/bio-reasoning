@@ -109,3 +109,13 @@ def test_cfa_first_channel_admits_on_auroc_alone():
     res = cfa_gate(candidate, None, de_true, min_auroc=0.55, max_corr=0.8)
     assert res.admit
     assert res.max_spearman == 0.0
+
+
+def test_cfa_single_class_labels_reject():
+    # AUROC is undefined (NaN) when de_true has one class; the `not (>=)` guard
+    # must reject rather than admit on NaN.
+    de_true = np.ones(8, dtype=int)
+    candidate = np.arange(8, dtype=float)
+    res = cfa_gate(candidate, None, de_true, min_auroc=0.55, max_corr=0.8)
+    assert not res.admit
+    assert np.isnan(res.de_auroc)
