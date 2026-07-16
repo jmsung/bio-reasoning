@@ -159,8 +159,10 @@ where they ride the PR and get reviewed. This step only surfaces drift.
 ```bash
 REPORT="$CB_ROOT/reports/progress-report.md"
 if [ -f "$REPORT" ]; then
-  # Did the squash-merge commit touch the report? (empty output = it did not.)
-  REPORT_TOUCHED=$(git -C "$CB_ROOT" show --stat HEAD -- reports/progress-report.md | grep -c 'progress-report.md')
+  # Did the squash-merge commit touch the report? (0 = it did not.)
+  # --name-only --format="" lists only changed paths, so the commit message
+  # (which may mention "progress report") can't false-positive the match.
+  REPORT_TOUCHED=$(git -C "$CB_ROOT" show --name-only --format="" HEAD -- reports/progress-report.md | grep -c .)
   # Is the freshness stamp older than today?
   STAMP=$(grep -m1 -oE 'Last updated: [0-9]{4}-[0-9]{2}-[0-9]{2}' "$REPORT" | awk '{print $3}')
   TODAY=$(date +%F)
