@@ -69,3 +69,22 @@ def neighbor_channel(
             p, g, train_df, pert_neighbors, gene_neighbors, min_support
         )
     return Channel(name="neighbor_retrieval", s_de=s_de, r=r)
+
+
+def build_neighbor_graph(
+    queries: pd.DataFrame,
+    partners: dict[str, set[str]],
+    train_df: pd.DataFrame,
+) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    """Per-query pert/gene neighbour sets, restricted to the TRAIN universe.
+
+    ``partners`` maps a symbol → its graph neighbours (e.g. STRING partners).
+    Intersecting with train perts/genes guarantees retrieval can only borrow
+    labels of rows that exist in train — the leak-free graph used by
+    :func:`neighbor_channel`.
+    """
+    tp = set(train_df["pert"].astype(str))
+    tg = set(train_df["gene"].astype(str))
+    pnb = {p: partners.get(p, set()) & tp for p in queries["pert"].astype(str).unique()}
+    gnb = {g: partners.get(g, set()) & tg for g in queries["gene"].astype(str).unique()}
+    return pnb, gnb

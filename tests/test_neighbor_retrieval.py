@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from bio_reasoning.features.neighbor_retrieval import (
+    build_neighbor_graph,
     neighbor_channel,
     retrieve_neighbor_labels,
 )
@@ -68,6 +69,24 @@ def test_retrieve_min_support_gates_thin_evidence():
     pert_nb = {"Q": {"Pb"}}  # only (Pb,G1,up) → 1 row
     s_de, r = retrieve_neighbor_labels("Q", "Gq", train, pert_nb, {"Gq": set()}, min_support=2)
     assert np.isnan(s_de)
+
+
+def test_build_neighbor_graph_restricts_to_train():
+    partners = {"Q": {"Pa", "Pb", "Xz"}, "Gq": {"G1", "Gy"}}
+    train = pd.DataFrame({"pert": ["Pa", "Pb"], "gene": ["G1", "G2"], "label": ["up", "none"]})
+    queries = pd.DataFrame({"pert": ["Q"], "gene": ["Gq"]})
+    pnb, gnb = build_neighbor_graph(queries, partners, train)
+    assert pnb["Q"] == {"Pa", "Pb"}  # Xz (not a train pert) dropped
+    assert gnb["Gq"] == {"G1"}  # Gy (not a train gene) dropped
+
+
+def test_build_neighbor_graph_missing_symbol_is_empty():
+    partners = {"Q": {"Pa"}}
+    train = pd.DataFrame({"pert": ["Pa"], "gene": ["G1"], "label": ["up"]})
+    queries = pd.DataFrame({"pert": ["Q"], "gene": ["Zz"]})
+    pnb, gnb = build_neighbor_graph(queries, partners, train)
+    assert pnb["Q"] == {"Pa"}
+    assert gnb["Zz"] == set()  # symbol absent from partners → empty neighbour set
 
 
 def test_neighbor_channel_builds_aligned_buses():
