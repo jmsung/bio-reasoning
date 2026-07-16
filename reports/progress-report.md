@@ -112,6 +112,34 @@ real, not seed noise (though σ≈0.05–0.06 on this split keeps the exact figu
 The CV-inflation trap that sank the raw agent (0.675→0.488) stayed absent — the
 honest split now reliably predicts the leaderboard.
 
+## Update (feat/trial-loop — landed)
+
+An OOD-val **optimization harness** now drives both tracks on one leak-free fitness
+surface: `scripts/trial_loop.py` proposes variants, scores each on `holdout_split` with
+`evaluate` (mean AUROC), and archives a leaderboard. Track A (prompt) and Track B (agent)
+share one injected `RowPredictor` seam, so "does the agent beat the prompt?" is a direct
+control. The Track B agent runner was extracted from `track_b_agentic.py`'s `main()` and its
+graded→A/B/C→prior abstention chain (the LB-0.488 bug) is now unit-tested.
+
+Full 1,276-row OOD-val sweep (`gpt-oss-120b`):
+
+| variant | OOD-val mean | note |
+|---|---|---|
+| zero-shot prompt (`fs0`) | **0.571** | Track A prompt ceiling |
+| agent (`jsagent`) | 0.557 | does **not** beat zero-shot |
+| few-shot — random / GO-retrieval | 0.53–0.55 | **few-shot hurts on dual-OOD** |
+| evidence prior (floor) | 0.533 | reference |
+
+Three findings: (1) **few-shot hurts** — random *and* GO-category-retrieval exemplars alike;
+on a dual-OOD split the exemplars aren't analogous to unseen queries, so they add noise, not
+signal. Zero-shot is the prompt ceiling. (2) The **vanilla agent doesn't beat zero-shot** —
+it clears the floor and beats few-shot, but at ~$2.5/run vs ~$0.08 it doesn't yet earn its
+cost. (3) These re-confirm on the harness that **AUROC_de ~0.55 (near chance) is the
+bottleneck**; direction (~0.58) is fine. The next lever is a real DE-detector for unseen
+`(pert, gene)` pairs — a vetted recon plan points to a **CollecTRI signed TF-regulon feature**
+(regulon membership = DE, edge sign under CRISPRi = direction). These were dev variants, not
+submitted — all ≤ the live LB 0.578.
+
 ## Approach
 
 1. **Honest fitness signal first** — a dual-OOD validation split (perturbations + genes
