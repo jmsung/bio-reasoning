@@ -336,7 +336,7 @@ def main() -> None:
         "--reasoning-effort",
         default=os.getenv("BIOREASONING_REASONING_EFFORT", "medium"),
         choices=["low", "medium", "high"],
-        help="Reasoning effort level sent to the model (default: low).",
+        help="Reasoning effort level sent to the model (default: medium).",
     )
     parser.add_argument(
         "--system-prompt",
