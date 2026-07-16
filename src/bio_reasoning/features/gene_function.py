@@ -82,15 +82,20 @@ def classify(symbol: str, terms: list[str]) -> str:
     return "housekeeping" if hk > im else "immune" if im > hk else "other"
 
 
-def annotate_perts(symbols, cache_path: str | Path) -> dict[str, str]:
-    """Return {symbol: category} for unique symbols, caching GO terms to disk."""
+def load_go_terms(symbols, cache_path: str | Path) -> dict[str, list[str]]:
+    """Return {symbol: [GO:BP terms]} for unique symbols, caching to disk.
+
+    Cache-hit is offline; a miss fetches from mygene.info and persists. A failed
+    fetch is cached as ``[]`` so it is not retried. This is the raw-term loader
+    shared by the functional-category classifier and the GO-term featurizer.
+    """
     cache_path = Path(cache_path)
     cache: dict[str, list[str]] = {}
     if cache_path.exists():
         cache = json.loads(cache_path.read_text())
 
-    out: dict[str, str] = {}
     dirty = False
+    out: dict[str, list[str]] = {}
     for sym in dict.fromkeys(symbols):  # unique, order-preserving
         if sym not in cache:
             try:
@@ -98,9 +103,15 @@ def annotate_perts(symbols, cache_path: str | Path) -> dict[str, str]:
             except Exception:
                 cache[sym] = []
             dirty = True
-        out[sym] = classify(sym, cache[sym])
+        out[sym] = cache[sym]
 
     if dirty:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(cache, indent=0))
     return out
+
+
+def annotate_perts(symbols, cache_path: str | Path) -> dict[str, str]:
+    """Return {symbol: category} for unique symbols, caching GO terms to disk."""
+    terms = load_go_terms(symbols, cache_path)
+    return {sym: classify(sym, t) for sym, t in terms.items()}

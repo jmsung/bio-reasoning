@@ -22,7 +22,7 @@ import numpy as np
 from sklearn.base import ClassifierMixin, clone
 from sklearn.linear_model import LogisticRegression
 
-from bio_reasoning.features.pair_features import extract_features
+from bio_reasoning.features.pair_features import CharNgramFeaturizer
 
 
 def _default_head() -> ClassifierMixin:
@@ -46,14 +46,21 @@ class TwoStageDEDIR:
     """Two classical heads recombined into graded up/down predictions."""
 
     def __init__(
-        self, de_head: ClassifierMixin | None = None, dir_head: ClassifierMixin | None = None
+        self,
+        featurizer=None,
+        de_head: ClassifierMixin | None = None,
+        dir_head: ClassifierMixin | None = None,
     ):
+        # Default features are the stateless char-ngrams; inject GoPairFeaturizer
+        # for the OOD-effective GO-term features.
+        self.featurizer = featurizer if featurizer is not None else CharNgramFeaturizer()
         self.de_head = de_head if de_head is not None else _default_head()
         self.dir_head = dir_head if dir_head is not None else _default_head()
 
     def fit(self, perts, genes, labels) -> "TwoStageDEDIR":
         labels = np.asarray(labels)
-        X = extract_features(perts, genes)
+        self.featurizer.fit(perts, genes)
+        X = self.featurizer.transform(perts, genes)
 
         de_y = labels != "none"
         self.de_ = clone(self.de_head).fit(X, de_y)
@@ -65,7 +72,7 @@ class TwoStageDEDIR:
 
     def predict(self, perts, genes) -> tuple[np.ndarray, np.ndarray]:
         """Return ``(pred_up, pred_down)`` aligned to the input pairs."""
-        X = extract_features(perts, genes)
+        X = self.featurizer.transform(perts, genes)
         p_de = _proba_pos(self.de_, X, fallback=0.5)
         p_up = _proba_pos(self.dir_, X, fallback=0.5)
         up = p_de * p_up

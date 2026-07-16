@@ -96,3 +96,18 @@ def extract_features(perts: Sequence[str], genes: Sequence[str]) -> sp.csr_matri
         np.array([_string_stats(p, g) for p, g in zip(perts, genes, strict=False)], dtype=float)
     )
     return sp.hstack([pert_ng, gene_ng, stats], format="csr")
+
+
+class CharNgramFeaturizer:
+    """Stateless featurizer wrapper around :func:`extract_features`.
+
+    Gives the char-ngram features the same ``fit``/``transform`` interface as
+    the GO-term featurizer so either can be injected into ``TwoStageDEDIR``;
+    ``fit`` is a no-op since there is no vocabulary to learn.
+    """
+
+    def fit(self, perts, genes) -> "CharNgramFeaturizer":
+        return self
+
+    def transform(self, perts, genes) -> sp.csr_matrix:
+        return extract_features(perts, genes)
