@@ -653,10 +653,12 @@ def main() -> None:
         rid = row["id"]
         c = cache["rows"].get(rid, {})
         # Floor zero-signal (0,0) ties to the pert's graded prior so no row is a
-        # rank-metric tie (Track B PR #13 root cause: 72% ties → LB 0.488).
+        # rank-metric tie (Track B PR #13 root cause: 72% ties → LB 0.488). A
+        # missing/failed row defaults to (0,0) so it, too, floors to the prior
+        # rather than emitting an uninformative 1/3 tie.
         pred_up, pred_down = floor_to_prior(
-            c.get("prediction_up", round(1 / 3, 3)),
-            c.get("prediction_down", round(1 / 3, 3)),
+            c.get("prediction_up", 0.0),
+            c.get("prediction_down", 0.0),
             row["pert"],
         )
         rows_out.append(

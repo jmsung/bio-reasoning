@@ -31,8 +31,10 @@ def apply_floor(sub: pd.DataFrame, id_to_pert: dict[str, str]) -> tuple[pd.DataF
     ups, downs = [], []
     for _, r in sub.iterrows():
         up, down = float(r["prediction_up"]), float(r["prediction_down"])
-        pert = id_to_pert[r["id"]]
-        new_up, new_down = floor_to_prior(up, down, pert)
+        rid = str(r["id"])
+        if rid not in id_to_pert:
+            raise KeyError(f"submission id {rid!r} not found in --test file")
+        new_up, new_down = floor_to_prior(up, down, id_to_pert[rid])
         if (new_up, new_down) != (up, down):
             n_floored += 1
         ups.append(new_up)
