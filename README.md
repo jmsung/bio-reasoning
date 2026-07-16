@@ -87,6 +87,31 @@ Artifacts (`trials.jsonl`, leaderboard, per-row cache) are written to
 `outputs/trial-loop/` (gitignored). Track B needs the `track-b` dep group
 (`uv sync --group track-b`) and `OPENROUTER_API_KEY`.
 
+### 1c. DE-detector fusion harness + candidate channels
+
+- `src/bio_reasoning/fuse/` — a rank-fusion harness for DE score channels
+  (`fuse`, `rank_normalize`) plus a **CFA** (Correlation-Filtered Admission)
+  gate (`cfa_gate`) that admits a new channel only when it is both strong
+  (standalone DE-AUROC ≥ threshold) and diverse (Spearman vs the current
+  fusion ≤ threshold), before it costs a Kaggle submission.
+- `src/bio_reasoning/features/tf_regulon.py` — a CollecTRI signed TF-regulon
+  featurizer (`TFRegulonFeaturizer`, `coverage_report`, `load_collectri_edges`)
+  proposed as a candidate DE channel. **Ruled out for Track A**: on the
+  dual-OOD val split the regulon covers only ~0.4% of rows as direct edges, so
+  its coverage gate failed — it is retained as a tested feature, not a working
+  DE detector.
+- `scripts/tf_regulon_coverage.py` — measures that coverage ceiling. It needs
+  the `network` dep group (`decoupler`) only to (re)build the cached edge table
+  the first time; the featurizer + tests read the cache:
+
+  ```bash
+  uv run --group network --group eval python scripts/tf_regulon_coverage.py
+  ```
+
+  The fetch is cached to `data/external/collectri_mouse.csv` (gitignored);
+  everything downstream reads the CSV, so `network` is not needed after the
+  first build.
+
 ### 2. Track B tools
 - `scripts/tools/` — local and external tool implementations used by Track B
 

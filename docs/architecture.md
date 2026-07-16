@@ -36,3 +36,26 @@ scores candidate `Variant`s against the leak-free **dual-OOD validation split**
 
 The same fitness surface for both tracks makes "does the agent beat the prompt?" a
 direct control. Our official agent is named `jsagent` (both tracks).
+
+## DE-detector fusion harness (Track A)
+
+The Track A metric averages a DE-detection AUROC with a direction AUROC, and the
+DE axis is at chance for every learned head on the dual-OOD split (no shared
+pert/gene identity with train). `src/bio_reasoning/fuse/` is the harness for
+combining *candidate DE channels* — each an incomparable 1-D score array — by
+**rank fusion** (`fuse`, `rank_normalize`), gated by **CFA**
+(Correlation-Filtered Admission, `cfa_gate`): a channel is admitted only if it is
+both strong (standalone DE-AUROC ≥ `min_auroc`) and diverse (|Spearman| vs the
+current fusion ≤ `max_corr`), so redundant signal is rejected before it costs a
+Kaggle submission.
+
+The first candidate channel was a CollecTRI signed TF-regulon feature
+(`src/bio_reasoning/features/tf_regulon.py`), motivated as identity-free
+mechanism (a regulon edge fires for an unseen pert). `scripts/tf_regulon_coverage.py`
+measured its ceiling first: on the dual-OOD val split the direct-edge coverage is
+only ~0.4%, so the DE channel was **ruled out** — the coverage gate failed before
+any fusion. It stands as a tested feature and a validated pattern (measure
+coverage before spending a submission), not a working DE detector. The featurizer
+and coverage report are pure functions of a cached edge table
+(`data/external/collectri_mouse.csv`); only rebuilding that cache needs the
+`network` dep group (`decoupler`).
