@@ -65,6 +65,22 @@ def prior_scores(pert: str, cache_path: str | Path = _CACHE) -> tuple[float, flo
     return up, down
 
 
+def floor_to_prior(
+    up: float, down: float, pert: str, cache_path: str | Path = _CACHE
+) -> tuple[float, float]:
+    """Replace a zero-signal ``(0, 0)`` prediction with the pert's category prior.
+
+    ``(0, 0)`` means "not differentially expressed" — but the metric is AUROC
+    (rank-based), so a mass of ``(0, 0)`` rows are ties that carry no ranking
+    signal and collapse the score toward random (Track B PR #13: 72% ties → LB
+    0.488). Flooring every such row to the graded prior guarantees a ranking
+    signal ≥ the 0.529 prior floor. Any non-zero prediction is real signal and is
+    returned unchanged."""
+    if up == 0.0 and down == 0.0:
+        return prior_scores(pert, cache_path)
+    return up, down
+
+
 def _prior_for(pert: str, cache_path: str | Path) -> str:
     """Core logic, with an injectable cache path (offline-testable)."""
     category, up_v, down_v = _category_and_scores(pert, cache_path)

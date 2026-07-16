@@ -66,6 +66,19 @@ def test_prior_scores_numeric_fallback(cache):
     assert (round(up2, 3), round(down2, 3)) == (0.220, 0.330)  # immune
 
 
+def test_floor_to_prior_replaces_zero_tie(cache):
+    # A (0,0) prediction is a zero-signal rank-metric tie -> replace with the prior.
+    up, down = direction_prior.floor_to_prior(0.0, 0.0, "Rpl13", cache)
+    assert (round(up, 3), round(down, 3)) == (0.455, 0.195)  # housekeeping prior
+
+
+def test_floor_to_prior_leaves_nonzero_untouched(cache):
+    # Any real signal is kept as-is — only the zero tie is floored.
+    assert direction_prior.floor_to_prior(0.6, 0.15, "Rpl13", cache) == (0.6, 0.15)
+    assert direction_prior.floor_to_prior(1.0, 0.0, "Rpl13", cache) == (1.0, 0.0)
+    assert direction_prior.floor_to_prior(0.0, 1.0, "Rpl13", cache) == (0.0, 1.0)
+
+
 def test_public_tool_uses_default_cache():
     # The public tool wraps _prior_for with the shared cache path; just assert
     # the signature the DSPy ReAct loop calls exists and takes a single arg.

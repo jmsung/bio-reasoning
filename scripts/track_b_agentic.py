@@ -45,7 +45,7 @@ from typing import Any
 import dspy
 import pandas as pd
 from dotenv import load_dotenv
-from tools.direction_prior import direction_prior, prior_scores
+from tools.direction_prior import direction_prior, floor_to_prior, prior_scores
 
 from mlgenx import format_prompt, parse_answer
 from mlgenx.prompts import _PROMPT_ZERO, CELL_DESC
@@ -652,11 +652,18 @@ def main() -> None:
     for _, row in test_df.iterrows():
         rid = row["id"]
         c = cache["rows"].get(rid, {})
+        # Floor zero-signal (0,0) ties to the pert's graded prior so no row is a
+        # rank-metric tie (Track B PR #13 root cause: 72% ties → LB 0.488).
+        pred_up, pred_down = floor_to_prior(
+            c.get("prediction_up", round(1 / 3, 3)),
+            c.get("prediction_down", round(1 / 3, 3)),
+            row["pert"],
+        )
         rows_out.append(
             {
                 "id": rid,
-                "prediction_up": c.get("prediction_up", round(1 / 3, 3)),
-                "prediction_down": c.get("prediction_down", round(1 / 3, 3)),
+                "prediction_up": pred_up,
+                "prediction_down": pred_down,
                 "reasoning_trace": c.get("reasoning_trace", ""),
                 "tokens_used": int(c.get("tokens_used", 0)),
                 "num_tool_calls": int(c.get("num_tool_calls", 0)),
