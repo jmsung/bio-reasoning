@@ -1,5 +1,9 @@
 from .anthropic_client import build_anthropic_client
-from .azure_openai_client import AzureOpenAIConfig, build_azure_openai_client, load_azure_openai_config
+from .azure_openai_client import (
+    AzureOpenAIConfig,
+    build_azure_openai_client,
+    load_azure_openai_config,
+)
 from .llm_clients import ProviderConfig, build_client, get_provider_name, load_provider_config
 from .openai_client import build_openai_client, get_openai_model_name
 

@@ -84,7 +84,5 @@ def train_data_lookup(pert: str | None = None, gene: str | None = None) -> str:
     for _, r in hits.iterrows():
         lab = str(r["label"]).lower()
         desc = _LABEL_DESC.get(lab, lab)
-        lines.append(
-            f"  - pert={r['pert']}, gene={r['gene']}, label={r['label']} ({desc})"
-        )
+        lines.append(f"  - pert={r['pert']}, gene={r['gene']}, label={r['label']} ({desc})")
     return "\n".join(lines)

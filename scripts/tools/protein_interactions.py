@@ -56,10 +56,7 @@ def protein_interactions(gene_symbol: str, limit: int = 10) -> str:
         return f"Error querying STRING DB for {gene_symbol}: {e}"
 
     if not data:
-        return (
-            f"No protein interactions found for '{gene_symbol}' "
-            f"in mouse (STRING DB)."
-        )
+        return f"No protein interactions found for '{gene_symbol}' " f"in mouse (STRING DB)."
 
     lines = [f"Protein interactions for {gene_symbol} (mouse, STRING DB):"]
     for entry in data[:limit]:

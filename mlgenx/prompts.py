@@ -9,9 +9,9 @@ Each (pert, gene) pair receives a single ternary question:
 
 from __future__ import annotations
 
-import pandas as pd
 from typing import Optional
 
+import pandas as pd
 
 # ── Cell line context ─────────────────────────────────────────────────────
 
@@ -76,6 +76,7 @@ ANSWERS = {
 
 # ── Public API ────────────────────────────────────────────────────────────
 
+
 def format_prompt(
     pert: str,
     gene: str,
@@ -110,11 +111,13 @@ def format_prompt(
 
     blocks = []
     for ex in examples:
-        blocks.append(_EXAMPLE_BLOCK.format(
-            pert=ex["pert"],
-            gene=ex["gene"],
-            answer=ANSWERS[ex["label"]],
-        ))
+        blocks.append(
+            _EXAMPLE_BLOCK.format(
+                pert=ex["pert"],
+                gene=ex["gene"],
+                answer=ANSWERS[ex["label"]],
+            )
+        )
     examples_block = "\n\n".join(blocks)
 
     return _PROMPT_FEWSHOT.format(
@@ -153,13 +156,15 @@ def format_prompts_from_csv(
     df = pd.read_csv(csv_path)
     prompts = []
     for _, row in df.iterrows():
-        prompts.append({
-            "id": row["id"],
-            "prompt": format_prompt(
-                pert=row["pert"],
-                gene=row["gene"],
-                examples=examples,
-                cell_desc=cell_desc,
-            ),
-        })
+        prompts.append(
+            {
+                "id": row["id"],
+                "prompt": format_prompt(
+                    pert=row["pert"],
+                    gene=row["gene"],
+                    examples=examples,
+                    cell_desc=cell_desc,
+                ),
+            }
+        )
     return pd.DataFrame(prompts)
