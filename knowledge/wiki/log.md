@@ -2,6 +2,13 @@
 
 Append-only history of ingests and queries.
 
+## 2026-07-16 — Wiki-learn: Track B floor-to-prior confirmed, blend exhausted
+- Insights filed: 2
+- Updated pages: findings/track-b-abstention-failure.md ("Fix direction" →
+  measured outcomes: floor-to-prior LB 0.568 / OOD-val 0.564 = best config;
+  blend gives no gain; ceiling is evidence-bound)
+- New pages: none
+
 ## 2026-06-08 — Ingested source/2025-zhang-tahoe-100m
 - Source: https://www.biorxiv.org/content/10.1101/2025.02.20.639398v1
 - Type: papers

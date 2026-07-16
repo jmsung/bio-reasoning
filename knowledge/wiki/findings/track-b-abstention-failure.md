@@ -52,8 +52,28 @@ Engineering was sound: 1% tool-fallback rate, the runaway-row guard held
 the initial $20–40 guess). The failure was entirely modeling/policy — a useful
 separation, because it says *don't polish the harness, fix the output policy.*
 
-## Fix direction (see backlog `track-b-*`)
+## Fix direction — outcomes (2026-07-16)
 
-Build the OOD val split first; then floor-to-prior / never-`0/0`; then blend
-with the prior; then reframe the task as continuous scoring rather than 3-way
-labeling (only order matters for AUROC).
+The plan was: OOD val split → floor-to-prior → blend → scoring-not-labeling.
+Three are now measured:
+
+- **Dual-OOD val split** — built (`holdout_split`, perts+genes disjoint; PR #14).
+  Baselines on it: no-signal 0.500, evidence prior **0.533**. It reproduces the
+  leaderboard (the eventual fix's LB↔OOD-val gap was **0.004**), so it is the
+  trusted offline fitness gate — a 60-row CV is not.
+- **floor-to-prior / never-`0/0`** — ✅ **works, and is the best Track B config.**
+  Flooring every `(0,0)` tie to the pert's graded prior: **Kaggle LB 0.568**
+  (PR #16, first Track B above the 0.529 floor), confirmed on OOD-val at **0.564**
+  (PR #20). The full ladder: hard A/B/C 0.507 → graded-but-over-abstaining 0.488
+  → floor-to-prior 0.568. The agent's ~28% signal rows add real lift *on top of*
+  the recovered prior — reasoning helps once it can't delete the prior.
+- **blend `α·agent + (1−α)·prior`** — ❌ **no gain; lever exhausted** (PR #21).
+  OOD-val α-sweep: best α=0.9 → 0.5654 vs floor-to-prior 0.5647 (+0.0007, noise).
+  The agent's signal rows are already well-calibrated, so shrinking them toward
+  the prior doesn't help; and a *raw* blend can't beat floor-to-prior by
+  construction — it gives `(0,0)` ties only `(1−α)·prior` vs the full prior.
+- **scoring-not-labeling** (continuous DE-likelihood) — still open.
+
+**Takeaway:** the Track B ceiling is set by **evidence quality** (the prior +
+better tools), not by post-hoc prediction mixing. The remaining levers are
+better knowledge tools and scoring-not-labeling, not more blending.
