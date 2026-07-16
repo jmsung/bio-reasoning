@@ -43,6 +43,7 @@ from typing import Any
 import dspy
 import pandas as pd
 from dotenv import load_dotenv
+from tools.direction_prior import direction_prior
 
 from mlgenx import format_prompt, parse_answer
 from mlgenx.prompts import _PROMPT_ZERO, CELL_DESC
@@ -458,6 +459,7 @@ def main() -> None:
     tool_list = [
         lookup_pert,
         lookup_gene,
+        direction_prior,
         gene_info,
         protein_interactions,
         submit_answer,
