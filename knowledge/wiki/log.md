@@ -31,3 +31,8 @@ Append-only history of ingests and queries.
 - Type: papers
 - raw: `raw/2026-kim-pbio-agent.md` (gitignored, README; paper PDF gated)
 - source: `source/2026-kim-pbio-agent.md` (in git, distilled, hash 6996cfa65a75)
+
+## 2026-07-15 — Wiki-learn: TabPFN for Track A/B
+- Insights filed: 1
+- New pages: findings/tabpfn-for-perturbation-tracks.md
+- Updated pages: index.md, methods/pbio-agent-for-tracks.md

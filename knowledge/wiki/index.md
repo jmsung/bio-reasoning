@@ -44,6 +44,7 @@ _(none yet)_
 
 - [Track A EDA — data structure and predictive signal](findings/track-a-eda.md) — 2026-06-08
 - [Housekeeping-perturbation transferability — augmentation lead](findings/housekeeping-transfer-hypothesis.md) — 2026-06-08
+- [TabPFN / tabular foundation models for Track A and B](findings/tabpfn-for-perturbation-tracks.md) — 2026-07-15
 
 ### Methods
 
