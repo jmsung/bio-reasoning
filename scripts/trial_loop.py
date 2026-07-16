@@ -239,13 +239,18 @@ def main() -> None:
     # (same signal the direction prior uses). Random few-shot ignores this.
     example_key_fn = None
     if args.retrieval == "go_category":
-        from bio_reasoning.features.gene_function import annotate_perts
+        if args.track == "b":
+            # The agent gathers evidence via tools, not few-shot exemplars, so a
+            # retrieval strategy would do nothing but burn a GO annotation. Warn, skip.
+            print("[warn] --retrieval is ignored for --track b (agent uses tools, not few-shot).")
+        else:
+            from bio_reasoning.features.gene_function import annotate_perts
 
-        cats = annotate_perts(
-            sorted(df["pert"].astype(str).unique()),
-            ROOT / "data" / "interim" / "pert_go_category.json",
-        )
-        example_key_fn = lambda pert, gene: cats.get(pert, "other")  # noqa: E731
+            cats = annotate_perts(
+                sorted(df["pert"].astype(str).unique()),
+                ROOT / "data" / "interim" / "pert_go_category.json",
+            )
+            example_key_fn = lambda pert, gene: cats.get(pert, "other")  # noqa: E731
 
     template = args.prompt_template.read_text() if args.prompt_template else None
     cost = {"prompt_tokens": 0.0, "completion_tokens": 0.0, "usd": 0.0, "errors": 0.0}

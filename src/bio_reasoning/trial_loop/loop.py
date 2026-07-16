@@ -148,6 +148,10 @@ def make_agent_row_predictor(agent_fn: AgentFn, concurrency: int = 1) -> RowPred
     ``get_examples`` is ignored — the agent gathers evidence via tools rather than
     few-shot exemplars. ``concurrency`` runs the (slow) agents in a thread pool, as
     the Track B harness does; ``ex.map`` preserves row order.
+
+    Note: ``seed`` is forwarded to ``agent_fn`` but the DSPy agent is unseeded
+    (temperature=1.0), so multi-seed variants would just repeat identical runs — the
+    CLI collapses Track B to a single seed. Multi-sample averaging is a separate lever.
     """
 
     def _predict(rows, variant, seed, get_examples):
