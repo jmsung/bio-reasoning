@@ -44,7 +44,7 @@ gate-rejected on the same OOD-val harness: neighbour-label retrieval (STRING gra
 key, AUROC_de 0.498; [[neighbor-retrieval-direction-lever]]) and char/prefix
 family-retrieval (`feat/family-retrieval-baseline`, AUROC_de 0.502 ± 0.027, 5th
 confirmation). The family-retrieval channel is additionally the first retrieval key
-to fail the *direction* axis too (DIR 0.519 vs the STRING-graph key's 0.647) — see
+to fail the *direction* axis too (DIR 0.519 vs the STRING-graph key's 0.651) — see
 [[neighbor-retrieval-direction-lever]] "The retrieval KEY decides whether DIR
 transfers". Every DE channel that is a lookup/borrow over pair-external structure
 lands at chance; only model-based channels remain untried.
