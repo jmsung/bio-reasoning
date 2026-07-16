@@ -8,6 +8,7 @@ cites:
   - findings/housekeeping-transfer-hypothesis.md
   - findings/tabpfn-for-perturbation-tracks.md
   - source/2025-wu-perturbqa.md
+  - findings/track-b-abstention-failure.md
 ---
 
 # Adapting PBio-Agent to our Track A/B task
