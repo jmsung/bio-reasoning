@@ -6,9 +6,10 @@ disable-model-invocation: true
 ---
 
 Runs the full PR-time gate before main: rebase → checks → 4 parallel
-reviews → push → `gh pr create` → update `docs/roadmap.md` with `(#N)`.
-**Does not auto-merge** — the human clicks "Squash and merge" in the
-GitHub UI.
+reviews → propose a report-worthy addition (if the project keeps
+`reports/progress-report.md`) → push → `gh pr create` → update
+`docs/roadmap.md` with `(#N)`. **Does not auto-merge** — the human clicks
+"Squash and merge" in the GitHub UI.
 
 Pairs with [`/pr-merge`](../pr-merge/SKILL.md) (post-merge cleanup) and
 [`/dev-setup`](../dev-setup/SKILL.md) (one-time onboarding). See
@@ -99,7 +100,38 @@ Severity bar for "blocking":
 
 User can override informational findings; never override security.
 
-### 5. Push the branch
+### 5. Report-worthy addition to progress report (conditional, user-gated)
+
+If the project keeps a committed narrative report (`reports/progress-report.md`),
+assess whether this branch produced something worth adding, and let the user approve.
+This runs **pre-push** so an approved addition **rides this PR** and is reviewed with
+the code (the report's own header declares additions are proposed "per PR").
+
+1. **Skip silently** if `reports/progress-report.md` does not exist (most projects
+   won't have one).
+2. Launch a subagent with the branch diff (`git -C "$REPO" diff origin/main...HEAD`),
+   the PR body Summary, and the current `reports/progress-report.md`. Task: judge whether
+   the branch produced a result a collaborator reading the report would want — a **new
+   empirical/scientific result, a methods change, or a significant finding** (NOT routine
+   refactors, chores, fixes, infra, or skill/tooling edits). If yes, draft the addition (a
+   section or paragraph matching the report's structure, with the key numbers) and name
+   which section it slots into. If not report-worthy, return `NONE`.
+3. If the subagent returns a draft, present it and **ask via `AskUserQuestion`** (approve /
+   edit / skip), showing the drafted text verbatim. Nothing is written without an explicit
+   approve.
+4. On approval: insert into `reports/progress-report.md` at the named location, bump the
+   `*Last updated:*` line to today, and commit on the branch:
+   ```bash
+   git -C "$REPO" add reports/progress-report.md
+   git -C "$REPO" commit -m "docs(reports): add <result> to progress report"
+   ```
+   It ships in this PR. The working tree must be clean again before push (step 6).
+
+**Recommend-only and user-gated:** the subagent *proposes*; the user disposes. A `NONE`
+verdict or a skip writes nothing and never blocks the PR. Keep additions tight — the report
+is publishable, so prefer a crisp result paragraph over a dump.
+
+### 6. Push the branch
 
 ```bash
 git -C "$REPO" push -u origin "$BRANCH"
@@ -108,7 +140,7 @@ git -C "$REPO" push -u origin "$BRANCH"
 If push is rejected (non-fast-forward), abort and surface — never
 `--force` from this skill.
 
-### 6. Open the PR
+### 7. Open the PR
 
 Extract `PR_TITLE` and `PR_BODY` from `mb/active/<slug>.md` (between the
 `<!-- PR_TITLE -->` and `<!-- PR_BODY -->` markers). If either is empty,
@@ -126,7 +158,7 @@ PR_NUM=$(gh pr view --json number -q .number 2>/dev/null)
   resolvable — check `gh pr list` manually."
 - **Existing PR** → skip creation; just continue.
 
-### 7. Tick matching roadmap items with (#N)
+### 8. Tick matching roadmap items with (#N)
 
 Read `docs/roadmap.md`. Identify which `- [ ]` items this PR closes —
 this is a judgment call:
@@ -140,9 +172,9 @@ this is a judgment call:
 
 If no items match (skill PR, refactor, infrastructure), skip silently.
 
-### 8. Commit + push the roadmap edit
+### 9. Commit + push the roadmap edit
 
-If step 7 made any changes:
+If step 8 made any changes:
 
 ```bash
 git -C "$REPO" add docs/roadmap.md
@@ -150,7 +182,7 @@ git -C "$REPO" commit -m "docs(roadmap): tick item(s) closed by #$PR_NUM"
 git -C "$REPO" push origin "$BRANCH"
 ```
 
-### 9. Report
+### 10. Report
 
 Print:
 
@@ -159,6 +191,7 @@ PR opened: <URL>
 Branch:    <branch>
 Checks:    pre-commit ✓ pytest ✓ mypy ✓
 Reviews:   code ✓ security ✓ docs ✓ wiki ✓
+Report:    added "<result>" to progress-report.md (or "none — not report-worthy / no report")
 Roadmap:   ticked items <N, M> with (#<PR_NUM>) (or "none — non-roadmap PR")
 
 Next: review in GitHub, then Squash-merge in the UI.
