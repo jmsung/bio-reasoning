@@ -2,10 +2,10 @@
 title: TabPFN / tabular foundation models for Track A and B
 status: draft
 cites:
-  - source/2026-palla-tabular-foundation-models-perturbation.md
   - source/2026-bioreasoning-challenge-overview.md
   - findings/track-a-eda.md
   - methods/pbio-agent-for-tracks.md
+  - https://www.biorxiv.org/content/10.64898/2026.06.28.735106v2
 ---
 
 # TabPFN / tabular foundation models for Track A and B
@@ -24,13 +24,16 @@ solve the hard part (OOD-both-axes generalization), and in Track B it must be an
 
 ## Why it's a real candidate (not just a hunch)
 
-The team already ingested the direct evidence:
-[[2026-palla-tabular-foundation-models-perturbation]] (Palla et al., CZ Biohub,
-2026). TabPFN/TabICL **match or beat every specialized single-cell model**
-(scGPT, scLAMBDA, PRESAGE, Prophet) at perturbation-response prediction across
-four benchmarks, with *no biology-specific pretraining* — a PFN backbone ranked
-#1 on all of them. The paper's thesis: **strong posterior-predictive regression +
-good featurization matter more than hand-crafted biological inductive biases.**
+The direct evidence is a public preprint — Palla et al., *Tabular Foundation
+Models Are Competitive Cellular Perturbation Predictors Across Biological Scales*
+(CZ Biohub, 2026; bioRxiv [10.64898/2026.06.28.735106](https://www.biorxiv.org/content/10.64898/2026.06.28.735106v2)).
+TabPFN/TabICL **match or beat every specialized single-cell model** (scGPT,
+scLAMBDA, PRESAGE, Prophet) at perturbation-response prediction across four
+benchmarks, with *no biology-specific pretraining* — a PFN backbone ranked #1 on
+all of them. The paper's thesis: **strong posterior-predictive regression + good
+featurization matter more than hand-crafted biological inductive biases.**
+(An internal distillation is being ingested on the `docs/ingest-perturbation-papers`
+branch; once it lands, upgrade this inline citation to the internal source link.)
 
 TabPFN's practical draw fits this project's "don't hand-tune, let the system do
 it" philosophy: one forward pass, frozen backbone, calibrated probabilities, fast.
@@ -39,7 +42,7 @@ it" philosophy: one forward pass, frozen backbone, calibrated probabilities, fas
 
 Track A is already a tabular problem: featurize each `(pert, target_gene)` pair →
 predict `{up, down, none}`, scored by AUROC. TabPFN is a drop-in replacement for
-the hand-set `PRIORS` dict in `models/track_a_prior.py`:
+the hand-set `PRIORS` dict in `src/bio_reasoning/models/track_a_prior.py`:
 
 - Features must be **transferable**, never identity — the split is doubly
   disjoint (0 overlap on *both* perts and target genes; [[track-a-eda]]). Use
