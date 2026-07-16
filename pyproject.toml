@@ -43,6 +43,11 @@ azure = [
 serve = [
     "vllm>=0.16.0",
 ]
+network = [
+    # CollecTRI signed TF-regulons (dc.op.collectri). Only needed to (re)build
+    # the data/external cache; the featurizer + tests read the cached CSV.
+    "decoupler>=2.0.0",
+]
 
 [tool.uv]
 # Install the test-required groups by default so `uv run pytest` collects the full
