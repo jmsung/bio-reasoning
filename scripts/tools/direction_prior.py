@@ -81,6 +81,22 @@ def floor_to_prior(
     return up, down
 
 
+def blend(
+    up: float, down: float, pert: str, alpha: float, cache_path: str | Path = _CACHE
+) -> tuple[float, float]:
+    """Blend the agent's graded prediction with the pert's category prior:
+    ``final = α·agent + (1−α)·prior``. ``α=1`` returns the agent unchanged;
+    ``α=0`` returns the pure prior. A convex combination of two valid
+    ``(up, down)`` points, so the result is always valid (up,down ≥ 0, sum ≤ 1)
+    — no clamp needed. Generalizes ``floor_to_prior``: any ``α<1`` lifts an agent
+    ``(0, 0)`` tie off zero, and it also regularizes an over/under-confident
+    agent toward the evidence floor."""
+    if alpha >= 1.0:
+        return up, down
+    p_up, p_down = prior_scores(pert, cache_path)
+    return alpha * up + (1 - alpha) * p_up, alpha * down + (1 - alpha) * p_down
+
+
 def _prior_for(pert: str, cache_path: str | Path) -> str:
     """Core logic, with an injectable cache path (offline-testable)."""
     category, up_v, down_v = _category_and_scores(pert, cache_path)

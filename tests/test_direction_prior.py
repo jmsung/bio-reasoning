@@ -79,6 +79,27 @@ def test_floor_to_prior_leaves_nonzero_untouched(cache):
     assert direction_prior.floor_to_prior(0.0, 1.0, "Rpl13", cache) == (0.0, 1.0)
 
 
+def test_blend_endpoints(cache):
+    # α=1 → agent passthrough; α=0 → pure prior.
+    assert direction_prior.blend(0.6, 0.2, "Rpl13", 1.0, cache) == (0.6, 0.2)
+    up, down = direction_prior.blend(0.6, 0.2, "Rpl13", 0.0, cache)
+    assert (round(up, 3), round(down, 3)) == (0.455, 0.195)  # housekeeping prior
+
+
+def test_blend_lifts_zero_tie(cache):
+    # Any α<1 pulls a (0,0) tie off zero toward the prior.
+    up, down = direction_prior.blend(0.0, 0.0, "Rpl13", 0.5, cache)
+    # 0.5*0 + 0.5*(0.455, 0.195)
+    assert (round(up, 4), round(down, 4)) == (0.2275, 0.0975)
+
+
+def test_blend_is_convex_mix(cache):
+    up, down = direction_prior.blend(0.8, 0.2, "Stat1", 0.5, cache)
+    # 0.5*(0.8,0.2) + 0.5*prior(Stat1)=(0.22,0.33)
+    assert (round(up, 3), round(down, 3)) == (0.510, 0.265)
+    assert up + down <= 1.0 + 1e-9  # convex mix of two valid points stays valid
+
+
 def test_public_tool_uses_default_cache():
     # The public tool wraps _prior_for with the shared cache path; just assert
     # the signature the DSPy ReAct loop calls exists and takes a single arg.
