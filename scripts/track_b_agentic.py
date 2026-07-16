@@ -391,9 +391,10 @@ def main() -> None:
     parser.add_argument(
         "--eval",
         action="store_true",
-        help="Leak-free CV mode: run on a labeled holdout from TRAIN_CSV "
-        "(doubly-disjoint fold) and score with mean(AUROC_de,AUROC_dir) vs the "
-        "0.529 Track A floor. Tools are restricted to the fold's train partition.",
+        help="Leak-free eval mode: run on a labeled holdout from TRAIN_CSV "
+        "(see --split for fold vs dual-OOD holdout) and score with "
+        "mean(AUROC_de,AUROC_dir) vs the split's prior floor. Tools are "
+        "restricted to the eval split's train partition.",
     )
     parser.add_argument("--eval-n", type=int, default=None, help="Cap holdout rows in --eval.")
     parser.add_argument(
@@ -533,7 +534,11 @@ def main() -> None:
         # tools to the TRAIN partition so the agent can't read a holdout row's own
         # label. 'fold' = doubly-disjoint CV fold; 'holdout' = the dual-OOD val
         # split (perts+genes disjoint — the authoritative fitness gate).
-        from bio_reasoning.eval.split import doubly_disjoint_folds, holdout_split
+        from bio_reasoning.eval.split import (
+            assert_leak_free,
+            doubly_disjoint_folds,
+            holdout_split,
+        )
 
         train_full = pd.read_csv(TRAIN_CSV)
         if args.split == "holdout":
@@ -542,6 +547,9 @@ def main() -> None:
             tr_idx, ev_idx = doubly_disjoint_folds(train_full, k=args.fold_k, seed=args.fold_seed)[
                 0
             ]
+        # The whole eval's validity rests on zero pert/gene overlap — fail loud if
+        # column names or hashing ever drift.
+        assert_leak_free(train_full, tr_idx, ev_idx)
         _set_train_df(train_full.iloc[tr_idx])  # tools see disjoint train only
         ev = train_full.iloc[ev_idx].reset_index(drop=True)
         if args.eval_n is not None:
@@ -720,7 +728,8 @@ def main() -> None:
         metrics = {
             "n_rows": int(len(sub_df)),
             "split": args.split,
-            "fold_k": args.fold_k,
+            # fold_k is meaningless for the holdout split (it uses no folds)
+            **({"fold_k": args.fold_k} if args.split == "fold" else {}),
             "fold_seed": args.fold_seed,
             "model_name": model_name,
             "auroc_de": float(s["auroc_de"]),
