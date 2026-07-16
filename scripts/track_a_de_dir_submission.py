@@ -78,9 +78,16 @@ def build_submission(train: pd.DataFrame, test: pd.DataFrame, partners) -> pd.Da
     cov = np.isfinite(nb.r).mean()
     print(f"neighbour direction coverage on test: {cov:.1%}", flush=True)
 
+    covered = np.isfinite(nb.r)
+    traces = [
+        f"two-stage GO DE + {'neighbour-fused' if c else 'model-only'} direction: "
+        f"score_de={u + d:.3f} dir={(u / (u + d) if (u + d) else 0.5):.3f}"
+        for u, d, c in zip(fu, fd, covered, strict=True)
+    ]
     expected = pd.read_csv(SAMPLE, nrows=0).columns.tolist()
-    out = to_submission_frame(test.id, fu, fd, MODEL_NAME, expected)
+    out = to_submission_frame(test.id, fu, fd, MODEL_NAME, expected, traces=traces)
     assert len(out) == len(test), "row count mismatch vs test.csv"
+    assert not out.isnull().any().any(), "submission has nulls"
     return out
 
 
