@@ -45,7 +45,7 @@ from typing import Any
 import dspy
 import pandas as pd
 from dotenv import load_dotenv
-from tools.direction_prior import direction_prior, floor_to_prior, prior_scores
+from tools.direction_prior import blend, direction_prior, floor_to_prior, prior_scores
 
 from mlgenx import format_prompt, parse_answer
 from mlgenx.prompts import _PROMPT_ZERO, CELL_DESC
@@ -409,7 +409,18 @@ def main() -> None:
         "'holdout' = holdout_split dual-OOD val (perts+genes disjoint — the "
         "authoritative fitness gate; baselines: no-signal 0.500, prior 0.533).",
     )
+    parser.add_argument(
+        "--blend-alpha",
+        type=float,
+        default=1.0,
+        help="Blend agent predictions with the direction prior: "
+        "final = alpha*agent + (1-alpha)*prior. 1.0 (default) = agent-only with "
+        "floor-to-prior on (0,0) ties; <1.0 mixes the prior into every row "
+        "(any alpha<1 also lifts the ties). Tune on --split holdout.",
+    )
     args = parser.parse_args()
+    if not 0.0 <= args.blend_alpha <= 1.0:
+        parser.error("--blend-alpha must be in [0, 1].")
 
     model_name = args.model_name or args.model
 
@@ -680,15 +691,16 @@ def main() -> None:
     for _, row in test_df.iterrows():
         rid = row["id"]
         c = cache["rows"].get(rid, {})
-        # Floor zero-signal (0,0) ties to the pert's graded prior so no row is a
-        # rank-metric tie (Track B PR #13 root cause: 72% ties → LB 0.488). A
-        # missing/failed row defaults to (0,0) so it, too, floors to the prior
-        # rather than emitting an uninformative 1/3 tie.
-        pred_up, pred_down = floor_to_prior(
-            c.get("prediction_up", 0.0),
-            c.get("prediction_down", 0.0),
-            row["pert"],
-        )
+        agent_up = c.get("prediction_up", 0.0)
+        agent_down = c.get("prediction_down", 0.0)
+        if args.blend_alpha < 1.0:
+            # Mix the prior into every row (any alpha<1 lifts (0,0) ties too).
+            pred_up, pred_down = blend(agent_up, agent_down, row["pert"], args.blend_alpha)
+        else:
+            # Default: floor only zero-signal (0,0) ties to the prior so no row is
+            # a rank-metric tie (PR #13 root cause: 72% ties → LB 0.488). A missing
+            # /failed row defaults to (0,0) so it floors to the prior too.
+            pred_up, pred_down = floor_to_prior(agent_up, agent_down, row["pert"])
         rows_out.append(
             {
                 "id": rid,
