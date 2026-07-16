@@ -6,8 +6,9 @@ disable-model-invocation: true
 ---
 
 Closes the PR loop: optionally squash-merge via CLI if the PR is still
-open, sync local `main`, archive the tracking file if present, prune the
-worktree if present, and delete the local branch.
+open, sync local `main`, verify progress-report freshness (read-only),
+archive the tracking file if present, prune the worktree if present, and
+delete the local branch.
 
 Two human-driven merge paths land here:
 - **Merged in GitHub UI already** → `/pr-merge` skips the merge step and
@@ -146,7 +147,36 @@ git -C "$CB_ROOT" pull --ff-only origin main || {
 }
 ```
 
-### 4. Archive the tracking file (worktree mode only)
+### 4. Verify progress-report freshness (conditional; read-only)
+
+If the project keeps `reports/progress-report.md`, sanity-check it against the just-merged
+`main` — **read-only**. We do **not** write to `main` here: a post-merge commit would either
+diverge local `main` from `origin` (this skill only `pull --ff-only`s, never pushes `main`) or
+bypass the "PRs against main, teammate review" gate. The narrative addition and the
+`*Last updated:*` stamp are owned by [`/pr-open`](../pr-open/SKILL.md) step 5, on the branch,
+where they ride the PR and get reviewed. This step only surfaces drift.
+
+```bash
+REPORT="$CB_ROOT/reports/progress-report.md"
+if [ -f "$REPORT" ]; then
+  # Did the squash-merge commit touch the report? (empty output = it did not.)
+  REPORT_TOUCHED=$(git -C "$CB_ROOT" show --stat HEAD -- reports/progress-report.md | grep -c 'progress-report.md')
+  # Is the freshness stamp older than today?
+  STAMP=$(grep -m1 -oE 'Last updated: [0-9]{4}-[0-9]{2}-[0-9]{2}' "$REPORT" | awk '{print $3}')
+  TODAY=$(date +%F)
+  # lexical compare is valid for YYYY-MM-DD; [[ ]] required for < on strings
+  if [[ -n "$STAMP" && "$STAMP" < "$TODAY" ]]; then
+    STALE="stamp $STAMP < $TODAY — consider a follow-up /pr-open"
+  else
+    STALE=""
+  fi
+fi
+```
+
+Fold `REPORT_TOUCHED` / `STALE` into the final Report (step 8). This never blocks or mutates —
+it is purely informational.
+
+### 5. Archive the tracking file (worktree mode only)
 
 ```bash
 if [ "$LAYOUT" = "worktree" ] && [ -f "$BRANCH_FILE" ] \
@@ -162,7 +192,7 @@ fi
 
 Plain clones have no `mb/` to archive; we skip silently.
 
-### 5. Prune the worktree (worktree mode only; CWD-critical)
+### 6. Prune the worktree (worktree mode only; CWD-critical)
 
 In **plain mode**, skip — step 3 already switched the clone to `main`,
 no worktree to remove. The teammate's checkout stays put.
@@ -187,7 +217,7 @@ resolve. Do NOT verify removal with `git worktree list` afterward —
 that's another Bash call from a potentially-just-reset CWD; trust the
 remove's exit code.
 
-### 6. Delete the local branch
+### 7. Delete the local branch
 
 ```bash
 # We already verified PR state == MERGED in step 2 (or auto-merged it),
@@ -199,7 +229,7 @@ git -C "$CB_ROOT" branch -D "$BRANCH"
 
 The remote branch is auto-deleted by GitHub (`delete_branch_on_merge: true`).
 
-### 7. Report
+### 8. Report
 
 Worktree mode:
 ```
@@ -208,6 +238,7 @@ Layout:       worktree
 Branch:       <branch> — deleted locally
 Worktree:     <path> — pruned
 Tracking:     mb/active/<slug>.md → mb/completed/<slug>.md
+Report:       progress-report updated by this PR ✓ (or "not touched" / "no report") [+ stale-stamp warning if any]
 Next:         /worktree-start <type>/<slug> to begin the next branch.
 ```
 
@@ -217,6 +248,7 @@ PR #<N> merged: <URL>
 Layout:       plain clone
 Branch:       <branch> — deleted locally
 Checkout:     <path> — switched to main
+Report:       progress-report updated by this PR ✓ (or "not touched" / "no report") [+ stale-stamp warning if any]
 Next:         git checkout -b <type>/<slug> to begin the next branch.
 ```
 
