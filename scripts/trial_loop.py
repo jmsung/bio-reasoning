@@ -26,6 +26,7 @@ from pathlib import Path
 import pandas as pd
 from dotenv import load_dotenv
 
+from bio_reasoning.trial_loop.archive import archive, load_trials
 from bio_reasoning.trial_loop.loop import run_variant
 from bio_reasoning.trial_loop.types import Variant
 from bio_reasoning.utils.openai_compat import post_chat_completion
@@ -129,6 +130,9 @@ def main() -> None:
     trials_path = args.output_dir / "trials.jsonl"
     with trials_path.open("a") as fh:
         fh.write(rec.to_json() + "\n")
+
+    # Refresh the derived views (leaderboard + best variant) from the full history.
+    archive(args.output_dir, load_trials(trials_path))
 
     m = rec.metrics
     verdict = "BEATS" if m["mean"] > PRIOR_FLOOR else "below"
