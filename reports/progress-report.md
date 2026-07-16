@@ -60,7 +60,11 @@ measured: **hard A/B/C 0.507 → graded-but-over-abstaining 0.488 → floor-to-p
 1,276 rows) → mean **0.564** (de 0.557, dir 0.570) vs prior 0.533 (+0.031). The
 **LB ↔ OOD-val gap is just 0.004**, so the lift is real, not a test-set artifact — and
 the CV↔LB inflation that sank the raw agent (0.675→0.488) is gone once ties are floored.
-Next lever: blend `α·agent + (1−α)·prior`, tuned on this same OOD-val surface.
+Blend (`α·agent + (1−α)·prior`) was then tuned on this OOD-val surface and gave **no
+gain** — best α=0.9 → 0.5654 vs floor-to-prior 0.5647 (noise). The agent's signal-rows
+are already well-calibrated, so the Track B ceiling is set by **evidence quality**
+(prior + tools), not post-hoc mixing. Real next levers: better knowledge tools and
+scoring-not-labeling (continuous DE-likelihood).
 
 ## Update (kb/competitor-landscape — landed)
 
