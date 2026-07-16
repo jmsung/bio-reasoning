@@ -6,6 +6,7 @@ cites:
   - findings/track-a-eda.md
   - findings/track-b-abstention-failure.md
   - findings/tabpfn-for-perturbation-tracks.md
+  - findings/curated-edges-fail-de-axis.md
 ---
 
 # Competitor landscape — the public field is LLM-free string-ML
@@ -22,7 +23,10 @@ framing is essentially unenforced by the metric. The two transferable wins are t
 and **character / gene-family prefix structure** (the only mechanism that survives
 the doubly-disjoint split; [[track-a-eda]]). The open lane nobody occupies: **real
 external gene knowledge** (GO / STRING / pathway) fed to the LLM, and **TabPFN over
-functional features** ([[tabpfn-for-perturbation-tracks]]).
+functional features** ([[tabpfn-for-perturbation-tracks]]). Caveat (measured later):
+external knowledge helps only as *LLM retrieval context*, **not** as a direct
+curated-edge feature on the DE axis — those edges are too sparse/weak
+([[curated-edges-fail-de-axis]]).
 
 ## Where the field stands (live leaderboards, 2026-07)
 

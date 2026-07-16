@@ -62,6 +62,7 @@ _(none yet)_
 - [TabPFN / tabular foundation models for Track A and B](findings/tabpfn-for-perturbation-tracks.md) — 2026-07-15
 - [Track B — the agent underperformed its own prior (rank-metric abstention)](findings/track-b-abstention-failure.md) — 2026-07-16
 - [Competitor landscape — the public field is LLM-free string-ML](findings/competitor-landscape.md) — 2026-07-16
+- [Curated-edge DBs are too sparse/weak to crack the DE axis — go model-based](findings/curated-edges-fail-de-axis.md) — 2026-07-16
 
 ### Methods
 
