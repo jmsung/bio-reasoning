@@ -119,6 +119,16 @@ def test_cfa_gate_partial_coverage_scores_covered_rows():
     assert stats["n_covered"] == 150
 
 
+def test_cfa_gate_single_class_labels_reject():
+    # AUROC is undefined (NaN) when de_true has one class; the gate must reject
+    # rather than admit on NaN. (Salvaged from the abandoned de-detector-fuse-harness.)
+    de_true = np.ones(8, dtype=int)
+    candidate = np.arange(8, dtype=float)
+    passed, stats = cfa_gate(candidate, np.arange(8, dtype=float), de_true, min_auroc=0.55)
+    assert not passed
+    assert np.isnan(stats["auroc"])
+
+
 def test_fuse_requires_at_least_one_channel():
     with pytest.raises(ValueError):
         fuse([])
