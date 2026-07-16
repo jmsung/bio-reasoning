@@ -17,6 +17,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from bio_reasoning.eval.submission import to_submission_frame
 from bio_reasoning.features.go_terms import GoPairFeaturizer
 from bio_reasoning.models.track_a_two_stage import TwoStageDEDIR
 
@@ -41,18 +42,8 @@ def build_submission(train: pd.DataFrame, test: pd.DataFrame, featurizer) -> pd.
         f"two-stage GO: P(DE)={u + d:.3f} P(up|DE)={(u / (u + d) if (u + d) else 0.5):.3f}"
         for u, d in zip(up, down, strict=True)
     ]
-    out = pd.DataFrame({"id": test.id, "prediction_up": up, "prediction_down": down})
-    for seed in (42, 43, 44):  # deterministic model -> identical per seed
-        out[f"prediction_up_seed{seed}"] = up
-        out[f"prediction_down_seed{seed}"] = down
-        out[f"reasoning_trace_seed{seed}"] = traces
-    out["tokens_used"] = 0
-    out["prompt_tokens"] = 0  # no LLM; well under the 4,096 cap
-    out["model_name"] = MODEL_NAME
-
     expected = pd.read_csv(SAMPLE, nrows=0).columns.tolist()
-    out = out[expected]  # exact order; raises if any column is missing
-    assert list(out.columns) == expected, "column mismatch vs sample submission"
+    out = to_submission_frame(test.id, up, down, MODEL_NAME, expected, traces=traces)
     assert len(out) == len(test), "row count mismatch vs test.csv"
     return out
 
