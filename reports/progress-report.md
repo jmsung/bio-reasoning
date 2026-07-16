@@ -34,6 +34,18 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
    DE-likelihood — only order matters for AUROC). And measurement must move onto a **dual-OOD
    validation split** that reproduces the real train/test disjointness, so CV stops lying.
 
+## Update (feat/ood-val-split — landed)
+
+The dual-OOD validation split now exists — `holdout_split()` (perturbations *and* target
+genes disjoint; val ~1,276 rows / train ~2,646) with a single `evaluate()` /
+`evaluate_on_split()` entry point. Honest baselines re-scored on it: no-signal **0.500**,
+evidence prior **0.533** (matches the 0.534 CV / 0.529 LB — the prior is CV-honest). We also
+pinned *why* a naive CV inflates: a **fixed** predictor cannot leak across CV schemes, but a
+**fold-fitted** one does — a per-pert memorizing baseline scores **0.552** under naive
+random-row CV and collapses to **0.500** under dual-OOD. This is the mechanism behind Track B's
+0.675 CV → 0.488 LB, and confirms the dual-OOD split (not naive CV) is the honest fitness
+surface for anything trained or tuned.
+
 ## Approach
 
 1. **Honest fitness signal first** — a dual-OOD validation split (perturbations + genes
@@ -53,8 +65,8 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
 
 ## Plan (to 2026-07-22)
 
-- **Now:** build the dual-OOD validation split (the loop's fitness signal); it exists to close
-  the CV↔LB gap that inflated Track B by ~0.19.
+- **Done:** the dual-OOD validation split (the loop's fitness signal) is built — it closes
+  the CV↔LB gap that inflated Track B by ~0.19. Honest floor on it: prior **0.533**.
 - **First Track B fix (cheapest, highest value):** never emit `0/0` — fall back to the direction
   prior on every would-be abstention. This alone should recover ≥ 0.529 (the bar is "stop
   deleting the prior"). Then blend `α·agent + (1−α)·prior` (never-worse-than-prior by
