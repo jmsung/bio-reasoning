@@ -6,6 +6,7 @@ cites:
   - source/2026-bioreasoning-challenge-overview.md
   - findings/track-a-eda.md
   - findings/housekeeping-transfer-hypothesis.md
+  - findings/tabpfn-for-perturbation-tracks.md
   - source/2025-wu-perturbqa.md
 ---
 
@@ -79,6 +80,8 @@ Serves as the control that Track B's agent must beat to justify its complexity.
 
 - Which KG tools give the best signal-per-call: STRING, Reactome, KEGG, GO,
   a TF-target regulatory net (e.g. DoRothEA), or a macrophage-specific atlas?
+  A frozen **TabPFN** numeric prior is another candidate tool here — as an
+  anchor the reasoning adjusts, not the answer ([[tabpfn-for-perturbation-tracks]]).
 - How to score per-prediction confidence for the curriculum ordering.
 - Is any auxiliary trained model (GAT) worth pushing into a Track C variant,
   or does it stay a pure-reasoning play?
