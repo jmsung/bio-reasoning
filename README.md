@@ -70,6 +70,23 @@ The repo is currently organized around three execution layers:
 
 These are the scripts to evolve toward full challenge submissions.
 
+Shared, importable pieces live under `src/bio_reasoning/`: the runners' agent
+wiring (`build_openrouter_lm`, `build_react_agent`, `predict_row` in
+`track_b_agentic.py`) and the OpenAI-compatible chat client
+(`src/bio_reasoning/utils/openai_compat.py`, `post_chat_completion`) are reused
+by the trial-loop below.
+
+### 1b. Trial-loop optimization harness
+- `scripts/trial_loop.py` — CLI to score Track A prompt variants (`--track a`,
+  default) or the Track B agent (`--track b`) on the leak-free dual-OOD
+  validation split, then propose → run → reflect → archive over a grid.
+- `src/bio_reasoning/trial_loop/` — the importable harness (loop, reflect,
+  archive, types).
+
+Artifacts (`trials.jsonl`, leaderboard, per-row cache) are written to
+`outputs/trial-loop/` (gitignored). Track B needs the `track-b` dep group
+(`uv sync --group track-b`) and `OPENROUTER_API_KEY`.
+
 ### 2. Track B tools
 - `scripts/tools/` — local and external tool implementations used by Track B
 

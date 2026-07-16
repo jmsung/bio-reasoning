@@ -24,7 +24,7 @@ GitHub: https://github.com/jmsung/bio-reasoning
 
 ```
 .
-├── src/bio_reasoning/    importable library code (data, features, models, training, eval, utils)
+├── src/bio_reasoning/    importable library code (data, features, models, training, eval, trial_loop, utils)
 ├── scripts/              entry points (prepare_data.py, train.py, predict.py, make_submission.py)
 ├── configs/              one YAML per experiment
 ├── notebooks/            exploration (numbered: 01-eda.ipynb, …)
