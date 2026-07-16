@@ -5,7 +5,7 @@ cites:
   - source/2026-bioreasoning-challenge-overview.md
   - findings/track-a-eda.md
   - methods/pbio-agent-for-tracks.md
-  - https://www.biorxiv.org/content/10.64898/2026.06.28.735106v2
+  - domains/bio-multiomics/source/2026-palla-tabular-foundation-models-perturbation.md
 ---
 
 # TabPFN / tabular foundation models for Track A and B
@@ -24,16 +24,14 @@ solve the hard part (OOD-both-axes generalization), and in Track B it must be an
 
 ## Why it's a real candidate (not just a hunch)
 
-The direct evidence is a public preprint — Palla et al., *Tabular Foundation
-Models Are Competitive Cellular Perturbation Predictors Across Biological Scales*
-(CZ Biohub, 2026; bioRxiv [10.64898/2026.06.28.735106](https://www.biorxiv.org/content/10.64898/2026.06.28.735106v2)).
+The direct evidence is [[2026-palla-tabular-foundation-models-perturbation]] —
+Palla et al., *Tabular Foundation Models Are Competitive Cellular Perturbation
+Predictors Across Biological Scales* (CZ Biohub, 2026; bioRxiv 10.64898/2026.06.28.735106).
 TabPFN/TabICL **match or beat every specialized single-cell model** (scGPT,
 scLAMBDA, PRESAGE, Prophet) at perturbation-response prediction across four
 benchmarks, with *no biology-specific pretraining* — a PFN backbone ranked #1 on
 all of them. The paper's thesis: **strong posterior-predictive regression + good
 featurization matter more than hand-crafted biological inductive biases.**
-(An internal distillation is being ingested on the `docs/ingest-perturbation-papers`
-branch; once it lands, upgrade this inline citation to the internal source link.)
 
 TabPFN's practical draw fits this project's "don't hand-tune, let the system do
 it" philosophy: one forward pass, frozen backbone, calibrated probabilities, fast.
