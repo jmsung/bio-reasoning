@@ -8,10 +8,9 @@ Returns (prediction_up, prediction_down) tuples.
 from __future__ import annotations
 
 import re
-import numpy as np
-import pandas as pd
 from typing import Optional
 
+import pandas as pd
 
 # ── Pattern matchers (order matters: checked top to bottom) ───────────────
 
@@ -64,7 +63,7 @@ def _extract_answer_portion(text: str) -> str:
     parts = re.split(r"(?:Final\s+)?Answer\s*:", text, flags=re.IGNORECASE)
     if len(parts) > 1:
         return parts[-1].strip()
-    lines = [l.strip() for l in text.strip().split("\n") if l.strip()]
+    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
     if lines:
         return lines[-1]
     return text
@@ -190,11 +189,13 @@ def build_submission(
         f"All inputs must have same length, got {len(ids)}, "
         f"{len(predictions_up)}, {len(predictions_down)}"
     )
-    df = pd.DataFrame({
-        "id": ids,
-        "prediction_up": predictions_up,
-        "prediction_down": predictions_down,
-    })
+    df = pd.DataFrame(
+        {
+            "id": ids,
+            "prediction_up": predictions_up,
+            "prediction_down": predictions_down,
+        }
+    )
     if output_path is not None:
         df.to_csv(output_path, index=False)
     return df

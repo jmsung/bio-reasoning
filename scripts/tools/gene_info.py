@@ -73,15 +73,13 @@ def gene_info(gene_symbol: str) -> str:
     if go_bp:
         terms = list({t["term"] for t in go_bp if "term" in t})[:8]
         if terms:
-            lines.append(
-                f"GO Biological Process ({len(terms)} shown): " + "; ".join(terms)
-            )
+            lines.append(f"GO Biological Process ({len(terms)} shown): " + "; ".join(terms))
 
     pathways = hit.get("pathway", {}).get("kegg", [])
     if isinstance(pathways, dict):
         pathways = [pathways]
     if pathways:
         pnames = [p.get("name", p.get("id", "?")) for p in pathways][:5]
-        lines.append(f"KEGG Pathways: " + "; ".join(pnames))
+        lines.append("KEGG Pathways: " + "; ".join(pnames))
 
     return "\n".join(lines)

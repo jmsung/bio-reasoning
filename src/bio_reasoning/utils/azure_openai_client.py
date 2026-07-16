@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from urllib.parse import urlsplit, urlunsplit
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from openai import AzureOpenAI, OpenAI
 

@@ -20,7 +20,6 @@ load_dotenv(ROOT / ".env.local", override=True)
 
 from bio_reasoning.utils import build_client, get_provider_name, load_provider_config  # noqa: E402
 
-
 PROVIDER_ALIASES = {
     "gpt_oss": "openai_compatible",
     "openai_compatible": "openai_compatible",
@@ -48,7 +47,9 @@ def normalize_provider(name: str | None) -> str | None:
         return None
     key = name.strip().lower()
     if key not in PROVIDER_ALIASES:
-        raise ValueError(f"Unsupported provider {name!r}. Expected one of: {sorted(PROVIDER_ALIASES)}")
+        raise ValueError(
+            f"Unsupported provider {name!r}. Expected one of: {sorted(PROVIDER_ALIASES)}"
+        )
     return PROVIDER_ALIASES[key]
 
 

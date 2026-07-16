@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import threading
 import time
@@ -61,7 +62,6 @@ import urllib.error
 import urllib.request
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import os
 from pathlib import Path
 from typing import Dict, Tuple
 
@@ -85,6 +85,7 @@ _DEFAULT_UP, _DEFAULT_DOWN = parse_answer("")
 # Prompt loading
 # ---------------------------------------------------------------------------
 
+
 def load_prompts_csv(path: Path) -> Dict[str, str]:
     """Load a CSV or JSONL of (id, prompt) pairs into {id: prompt}."""
     suffix = path.suffix.lower()
@@ -101,10 +102,9 @@ def load_prompts_csv(path: Path) -> Dict[str, str]:
     missing = {"id", "prompt"} - set(df.columns)
     if missing:
         raise ValueError(
-            f"{path} is missing required column(s): {missing}. "
-            f"Expected columns: id, prompt"
+            f"{path} is missing required column(s): {missing}. " f"Expected columns: id, prompt"
         )
-    return dict(zip(df["id"].astype(str), df["prompt"].astype(str)))
+    return dict(zip(df["id"].astype(str), df["prompt"].astype(str), strict=True))
 
 
 def load_prompt_template(path: Path) -> str:
@@ -112,9 +112,7 @@ def load_prompt_template(path: Path) -> str:
     text = path.read_text()
     for required in ("{pert}", "{gene}"):
         if required not in text:
-            raise ValueError(
-                f"Template {path} must contain placeholder {required}"
-            )
+            raise ValueError(f"Template {path} must contain placeholder {required}")
     return text
 
 
@@ -143,6 +141,7 @@ def resolve_prompt(
 # ---------------------------------------------------------------------------
 # API helpers
 # ---------------------------------------------------------------------------
+
 
 def post_chat_completion(
     api_base: str,
@@ -187,9 +186,7 @@ def post_chat_completion(
         content = msg.get("content", "") or ""
         if isinstance(content, list):
             content = "\n".join(
-                str(c.get("text", c.get("content", "")))
-                for c in content
-                if isinstance(c, dict)
+                str(c.get("text", c.get("content", ""))) for c in content if isinstance(c, dict)
             )
         parts = [p for p in (str(reasoning).strip(), str(content).strip()) if p]
         return "\n\n".join(parts), token_stats
@@ -215,6 +212,7 @@ def extract_answer_tag(text: str) -> str | None:
 # Cache helpers
 # ---------------------------------------------------------------------------
 
+
 def load_cache(path: Path) -> dict:
     if path.exists():
         try:
@@ -233,23 +231,26 @@ def save_cache(path: Path, obj: dict) -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Track A: Prompt-only baseline (3 seeds)"
-    )
+    parser = argparse.ArgumentParser(description="Track A: Prompt-only baseline (3 seeds)")
 
     # Prompt sources (can combine: CSV overrides template, template overrides default)
     parser.add_argument(
-        "--prompts-csv", type=Path, default=None,
+        "--prompts-csv",
+        type=Path,
+        default=None,
         help="CSV or JSONL with columns (id, prompt). Rows found here use "
-             "the provided prompt; remaining rows fall back to --prompt-template "
-             "or the built-in default.",
+        "the provided prompt; remaining rows fall back to --prompt-template "
+        "or the built-in default.",
     )
     parser.add_argument(
-        "--prompt-template", type=Path, default=None,
+        "--prompt-template",
+        type=Path,
+        default=None,
         help="Text file with a prompt template containing {pert}, {gene}, and "
-             "optionally {cell_desc} placeholders. Used as fallback for "
-             "rows not in --prompts-csv.",
+        "optionally {cell_desc} placeholders. Used as fallback for "
+        "rows not in --prompts-csv.",
     )
 
     parser.add_argument(
@@ -281,16 +282,17 @@ def main() -> None:
         help="Reasoning effort level sent to the model (default: low).",
     )
     parser.add_argument("--test-csv", type=Path, default=TEST_CSV)
-    parser.add_argument(
-        "--output-dir", type=Path, default=ROOT / "outputs" / "track_a" / "default"
-    )
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "track_a" / "default")
     parser.add_argument("--save-every", type=int, default=25)
     parser.add_argument(
-        "--concurrency", type=int, default=1,
+        "--concurrency",
+        type=int,
+        default=1,
         help="Number of concurrent requests. Increase to speed up inference.",
     )
     parser.add_argument(
-        "--model-name", default=None,
+        "--model-name",
+        default=None,
         help="Override model name recorded in submission (defaults to --model).",
     )
     args = parser.parse_args()
@@ -323,27 +325,28 @@ def main() -> None:
 
     try:
         import tiktoken
+
         _enc = tiktoken.get_encoding("cl100k_base")
+
         def _count_tokens(text: str) -> int:
             return len(_enc.encode(text))
+
     except Exception:
+
         def _count_tokens(text: str) -> int:
             return len(text) // 4
 
     def process_row(idx: int, row: pd.Series) -> None:
         nonlocal new_count
         rid = row["id"]
-        prompt_raw = resolve_prompt(
-            row, prompts_map=prompts_map, template=template
-        )
+        prompt_raw = resolve_prompt(row, prompts_map=prompts_map, template=template)
         prompt = append_answer_tag(prompt_raw)
         row_prompt_tokens = _count_tokens(prompt)
 
         with cache_lock:
             cached = cache["rows"].get(rid, {})
             if all(
-                f"prediction_up_seed{s}" in cached
-                and f"prediction_down_seed{s}" in cached
+                f"prediction_up_seed{s}" in cached and f"prediction_down_seed{s}" in cached
                 for s in SEEDS
             ):
                 print(f"[{idx+1}/{total}] {rid} cache_hit")
@@ -385,9 +388,7 @@ def main() -> None:
             cached[key_trace] = text
             cached[f"tokens_seed{seed}"] = token_stats.get("total_tokens", 0.0)
 
-        cached["tokens_used"] = sum(
-            cached.get(f"tokens_seed{s}", 0.0) for s in SEEDS
-        )
+        cached["tokens_used"] = sum(cached.get(f"tokens_seed{s}", 0.0) for s in SEEDS)
         cached["prompt_tokens"] = row_prompt_tokens
         cached["prediction_up"] = sum(
             cached.get(f"prediction_up_seed{s}", _DEFAULT_UP) for s in SEEDS
@@ -409,10 +410,7 @@ def main() -> None:
                 save_cache(cache_path, cache)
 
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
-        futures = [
-            pool.submit(process_row, idx, row)
-            for idx, row in test_df.iterrows()
-        ]
+        futures = [pool.submit(process_row, idx, row) for idx, row in test_df.iterrows()]
         for future in as_completed(futures):
             future.result()  # raise any exceptions
 
@@ -424,23 +422,25 @@ def main() -> None:
     for _, row in test_df.iterrows():
         rid = row["id"]
         c = cache["rows"].get(rid, {})
-        rows_out.append({
-            "id": rid,
-            "prediction_up": c.get("prediction_up", _DEFAULT_UP),
-            "prediction_down": c.get("prediction_down", _DEFAULT_DOWN),
-            "prediction_up_seed42": c.get("prediction_up_seed42", _DEFAULT_UP),
-            "prediction_down_seed42": c.get("prediction_down_seed42", _DEFAULT_DOWN),
-            "prediction_up_seed43": c.get("prediction_up_seed43", _DEFAULT_UP),
-            "prediction_down_seed43": c.get("prediction_down_seed43", _DEFAULT_DOWN),
-            "prediction_up_seed44": c.get("prediction_up_seed44", _DEFAULT_UP),
-            "prediction_down_seed44": c.get("prediction_down_seed44", _DEFAULT_DOWN),
-            "reasoning_trace_seed42": c.get("reasoning_trace_seed42") or "none",
-            "reasoning_trace_seed43": c.get("reasoning_trace_seed43") or "none",
-            "reasoning_trace_seed44": c.get("reasoning_trace_seed44") or "none",
-            "tokens_used": int(c.get("tokens_used", 0)),
-            "prompt_tokens": int(c.get("prompt_tokens", 0)),
-            "model_name": c.get("model_name", model_name),
-        })
+        rows_out.append(
+            {
+                "id": rid,
+                "prediction_up": c.get("prediction_up", _DEFAULT_UP),
+                "prediction_down": c.get("prediction_down", _DEFAULT_DOWN),
+                "prediction_up_seed42": c.get("prediction_up_seed42", _DEFAULT_UP),
+                "prediction_down_seed42": c.get("prediction_down_seed42", _DEFAULT_DOWN),
+                "prediction_up_seed43": c.get("prediction_up_seed43", _DEFAULT_UP),
+                "prediction_down_seed43": c.get("prediction_down_seed43", _DEFAULT_DOWN),
+                "prediction_up_seed44": c.get("prediction_up_seed44", _DEFAULT_UP),
+                "prediction_down_seed44": c.get("prediction_down_seed44", _DEFAULT_DOWN),
+                "reasoning_trace_seed42": c.get("reasoning_trace_seed42") or "none",
+                "reasoning_trace_seed43": c.get("reasoning_trace_seed43") or "none",
+                "reasoning_trace_seed44": c.get("reasoning_trace_seed44") or "none",
+                "tokens_used": int(c.get("tokens_used", 0)),
+                "prompt_tokens": int(c.get("prompt_tokens", 0)),
+                "model_name": c.get("model_name", model_name),
+            }
+        )
 
     sub_df = pd.DataFrame(rows_out)
     sub_path = args.output_dir / "submission.csv"
@@ -455,16 +455,14 @@ def main() -> None:
         )
     elif args.prompt_template is not None:
         prompt_path.write_text(
-            f"# Track A -- prompt template from {args.prompt_template.name}\n\n"
-            + template
+            f"# Track A -- prompt template from {args.prompt_template.name}\n\n" + template
         )
     else:
         from mlgenx.prompts import _PROMPT_ZERO
+
         prompt_path.write_text(
             "# Track A -- default mlgenx ternary zero-shot prompt\n\n"
-            + _PROMPT_ZERO.format(
-                pert="{pert}", gene="{gene}", cell_desc=CELL_DESC
-            )
+            + _PROMPT_ZERO.format(pert="{pert}", gene="{gene}", cell_desc=CELL_DESC)
         )
 
     # Package zip
