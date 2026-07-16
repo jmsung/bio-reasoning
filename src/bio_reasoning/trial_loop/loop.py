@@ -16,6 +16,7 @@ import pandas as pd
 
 from bio_reasoning.eval.split import holdout_split
 from bio_reasoning.eval.track_a_score import evaluate
+from bio_reasoning.trial_loop.reflect import Proposer, reflect
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 from mlgenx import format_prompt, parse_answer
 from mlgenx.prompts import CELL_DESC
@@ -99,3 +100,38 @@ def run_variant(
     metrics = evaluate(labels, up, down)
     metrics["n_val"] = int(len(val_idx))
     return TrialRecord(variant=variant, metrics=metrics, **record_kwargs)  # type: ignore[arg-type]
+
+
+# on_trial(record, history_so_far) — persistence/side-effect hook per trial.
+OnTrial = Callable[[TrialRecord, "list[TrialRecord]"], None]
+
+
+def run_loop(
+    df: pd.DataFrame,
+    proposer: "Proposer",
+    infer_fn: InferFn,
+    seed: int = 0,
+    pert_frac: float = 0.4,
+    gene_frac: float = 0.4,
+    max_trials: int | None = None,
+    on_trial: OnTrial | None = None,
+) -> list[TrialRecord]:
+    """Drive ``propose → run_variant → reflect`` until the proposer converges.
+
+    Each cycle: build the reflection from the history so far, ask ``proposer`` for
+    the next :class:`Variant` (``None`` → converged, stop), evaluate it on the
+    OOD-val split, append the record, and fire ``on_trial`` (persist/archive).
+    Stops at ``max_trials`` if the proposer never converges. Returns the history.
+    """
+    history: list[TrialRecord] = []
+    while max_trials is None or len(history) < max_trials:
+        variant = proposer(reflect(history), history)
+        if variant is None:
+            break
+        rec = run_variant(
+            df, variant, infer_fn, seed=seed, pert_frac=pert_frac, gene_frac=gene_frac
+        )
+        history.append(rec)
+        if on_trial is not None:
+            on_trial(rec, history)
+    return history

@@ -9,7 +9,8 @@ import pandas as pd
 
 from bio_reasoning.eval.split import holdout_split
 from bio_reasoning.eval.track_a_score import evaluate
-from bio_reasoning.trial_loop.loop import predict_variant, run_variant, sample_examples
+from bio_reasoning.trial_loop.loop import predict_variant, run_loop, run_variant, sample_examples
+from bio_reasoning.trial_loop.reflect import make_grid_proposer
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
 _UP, _DOWN, _NONE = "upregulated", "downregulated", "does not significantly affect"
@@ -84,6 +85,43 @@ def test_sample_examples_leak_free() -> None:
     for ex in examples:
         assert ex["pert"] not in val_perts
         assert ex["gene"] not in val_genes
+
+
+def test_run_loop_drives_grid_to_convergence() -> None:
+    """run_loop evaluates each candidate once then stops when the proposer converges."""
+    df = _frame()
+    cands = [Variant(id="v0", seeds=(1,)), Variant(id="v1", seeds=(1,))]
+
+    persisted: list[str] = []
+
+    def fake(prompts, seed):
+        return [_UP] * len(prompts)
+
+    hist = run_loop(
+        df,
+        make_grid_proposer(cands),
+        fake,
+        pert_frac=1.0,
+        gene_frac=1.0,
+        on_trial=lambda rec, h: persisted.append(rec.variant.id),
+    )
+    assert [r.variant.id for r in hist] == ["v0", "v1"]
+    assert persisted == ["v0", "v1"]  # on_trial fired per trial
+    assert all("mean" in r.metrics for r in hist)
+
+
+def test_run_loop_respects_max_trials() -> None:
+    """A never-converging proposer is bounded by max_trials."""
+    df = _frame()
+
+    def endless(reflection, history):
+        return Variant(id=f"v{len(history)}", seeds=(1,))
+
+    def fake(prompts, seed):
+        return [_UP] * len(prompts)
+
+    hist = run_loop(df, endless, fake, pert_frac=1.0, gene_frac=1.0, max_trials=3)
+    assert [r.variant.id for r in hist] == ["v0", "v1", "v2"]
 
 
 def test_trial_record_json_round_trip() -> None:
