@@ -59,6 +59,20 @@ measured: **hard A/B/C 0.507 → graded-but-over-abstaining 0.488 → floor-to-p
 Next lever: blend `α·agent + (1−α)·prior`; the authoritative re-measure on the dual-OOD
 split is a follow-up (it needs agent inference on the val rows, not just the prior).
 
+## Update (kb/competitor-landscape — landed)
+
+A survey of the public field (6 vote-leading Kaggle notebooks across A/B/C + live
+leaderboards A **0.693** / B **0.752** / C **0.693**) reframes the competition:
+**every public solution predicts from gene-name character n-grams with classical ML and
+fakes the LLM scaffolding** — the "bioreasoning" framing is unenforced by the metric. The
+two transferable wins are the **two-stage DE×DIR decomposition** (model `P(DE)` and
+`P(up|DE)` separately, recombine — aligns to the metric's two AUROCs) and **char /
+gene-family prefix structure** (the zero-overlap bridge). The lane nobody occupies — where
+LLM+tools can genuinely differentiate — is **real external gene knowledge** (GO / STRING /
+pathway) fed to the agent, plus **TabPFN over functional features** (SOTA per Palla 2026,
+unused by the field). Spawned two priorities: the two-stage decomposition and
+functional-knowledge Track B tools.
+
 ## Approach
 
 1. **Honest fitness signal first** — a dual-OOD validation split (perturbations + genes
