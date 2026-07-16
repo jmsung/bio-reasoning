@@ -56,8 +56,11 @@ first Track B result above the 0.529 prior floor (+0.039), and +0.080 over the r
 agent's 0.488. It confirms the diagnosis: the prior is recovered by removing the ties,
 and the agent's 506 signal-carrying rows add real lift on top. Full LB ladder now
 measured: **hard A/B/C 0.507 → graded-but-over-abstaining 0.488 → floor-to-prior 0.568**.
-Next lever: blend `α·agent + (1−α)·prior`; the authoritative re-measure on the dual-OOD
-split is a follow-up (it needs agent inference on the val rows, not just the prior).
+**Confirmed on the honest split:** re-measured on the dual-OOD val (`--split holdout`,
+1,276 rows) → mean **0.564** (de 0.557, dir 0.570) vs prior 0.533 (+0.031). The
+**LB ↔ OOD-val gap is just 0.004**, so the lift is real, not a test-set artifact — and
+the CV↔LB inflation that sank the raw agent (0.675→0.488) is gone once ties are floored.
+Next lever: blend `α·agent + (1−α)·prior`, tuned on this same OOD-val surface.
 
 ## Update (kb/competitor-landscape — landed)
 
