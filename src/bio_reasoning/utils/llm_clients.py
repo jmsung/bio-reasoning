@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from anthropic import Anthropic
-from openai import AzureOpenAI
-from openai import OpenAI
+from openai import AzureOpenAI, OpenAI
 
 from .azure_openai_client import build_azure_openai_client, load_azure_openai_config
 
@@ -26,8 +25,7 @@ def get_provider_name() -> ProviderName:
     allowed = {"openai_compatible", "ollama", "openai", "anthropic", "azure_openai"}
     if provider not in allowed:
         raise ValueError(
-            "BIOREASONING_LLM_PROVIDER must be one of "
-            f"{sorted(allowed)}, got {provider!r}."
+            "BIOREASONING_LLM_PROVIDER must be one of " f"{sorted(allowed)}, got {provider!r}."
         )
     return provider  # type: ignore[return-value]
 
@@ -59,7 +57,9 @@ def load_provider_config() -> ProviderConfig:
     if provider == "ollama":
         return ProviderConfig(
             provider=provider,
-            model=os.getenv("BIOREASONING_OLLAMA_MODEL", os.getenv("BIOREASONING_OPENAI_MODEL", "gpt-oss:120b")),
+            model=os.getenv(
+                "BIOREASONING_OLLAMA_MODEL", os.getenv("BIOREASONING_OPENAI_MODEL", "gpt-oss:120b")
+            ),
             api_key=os.getenv("BIOREASONING_OLLAMA_API_KEY", "ollama"),
             api_base=os.getenv("BIOREASONING_OLLAMA_API_BASE", "http://localhost:11434/v1"),
         )
@@ -79,7 +79,7 @@ def build_client() -> OpenAI | Anthropic | AzureOpenAI:
     if config.provider == "azure_openai":
         return build_azure_openai_client()
     if config.provider == "anthropic":
-        kwargs = {"api_key": config.api_key}
+        kwargs: dict[str, Any] = {"api_key": config.api_key}
         if config.api_base:
             kwargs["base_url"] = config.api_base
         return Anthropic(**kwargs)
