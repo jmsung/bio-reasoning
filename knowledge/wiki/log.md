@@ -2,6 +2,13 @@
 
 Append-only history of ingests and queries.
 
+## 2026-07-16 — Wiki-learn: neighbour-retrieval is a direction lever, not a DE lever
+- Insights filed: 1
+- New pages: findings/neighbor-retrieval-direction-lever.md
+- Updated pages: index.md, findings/curated-edges-fail-de-axis.md (reverse cite)
+- Source: `feat/de-retrieval` — DE-AUROC 0.498 (chance) but DIR-AUROC 0.651±0.047; fusion +0.027 mean.
+
+
 ## 2026-07-16 — Wiki-learn: curated-edge DBs fail the DE axis
 - Insights filed: 1
 - New pages: findings/curated-edges-fail-de-axis.md
