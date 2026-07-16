@@ -20,9 +20,15 @@ A trustworthy number needs the FULL val partition (~1276 rows) — ``--val-n`` c
 for a cheap plumbing smoke only, and a capped run's score is a mirage (do not record it
 as the variant's fitness). See ``mb/findings/track-strategy.md``.
 
+Few-shot exemplars are ``--retrieval random`` (default) or ``go_category`` — the latter
+retrieves, per query, train exemplars sharing the query perturbation's GO category
+(relevance-selected). On the dual-OOD split random few-shot hurts (exemplars aren't
+analogous to unseen queries); go_category tests whether *relevant* exemplars recover lift.
+
 Usage:
     uv run python scripts/trial_loop.py --variant-id zero-shot
-    uv run python scripts/trial_loop.py --grid 0,2,4,8            # loop over few-shot sizes
+    uv run python scripts/trial_loop.py --grid 0,2,4,8            # random few-shot sizes
+    uv run python scripts/trial_loop.py --grid 2,4,8 --retrieval go_category  # retrieval
     uv run python scripts/trial_loop.py --variant-id fs4 --n-few-shot 4 --val-n 40  # smoke
 """
 
@@ -168,6 +174,12 @@ def main() -> None:
     ap.add_argument("--max-trials", type=int, default=None, help="Cap loop iterations.")
     ap.add_argument("--prompt-template", type=Path, help="Custom template file ({pert}/{gene}).")
     ap.add_argument("--n-few-shot", type=int, default=0)
+    ap.add_argument(
+        "--retrieval",
+        choices=["random", "go_category"],
+        default="random",
+        help="Few-shot exemplar selection: random sample vs GO-category retrieval.",
+    )
     ap.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44])
     ap.add_argument("--split-seed", type=int, default=0)
     ap.add_argument("--pert-frac", type=float, default=0.4)
@@ -197,6 +209,18 @@ def main() -> None:
         train_mask = ~df.index.isin(val_idx)
         df = df[train_mask | df.index.isin(keep)].reset_index(drop=True)
 
+    # Retrieval few-shot: relevance key = the perturbation's GO functional category
+    # (same signal the direction prior uses). Random few-shot ignores this.
+    example_key_fn = None
+    if args.retrieval == "go_category":
+        from bio_reasoning.features.gene_function import annotate_perts
+
+        cats = annotate_perts(
+            sorted(df["pert"].astype(str).unique()),
+            ROOT / "data" / "interim" / "pert_go_category.json",
+        )
+        example_key_fn = lambda pert, gene: cats.get(pert, "other")  # noqa: E731
+
     template = args.prompt_template.read_text() if args.prompt_template else None
     cost = {"prompt_tokens": 0.0, "completion_tokens": 0.0, "usd": 0.0, "errors": 0.0}
     if args.track == "a":
@@ -222,10 +246,22 @@ def main() -> None:
         archive(args.output_dir, load_trials(trials_path))
         _report(rec)
 
-    kw = dict(seed=args.split_seed, pert_frac=args.pert_frac, gene_frac=args.gene_frac)
+    kw = dict(
+        seed=args.split_seed,
+        pert_frac=args.pert_frac,
+        gene_frac=args.gene_frac,
+        example_key_fn=example_key_fn,
+    )
+    pfx = "go" if args.retrieval == "go_category" else "fs"  # distinct ids per strategy
     if args.grid:
         candidates = [
-            Variant(id=f"fs{n}", prompt_template=template, n_few_shot=n, seeds=variant_seeds)
+            Variant(
+                id=f"{pfx}{n}",
+                prompt_template=template,
+                n_few_shot=n,
+                retrieval=args.retrieval,
+                seeds=variant_seeds,
+            )
             for n in (int(x) for x in args.grid.split(","))
         ]
         run_loop(
@@ -241,6 +277,7 @@ def main() -> None:
             id=args.variant_id,
             prompt_template=template,
             n_few_shot=args.n_few_shot,
+            retrieval=args.retrieval,
             seeds=variant_seeds,
         )
         persist(run_variant(df, variant, row_predictor, **kw), [])

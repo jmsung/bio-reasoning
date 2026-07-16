@@ -17,6 +17,10 @@ class Variant:
             (zero-shot, or few-shot when ``n_few_shot`` > 0).
         n_few_shot: Number of few-shot exemplars, drawn from the TRAIN partition
             only (leak-free). Ignored when ``prompt_template`` is custom.
+        retrieval: How exemplars are chosen. ``"random"`` (default) samples the
+            train partition once; ``"go_category"`` retrieves, per query, train
+            exemplars whose perturbation shares the query's GO functional category
+            (relevance-selected few-shot). Ignored when ``n_few_shot == 0``.
         seeds: Sampling seeds; per-seed predictions are averaged into a graded
             score (the Track A multi-sample recipe).
     """
@@ -24,6 +28,7 @@ class Variant:
     id: str
     prompt_template: str | None = None
     n_few_shot: int = 0
+    retrieval: str = "random"
     seeds: tuple[int, ...] = (42, 43, 44)
 
 
