@@ -140,6 +140,34 @@ bottleneck**; direction (~0.58) is fine. The next lever is a real DE-detector fo
 (regulon membership = DE, edge sign under CRISPRi = direction). These were dev variants, not
 submitted — all ≤ the live LB 0.578.
 
+## Update (feat/de-detector-fuse-harness — landed)
+
+The DE-detector lever the trial-loop update pointed at was built and **measured before
+submission — the coverage gate killed it**. Two artifacts landed:
+
+- **`fuse()` rank-fusion harness + CFA diversity gate** (`src/bio_reasoning/fuse/`) — a
+  reusable way to combine DE score channels by rank (scale-free, deterministic) behind a
+  **Correlation-Filtered Admission** gate that admits a channel only if it is both strong
+  (standalone DE-AUROC ≥ threshold) *and* diverse (low Spearman vs the current fusion). The
+  offline validator every future DE channel runs through before it can cost a submission.
+- **CollecTRI signed TF-regulon feature** (`src/bio_reasoning/features/tf_regulon.py`) —
+  identity-free per-`(pert, gene)` DE edge indicator + signed direction under CRISPRi polarity.
+
+The plan named regulon-edge coverage on OOD-val as the go/no-go. Measured (dual-OOD val,
+1,276 rows; CollecTRI mouse = 43,226 edges / 1,165 TFs):
+
+| metric | value |
+|---|---|
+| TF-pert coverage | 12.1% |
+| regulon-edge rows | **0.4%** (~5 rows) |
+| edge \| TF-pert | 3.2% |
+
+At 0.4% direct-edge coverage the channel moves ~5 of 1,276 rows → no DE lift, so it never
+reached fusion. **Finding: curated direct-edge networks are structurally too sparse for the DE
+axis here** — the task scores *arbitrary* `(pert, gene)` pairs, and a curated DB stores only
+~1–2% of them as direct edges. The DE bet moves to model-based / dense channels
+(neighbor-retrieval, gene embeddings, network diffusion), all validated through the new harness.
+
 ## Approach
 
 1. **Honest fitness signal first** — a dual-OOD validation split (perturbations + genes
