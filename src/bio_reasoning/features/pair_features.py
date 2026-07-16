@@ -1,13 +1,19 @@
-"""Stateless char-ngram + string-stat features over a (perturbation, gene) pair.
+"""Char n-gram TF-IDF + string-stat features over a (perturbation, gene) pair.
 
 The Track A test split shares **zero** perturbations and **zero** target genes
 with train (`docs/track-a-eda.md`), so any learned head must generalize from the
-symbol *strings* themselves — not from identity, which never repeats. These
-features are deliberately stateless: char n-grams are hashed (no fitted
-vocabulary) and the string stats are pure functions of the pair, so the exact
-same transform applies to unseen symbols. Gene families share naming (ribosomal
-``Rpl*/Rps*``, interferon ``Ifit*``), so character n-grams carry real
-functional signal that survives the OOD split.
+symbol *strings* themselves — not identity, which never repeats. Gene families
+share naming (ribosomal ``Rpl*/Rps*``, interferon ``Ifit*``), so character
+n-grams carry real functional signal that survives the OOD split.
+
+An earlier version hashed the n-grams into 256 colliding buckets with **no
+TF-IDF**, which destroyed that signal (a head on it scored ~chance, 0.531). This
+module fits a proper char n-gram **TF-IDF** per axis (:class:`CharNgramFeaturizer`).
+It is stateful — the vocabulary and IDF are fit on the train fold — but stays
+OOD-safe: an unseen symbol's 2–4-grams overlap n-grams seen in train, so the same
+weighted representation applies to symbols never seen at fit time (novel n-grams
+are simply dropped). The dense per-pair string stats remain a stateless pure
+function of the pair.
 """
 
 from __future__ import annotations
@@ -16,20 +22,12 @@ from collections.abc import Sequence
 
 import numpy as np
 import scipy.sparse as sp
-from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-# Char n-gram hash width per axis (pert, gene). The space of character 2–4grams
-# over short gene symbols is small, so a few hundred buckets collide rarely.
-NGRAM_FEATURES = 256
-_NGRAM_KW = dict(
-    analyzer="char_wb",
-    ngram_range=(2, 4),
-    n_features=NGRAM_FEATURES,
-    alternate_sign=False,  # keep counts non-negative (NB-compatible)
-    norm=None,
-)
+# Char n-gram TF-IDF range, shared by the pert and gene axes.
+_NGRAM_RANGE = (2, 4)
 
-# Dense per-pair stats, in column order. All non-negative.
+# Dense per-pair stats, in column order. All non-negative, stateless.
 STRING_STAT_NAMES = [
     "len_pert",
     "len_gene",
@@ -43,7 +41,6 @@ STRING_STAT_NAMES = [
     "gene_ends_digit",
 ]
 N_STRING_STATS = len(STRING_STAT_NAMES)
-N_FEATURES = 2 * NGRAM_FEATURES + N_STRING_STATS
 
 
 def _char_trigrams(s: str) -> set[str]:
@@ -74,40 +71,79 @@ def _string_stats(pert: str, gene: str) -> list[float]:
     ]
 
 
-def extract_features(perts: Sequence[str], genes: Sequence[str]) -> sp.csr_matrix:
-    """Return an ``(n_rows, N_FEATURES)`` sparse feature matrix for the pairs.
+def string_stats(perts: Sequence[str], genes: Sequence[str]) -> sp.csr_matrix:
+    """Return the ``(n_rows, N_STRING_STATS)`` dense per-pair string stats.
 
-    Columns are ``[pert char-ngrams | gene char-ngrams | string stats]``.
-    Stateless — no ``fit``, no vocabulary — so it is safe to apply unchanged to
-    perturbations and genes never seen in training.
+    Stateless — a pure function of each ``(pert, gene)`` pair — so it applies
+    unchanged to unseen symbols. Columns follow :data:`STRING_STAT_NAMES`.
     """
     perts = [str(x) for x in perts]
     genes = [str(x) for x in genes]
     if len(perts) != len(genes):
         raise ValueError("perts and genes must be the same length")
-
-    hv = HashingVectorizer(**_NGRAM_KW)
     if not perts:
-        return sp.csr_matrix((0, N_FEATURES))
-
-    pert_ng = hv.transform(perts)
-    gene_ng = hv.transform(genes)
-    stats = sp.csr_matrix(
-        np.array([_string_stats(p, g) for p, g in zip(perts, genes, strict=False)], dtype=float)
+        return sp.csr_matrix((0, N_STRING_STATS))
+    return sp.csr_matrix(
+        np.array([_string_stats(p, g) for p, g in zip(perts, genes, strict=True)], dtype=float)
     )
-    return sp.hstack([pert_ng, gene_ng, stats], format="csr")
 
 
 class CharNgramFeaturizer:
-    """Stateless featurizer wrapper around :func:`extract_features`.
+    """Char n-gram TF-IDF over ``(pert, gene)`` + stateless string stats.
 
-    Gives the char-ngram features the same ``fit``/``transform`` interface as
-    the GO-term featurizer so either can be injected into ``TwoStageDEDIR``;
-    ``fit`` is a no-op since there is no vocabulary to learn.
+    Fits one :class:`~sklearn.feature_extraction.text.TfidfVectorizer` per axis
+    on the train symbols (``analyzer="char_wb"``, 2–4grams, L2-normalized,
+    ``sublinear_tf``). ``transform`` concatenates
+    ``[pert-tfidf | gene-tfidf | string-stats]``. Fit/transform is the standard
+    leak-free lifecycle (``fit`` on train, ``transform`` on eval); the width is
+    ``n_features_`` after fit. Exposes the same ``fit``/``transform`` interface as
+    the GO-term featurizer so either injects into ``TwoStageDEDIR``.
     """
 
+    def __init__(self, ngram_range: tuple[int, int] = _NGRAM_RANGE, min_df: int = 2):
+        self.ngram_range = ngram_range
+        self.min_df = min_df
+
+    def _new_vectorizer(self) -> TfidfVectorizer:
+        return TfidfVectorizer(
+            analyzer="char_wb",
+            ngram_range=self.ngram_range,
+            min_df=self.min_df,
+            sublinear_tf=True,
+            norm="l2",
+        )
+
+    def _fit_vectorizer(self, docs: list[str]) -> TfidfVectorizer:
+        """Fit a char-TFIDF vectorizer, backing off to ``min_df=1`` on empty vocab.
+
+        With ``min_df>1`` a tiny corpus whose n-grams are all rare raises "empty
+        vocabulary"; fall back so the featurizer degrades gracefully instead of
+        crashing (mirrors the GO featurizer).
+        """
+        try:
+            return self._new_vectorizer().fit(docs)
+        except ValueError:
+            v = self._new_vectorizer()
+            v.min_df = 1
+            return v.fit(docs)
+
     def fit(self, perts, genes) -> "CharNgramFeaturizer":
+        perts = [str(x) for x in perts]
+        genes = [str(x) for x in genes]
+        if len(perts) != len(genes):
+            raise ValueError("perts and genes must be the same length")
+        self._vp = self._fit_vectorizer(perts)
+        self._vg = self._fit_vectorizer(genes)
+        self.n_features_ = len(self._vp.vocabulary_) + len(self._vg.vocabulary_) + N_STRING_STATS
         return self
 
     def transform(self, perts, genes) -> sp.csr_matrix:
-        return extract_features(perts, genes)
+        perts = [str(x) for x in perts]
+        genes = [str(x) for x in genes]
+        if len(perts) != len(genes):
+            raise ValueError("perts and genes must be the same length")
+        if not perts:
+            return sp.csr_matrix((0, self.n_features_))
+        pert_ng = self._vp.transform(perts)
+        gene_ng = self._vg.transform(genes)
+        return sp.hstack([pert_ng, gene_ng, string_stats(perts, genes)], format="csr")
