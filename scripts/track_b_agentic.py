@@ -45,16 +45,23 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from mlgenx import format_prompt, parse_answer
-from mlgenx.prompts import CELL_DESC, _PROMPT_ZERO
+from mlgenx.prompts import _PROMPT_ZERO, CELL_DESC
 
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
 load_dotenv(ROOT / ".env.local", override=True)
-DEFAULT_DATA_DIR = ROOT / "data" / "raw"
+DEFAULT_DATA_DIR = ROOT / "data" / "raw" / "track_a"  # Track B data == Track A (byte-identical)
 TEST_CSV = Path(os.getenv("BIOREASONING_TEST_CSV", str(DEFAULT_DATA_DIR / "test.csv")))
 TRAIN_CSV = Path(os.getenv("BIOREASONING_TRAIN_CSV", str(DEFAULT_DATA_DIR / "train.csv")))
 
 _TRAIN_DF: pd.DataFrame | None = None
+
+
+def _set_train_df(df: pd.DataFrame) -> None:
+    """Override the training frame the lookup tools see. Used by --eval to
+    restrict tools to the fold's disjoint train partition (leak-free CV)."""
+    global _TRAIN_DF
+    _TRAIN_DF = df.reset_index(drop=True)
 
 
 def _get_train_df() -> pd.DataFrame:
@@ -101,9 +108,7 @@ def lookup_pert(pert: str) -> str:
     if down_genes:
         lines.append(f"    Down-regulated: {', '.join(down_genes[:30])}")
     if none_genes:
-        lines.append(
-            f"    Not differentially expressed: {', '.join(none_genes[:30])}"
-        )
+        lines.append(f"    Not differentially expressed: {', '.join(none_genes[:30])}")
     return "\n".join(lines)
 
 
@@ -173,10 +178,7 @@ def gene_info(gene_symbol: str) -> str:
     if go_bp:
         terms = list({t["term"] for t in go_bp if "term" in t})[:8]
         if terms:
-            lines.append(
-                f"GO Biological Process ({len(terms)} shown): "
-                + "; ".join(terms)
-            )
+            lines.append(f"GO Biological Process ({len(terms)} shown): " + "; ".join(terms))
 
     pathways = hit.get("pathway", {}).get("kegg", [])
     if isinstance(pathways, dict):
@@ -205,10 +207,7 @@ def protein_interactions(gene_symbol: str, limit: int = 10) -> str:
         return f"Error querying STRING DB for {gene_symbol}: {e}"
 
     if not data:
-        return (
-            f"No protein interactions found for '{gene_symbol}' "
-            f"in mouse (STRING DB)."
-        )
+        return f"No protein interactions found for '{gene_symbol}' " f"in mouse (STRING DB)."
 
     lines = [f"Protein interactions for {gene_symbol} (mouse, STRING DB):"]
     for entry in data[:limit]:
@@ -222,6 +221,7 @@ def protein_interactions(gene_symbol: str, limit: int = 10) -> str:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _tokens_from_history(lm: dspy.LM, start_idx: int) -> int:
     """Sum total_tokens from LM history entries added since start_idx."""
@@ -262,18 +262,15 @@ def save_cache(path: Path, obj: dict) -> None:
 # DSPy signature
 # ---------------------------------------------------------------------------
 
+
 class BioPredict(dspy.Signature):
     """You are an expert molecular biologist who studies gene expression
     using Perturb-seq.  Use the available tools to look up training data
     and gene annotations, then call submit_answer with your final choice
     (A, B, or C)."""
 
-    question: str = dspy.InputField(
-        desc="Gene expression prediction question with answer choices"
-    )
-    answer: str = dspy.OutputField(
-        desc="Your answer: A, B, or C, with brief justification"
-    )
+    question: str = dspy.InputField(desc="Gene expression prediction question with answer choices")
+    answer: str = dspy.OutputField(desc="Your answer: A, B, or C, with brief justification")
 
 
 # ---------------------------------------------------------------------------
@@ -284,9 +281,7 @@ DEFAULT_SYSTEM_PROMPT_PATH = ROOT / "configs" / "track_b_system_prompt.txt"
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Track B: Agentic tool-use baseline (DSPy ReAct)"
-    )
+    parser = argparse.ArgumentParser(description="Track B: Agentic tool-use baseline (DSPy ReAct)")
     parser.add_argument(
         "--api-base",
         default=os.getenv("BIOREASONING_OPENAI_API_BASE", "http://localhost:8000/v1"),
@@ -316,30 +311,61 @@ def main() -> None:
         help="Reasoning effort level sent to the model (default: low).",
     )
     parser.add_argument(
-        "--system-prompt", type=Path, default=DEFAULT_SYSTEM_PROMPT_PATH,
+        "--system-prompt",
+        type=Path,
+        default=DEFAULT_SYSTEM_PROMPT_PATH,
         help="Path to system prompt file (contents used as-is).",
     )
     parser.add_argument(
-        "--max-iters", type=int, default=250,
+        "--max-iters",
+        type=int,
+        default=250,
         help="Max ReAct iterations (tool-call rounds per row)",
     )
     parser.add_argument("--test-csv", type=Path, default=TEST_CSV)
-    parser.add_argument(
-        "--output-dir", type=Path, default=ROOT / "outputs" / "track_b" / "default"
-    )
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "track_b" / "default")
     parser.add_argument("--save-every", type=int, default=5)
     parser.add_argument(
-        "--concurrency", type=int, default=1,
+        "--concurrency",
+        type=int,
+        default=1,
         help="Number of concurrent rows to process. Increase to speed up.",
     )
     parser.add_argument(
-        "--clear-cache", action="store_true",
+        "--clear-cache",
+        action="store_true",
         help="Delete cached API responses and start fresh.",
     )
     parser.add_argument(
-        "--model-name", default=None,
+        "--model-name",
+        default=None,
         help="Override model name recorded in submission (defaults to --model).",
     )
+    parser.add_argument(
+        "--provider",
+        default=os.getenv("BIOREASONING_LLM_PROVIDER", "openai_compatible"),
+        choices=["openai_compatible", "openrouter", "anthropic", "openai"],
+        help="LLM provider. 'openai_compatible' = local vLLM/Ollama gpt-oss-120b; "
+        "'openrouter' = hosted gpt-oss-120b via OpenRouter (both are the fixed "
+        "challenge model — leaderboard-valid). 'anthropic'/'openai' = hosted "
+        "frontier dev fallbacks for harness debugging only (NOT leaderboard-valid).",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Process only the first N rows (dev smoke run).",
+    )
+    parser.add_argument(
+        "--eval",
+        action="store_true",
+        help="Leak-free CV mode: run on a labeled holdout from TRAIN_CSV "
+        "(doubly-disjoint fold) and score with mean(AUROC_de,AUROC_dir) vs the "
+        "0.529 Track A floor. Tools are restricted to the fold's train partition.",
+    )
+    parser.add_argument("--eval-n", type=int, default=None, help="Cap holdout rows in --eval.")
+    parser.add_argument("--fold-k", type=int, default=5, help="CV folds for --eval split.")
+    parser.add_argument("--fold-seed", type=int, default=0, help="Seed for --eval split.")
     args = parser.parse_args()
 
     model_name = args.model_name or args.model
@@ -347,6 +373,7 @@ def main() -> None:
     system_prompt = args.system_prompt.read_text().strip()
     try:
         import tiktoken
+
         enc = tiktoken.get_encoding("cl100k_base")
         prompt_tokens = len(enc.encode(system_prompt))
     except Exception:
@@ -362,36 +389,82 @@ def main() -> None:
         )
 
     # ── Configure DSPy ────────────────────────────────────────────────
-    # litellm model format: "openai/<model_name_on_server>"
-    # The "openai/" prefix selects the OpenAI-compatible provider and is
-    # stripped before the request is sent.  Since the vLLM server
-    # registers the model as "openai/gpt-oss-120b", we need the full
-    # name in the request body, so we always prepend "openai/".
-    litellm_model = args.model if args.model.startswith("openai/") else f"openai/{args.model}"
-    lm = dspy.LM(
-        model=litellm_model,
-        api_base=args.api_base,
-        api_key=args.api_key,
-        max_tokens=args.max_tokens,
-        temperature=1.0,
-        num_retries=args.max_retries,
-        reasoning_effort=args.reasoning_effort,
-        allowed_openai_params=["reasoning_effort"],
-    )
+    # NOTE: 'anthropic' and 'openai' are DEV fallbacks (hosted frontier models)
+    # for debugging the harness only — NOT the fixed challenge model, so their
+    # output is never leaderboard-valid. The real run uses gpt-oss-120b via the
+    # 'openai_compatible' provider (Bing's Ollama/vLLM endpoint).
+    if args.provider == "openrouter":
+        # Hosted gpt-oss-120b via OpenRouter (litellm native routing). This IS
+        # the fixed challenge model, so output is leaderboard-valid. Cheap
+        # pay-per-token; pair with --limit for smoke tests.
+        or_model = os.getenv("BIOREASONING_OPENROUTER_MODEL", "openai/gpt-oss-120b")
+        litellm_model = or_model if or_model.startswith("openrouter/") else f"openrouter/{or_model}"
+        model_name = args.model_name or or_model
+        lm = dspy.LM(
+            model=litellm_model,
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            max_tokens=args.max_tokens,
+            temperature=1.0,
+            num_retries=args.max_retries,
+        )
+    elif args.provider == "anthropic":
+        claude_model = os.getenv("BIOREASONING_ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
+        litellm_model = (
+            claude_model if claude_model.startswith("anthropic/") else f"anthropic/{claude_model}"
+        )
+        model_name = args.model_name or litellm_model
+        lm = dspy.LM(
+            model=litellm_model,
+            api_key=os.getenv("ANTHROPIC_API_KEY"),
+            max_tokens=min(args.max_tokens, 8192),  # Claude output cap
+            temperature=1.0,
+            num_retries=args.max_retries,
+        )
+    elif args.provider == "openai":
+        # Hosted OpenAI (api.openai.com) — cheap small model for smoke tests.
+        # No api_base (litellm defaults to OpenAI); no reasoning_effort (only
+        # valid for o-series/gpt-5). Pair with --limit to keep cost negligible.
+        dev_model = os.getenv("BIOREASONING_OPENAI_DEV_MODEL", "gpt-4o-mini")
+        litellm_model = dev_model if dev_model.startswith("openai/") else f"openai/{dev_model}"
+        model_name = args.model_name or litellm_model
+        lm = dspy.LM(
+            model=litellm_model,
+            api_key=os.getenv("OPENAI_API_KEY"),
+            max_tokens=min(args.max_tokens, 4096),
+            temperature=1.0,
+            num_retries=args.max_retries,
+        )
+    else:
+        # litellm model format: "openai/<model_name_on_server>". The "openai/"
+        # prefix selects the OpenAI-compatible provider and is stripped before
+        # the request is sent. The vLLM/Ollama server registers the model as
+        # "openai/gpt-oss-120b", so we always prepend "openai/".
+        litellm_model = args.model if args.model.startswith("openai/") else f"openai/{args.model}"
+        lm = dspy.LM(
+            model=litellm_model,
+            api_base=args.api_base,
+            api_key=args.api_key,
+            max_tokens=args.max_tokens,
+            temperature=1.0,
+            num_retries=args.max_retries,
+            reasoning_effort=args.reasoning_effort,
+            allowed_openai_params=["reasoning_effort"],
+        )
     dspy.configure(
         lm=lm,
         adapter=dspy.ChatAdapter(use_native_function_calling=False),
     )
 
     tool_list = [
-        lookup_pert, lookup_gene, gene_info,
-        protein_interactions, submit_answer,
+        lookup_pert,
+        lookup_gene,
+        gene_info,
+        protein_interactions,
+        submit_answer,
     ]
     num_distinct_tools = len(tool_list)
     if num_distinct_tools > 100:
-        parser.error(
-            f"Too many tools ({num_distinct_tools}), competition limit is 100."
-        )
+        parser.error(f"Too many tools ({num_distinct_tools}), competition limit is 100.")
     print(f"Tools: {num_distinct_tools}, max_iters: {args.max_iters}")
 
     react = dspy.ReAct(
@@ -410,7 +483,37 @@ def main() -> None:
     if "rows" not in cache:
         cache["rows"] = {}
 
-    test_df = pd.read_csv(args.test_csv)
+    eval_labels = None
+    if args.eval:
+        # Leak-free CV: hold out an entire (pert, gene)-disjoint fold from train,
+        # and restrict the lookup tools to that fold's TRAIN partition so the
+        # agent can't read the holdout row's own label.
+        from bio_reasoning.eval.split import doubly_disjoint_folds
+
+        train_full = pd.read_csv(TRAIN_CSV)
+        tr_idx, ev_idx = doubly_disjoint_folds(train_full, k=args.fold_k, seed=args.fold_seed)[0]
+        _set_train_df(train_full.iloc[tr_idx])  # tools see disjoint train only
+        ev = train_full.iloc[ev_idx].reset_index(drop=True)
+        if args.eval_n is not None:
+            ev = ev.head(args.eval_n).reset_index(drop=True)
+        test_df = pd.DataFrame(
+            {
+                "id": ev["pert"].astype(str) + "_" + ev["gene"].astype(str),
+                "pert": ev["pert"],
+                "gene": ev["gene"],
+            }
+        )
+        eval_labels = ev["label"].astype(str).to_numpy()
+        print(
+            f"--eval: leak-free CV on {len(test_df)} holdout rows "
+            f"(fold k={args.fold_k} seed={args.fold_seed}); tools restricted to "
+            f"{len(tr_idx)} disjoint train rows."
+        )
+    else:
+        test_df = pd.read_csv(args.test_csv)
+        if args.limit is not None:
+            test_df = test_df.head(args.limit).reset_index(drop=True)
+            print(f"--limit {args.limit}: processing first {len(test_df)} rows only (dev smoke).")
     total = len(test_df)
     cache_lock = threading.Lock()
     new_count = 0
@@ -437,8 +540,7 @@ def main() -> None:
             trajectory = getattr(result, "trajectory", {}) or {}
             trace = trajectory
             tool_calls_count = sum(
-                1 for k in trajectory
-                if isinstance(k, str) and k.startswith("tool_name")
+                1 for k in trajectory if isinstance(k, str) and k.startswith("tool_name")
             )
         except Exception as e:
             print(f"  [error] ReAct failed: {e}")
@@ -480,10 +582,7 @@ def main() -> None:
                 save_cache(cache_path, cache)
 
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
-        futures = [
-            pool.submit(process_row, idx, row)
-            for idx, row in test_df.iterrows()
-        ]
+        futures = [pool.submit(process_row, idx, row) for idx, row in test_df.iterrows()]
         for future in as_completed(futures):
             future.result()
 
@@ -495,25 +594,67 @@ def main() -> None:
     for _, row in test_df.iterrows():
         rid = row["id"]
         c = cache["rows"].get(rid, {})
-        rows_out.append({
-            "id": rid,
-            "prediction_up": c.get("prediction_up", round(1 / 3, 3)),
-            "prediction_down": c.get("prediction_down", round(1 / 3, 3)),
-            "reasoning_trace": c.get("reasoning_trace", ""),
-            "tokens_used": int(c.get("tokens_used", 0)),
-            "num_tool_calls": int(c.get("num_tool_calls", 0)),
-            "prompt_tokens": prompt_tokens,
-            "num_distinct_tools": num_distinct_tools,
-            "model_name": c.get("model_name", model_name),
-        })
+        rows_out.append(
+            {
+                "id": rid,
+                "prediction_up": c.get("prediction_up", round(1 / 3, 3)),
+                "prediction_down": c.get("prediction_down", round(1 / 3, 3)),
+                "reasoning_trace": c.get("reasoning_trace", ""),
+                "tokens_used": int(c.get("tokens_used", 0)),
+                "num_tool_calls": int(c.get("num_tool_calls", 0)),
+                "prompt_tokens": prompt_tokens,
+                "num_distinct_tools": num_distinct_tools,
+                "model_name": c.get("model_name", model_name),
+            }
+        )
 
     sub_df = pd.DataFrame(rows_out)
     sub_path = args.output_dir / "submission.csv"
     sub_df.to_csv(sub_path, index=False)
 
+    if args.eval:
+        # Score the labeled holdout with the shared Track A/B metric and compare
+        # to the 0.529 floor. The Kaggle zip below is submission-only, so return.
+        from bio_reasoning.eval.track_a_score import score_preds
+
+        up = sub_df["prediction_up"].to_numpy(dtype=float)
+        down = sub_df["prediction_down"].to_numpy(dtype=float)
+        floor = 0.529
+        try:
+            s = score_preds(eval_labels, up, down)
+        except ValueError as e:
+            print(
+                f"\n[eval] Cannot score {len(sub_df)} holdout rows — degenerate "
+                f"class balance ({e}). Re-run with a larger --eval-n."
+            )
+            return
+        metrics = {
+            "n_rows": int(len(sub_df)),
+            "fold_k": args.fold_k,
+            "fold_seed": args.fold_seed,
+            "model_name": model_name,
+            "auroc_de": float(s["auroc_de"]),
+            "auroc_dir": float(s["auroc_dir"]),
+            "mean": float(s["mean"]),
+            "track_a_floor": floor,
+            "beats_floor": bool(s["mean"] > floor),
+        }
+        metrics_path = args.output_dir / "eval_metrics.json"
+        metrics_path.write_text(json.dumps(metrics, indent=2))
+        verdict = "BEATS" if s["mean"] > floor else "does NOT beat"
+        print(
+            f"\n=== Leak-free CV (Track B, {len(sub_df)} rows) ===\n"
+            f"  mean(AUROC_de, AUROC_dir) = {s['mean']:.3f}  "
+            f"(de={s['auroc_de']:.3f}, dir={s['auroc_dir']:.3f})\n"
+            f"  vs Track A floor {floor:.3f} -> {verdict} the floor\n"
+            f"Wrote {sub_path}\nWrote {metrics_path}"
+        )
+        return
+
     prompt_path = args.output_dir / "prompt.txt"
     prompt_path.write_text(
-        "# System prompt used for Track B (DSPy ReAct)\n\n" + system_prompt
+        "# System prompt used for Track B (DSPy ReAct)\n\n"
+        + system_prompt
         + "\n\n# User prompt template (zero-shot)\n\n"
         + _PROMPT_ZERO.format(pert="{pert}", gene="{gene}", cell_desc=CELL_DESC)
     )
