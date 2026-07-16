@@ -2,6 +2,14 @@
 
 Append-only history of ingests and queries.
 
+## 2026-07-16 — Wiki-learn: curated-edge DBs fail the DE axis
+- Insights filed: 1
+- New pages: findings/curated-edges-fail-de-axis.md
+- Updated pages: findings/competitor-landscape.md (reverse cite)
+- Source: `feat/de-detector` branch experiments — CollecTRI (0.4% edges), STRING 1-hop
+  (1.6%), STRING 2-hop proximity (DE-AUROC 0.543). All curated-network DE channels too
+  weak on arbitrary (pert,gene) pairs → go model-based (logprobs / neighbor-retrieval).
+
 ## 2026-07-16 — Update: two-stage direction blend beats the "blend exhausted" claim
 - Updated pages: findings/track-b-abstention-failure.md — the earlier "blend
   exhausted" verdict was about the *raw α·agent+(1−α)·prior* blend. A *different*
