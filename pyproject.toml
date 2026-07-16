@@ -44,6 +44,12 @@ serve = [
     "vllm>=0.16.0",
 ]
 
+[tool.uv]
+# Install the test-required groups by default so `uv run pytest` collects the full
+# suite (eval → sklearn, track-b → dspy). Without these, test collection fails on
+# ModuleNotFoundError. azure/serve stay opt-in (deployment-only, not needed for tests).
+default-groups = ["dev", "eval", "track-b"]
+
 [tool.black]
 line-length = 100
 target-version = ["py311"]
