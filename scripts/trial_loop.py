@@ -11,8 +11,9 @@ best variant are refreshed after every trial.
   proposer converges (``run_loop`` + ``make_grid_proposer``).
 
 ``--track a`` (default) is prompt-only. ``--track b`` reuses the identical
-split/score/reflect/archive harness via an agent row predictor; wiring the real
-DSPy agent runner is the follow-up (mb backlog ``track-b-on-top-of-a``).
+split/score/reflect/archive harness via the DSPy ReAct agent (one run per val row,
+tools restricted to the split's train partition for leak-freedom); needs the
+``track-b`` dep group + ``OPENROUTER_API_KEY``.
 
 Fitness is the OOD-val mean; the honest floor to beat is the evidence prior ≈ 0.533.
 A trustworthy number needs the FULL val partition (~1276 rows) — ``--val-n`` caps rows
@@ -29,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -36,7 +38,12 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from bio_reasoning.trial_loop.archive import archive, load_trials
-from bio_reasoning.trial_loop.loop import make_prompt_row_predictor, run_loop, run_variant
+from bio_reasoning.trial_loop.loop import (
+    make_agent_row_predictor,
+    make_prompt_row_predictor,
+    run_loop,
+    run_variant,
+)
 from bio_reasoning.trial_loop.reflect import make_grid_proposer
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 from bio_reasoning.utils.openai_compat import post_chat_completion
@@ -82,6 +89,53 @@ def _build_infer_fn(args: argparse.Namespace, cost: dict[str, float]):
     return infer_fn
 
 
+def _load_track_b_module():
+    """Import scripts/track_b_agentic.py by file path (scripts/ is not a package)."""
+    import importlib.util
+
+    scripts_dir = Path(__file__).resolve().parent
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    spec = importlib.util.spec_from_file_location(
+        "track_b_agentic", scripts_dir / "track_b_agentic.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _build_track_b_predictor(df, args):
+    """Build a Track B agent RowPredictor: DSPy ReAct agent, one run per val row.
+
+    Restricts the agent's lookup tools to the split's TRAIN partition (same split
+    params ``predict_variant`` uses) so the agent can't read a val row's own label.
+    Reuses the extracted ``build_openrouter_lm``/``build_react_agent``/``predict_row``.
+    """
+    if not os.getenv("OPENROUTER_API_KEY"):
+        raise SystemExit("--track b needs OPENROUTER_API_KEY (in .env.local).")
+    try:
+        tba = _load_track_b_module()
+    except ModuleNotFoundError as e:
+        raise SystemExit(
+            f"--track b needs the 'track-b' dep group (uv sync --group track-b): {e}"
+        ) from e
+
+    from bio_reasoning.eval.split import holdout_split
+
+    train_idx, _ = holdout_split(
+        df, seed=args.split_seed, pert_frac=args.pert_frac, gene_frac=args.gene_frac
+    )
+    tba._set_train_df(df.iloc[train_idx])  # leak-free: tools see disjoint train only
+
+    lm = tba.build_openrouter_lm(args.max_tokens, args.max_retries)
+    react = tba.build_react_agent(lm, args.max_iters)
+
+    def agent_fn(pert: str, gene: str, seed: int) -> tuple[float, float]:
+        return tba.predict_row(react, pert, gene)
+
+    return make_agent_row_predictor(agent_fn)
+
+
 def _report(rec: TrialRecord) -> None:
     m = rec.metrics
     verdict = "BEATS" if m["mean"] > PRIOR_FLOOR else "below"
@@ -107,6 +161,8 @@ def main() -> None:
     ap.add_argument("--gene-frac", type=float, default=0.4)
     ap.add_argument("--val-n", type=int, default=None, help="Cap val rows (SMOKE only — noisy).")
     ap.add_argument("--max-tokens", type=int, default=2048)
+    ap.add_argument("--max-iters", type=int, default=40, help="Track B: ReAct rounds/row.")
+    ap.add_argument("--max-retries", type=int, default=2, help="Track B: LM retries.")
     ap.add_argument("--reasoning-effort", default="low")
     ap.add_argument("--concurrency", type=int, default=16)
     ap.add_argument("--timeout", type=int, default=120)
@@ -114,17 +170,6 @@ def main() -> None:
     args = ap.parse_args()
     if not args.grid and not args.variant_id:
         ap.error("--variant-id is required unless --grid is given")
-    if args.track == "b":
-        # Track B drives the same loop via an agent row predictor. Wiring the real
-        # DSPy ReAct agent_fn requires extracting a reusable agent runner from
-        # scripts/track_b_agentic.py (its agent lives inside main()); that + the
-        # spend run are the follow-up (mb backlog: track-b-on-top-of-a).
-        raise SystemExit(
-            "--track b: the loop seam + agent row predictor are ready and tested, but the "
-            "real agent_fn is not wired yet. Next step: extract build_react_agent()/predict_row() "
-            "from scripts/track_b_agentic.py and pass make_agent_row_predictor(agent_fn). "
-            "See mb backlog 'track-b-on-top-of-a'."
-        )
 
     df = pd.read_csv(args.train_csv)
     if args.val_n is not None:
@@ -141,7 +186,14 @@ def main() -> None:
 
     template = args.prompt_template.read_text() if args.prompt_template else None
     cost = {"prompt_tokens": 0.0, "completion_tokens": 0.0, "usd": 0.0}
-    row_predictor = make_prompt_row_predictor(_build_infer_fn(args, cost))
+    if args.track == "a":
+        row_predictor = make_prompt_row_predictor(_build_infer_fn(args, cost))
+        variant_seeds = tuple(args.seeds)
+    else:
+        row_predictor = _build_track_b_predictor(df, args)
+        # One agent run per row is already expensive; don't silently multiply by
+        # len(seeds). Multi-sample averaging is a separate lever (track-b-multisample).
+        variant_seeds = (args.seeds[0],)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     trials_path = args.output_dir / "trials.jsonl"
@@ -160,7 +212,7 @@ def main() -> None:
     kw = dict(seed=args.split_seed, pert_frac=args.pert_frac, gene_frac=args.gene_frac)
     if args.grid:
         candidates = [
-            Variant(id=f"fs{n}", prompt_template=template, n_few_shot=n, seeds=tuple(args.seeds))
+            Variant(id=f"fs{n}", prompt_template=template, n_few_shot=n, seeds=variant_seeds)
             for n in (int(x) for x in args.grid.split(","))
         ]
         run_loop(
@@ -176,7 +228,7 @@ def main() -> None:
             id=args.variant_id,
             prompt_template=template,
             n_few_shot=args.n_few_shot,
-            seeds=tuple(args.seeds),
+            seeds=variant_seeds,
         )
         persist(run_variant(df, variant, row_predictor, **kw), [])
 

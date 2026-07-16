@@ -40,7 +40,7 @@ import urllib.request
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import dspy
 import pandas as pd
@@ -302,6 +302,115 @@ class BioPredict(dspy.Signature):
 
 
 # ---------------------------------------------------------------------------
+# Reusable agent runner (shared by main() and the trial-loop --track b adapter)
+# ---------------------------------------------------------------------------
+
+
+def default_tools() -> list:
+    """The Track B tool set (single source for main() and the trial-loop)."""
+    return [
+        lookup_pert,
+        lookup_gene,
+        direction_prior,
+        gene_info,
+        protein_interactions,
+        submit_graded,
+        submit_answer,
+    ]
+
+
+def build_openrouter_lm(max_tokens: int = 16384, max_retries: int = 2) -> "dspy.LM":
+    """The fixed challenge model (gpt-oss-120b) via OpenRouter — leaderboard-valid."""
+    or_model = os.getenv("BIOREASONING_OPENROUTER_MODEL", "openai/gpt-oss-120b")
+    litellm_model = or_model if or_model.startswith("openrouter/") else f"openrouter/{or_model}"
+    return dspy.LM(
+        model=litellm_model,
+        api_key=os.getenv("OPENROUTER_API_KEY"),
+        max_tokens=max_tokens,
+        temperature=1.0,
+        num_retries=max_retries,
+    )
+
+
+def build_react_agent(lm: "dspy.LM", max_iters: int, tools: list | None = None) -> "dspy.ReAct":
+    """Configure DSPy with ``lm`` and return a ReAct agent over the Track B tools."""
+    dspy.configure(lm=lm, adapter=dspy.ChatAdapter(use_native_function_calling=False))
+    return dspy.ReAct(
+        BioPredict, tools=tools if tools is not None else default_tools(), max_iters=max_iters
+    )
+
+
+def extract_prediction(
+    trace: Any,
+    final_text: str,
+    pert: str,
+    prior_fn: Callable[[str], tuple[float, float]] = prior_scores,
+) -> tuple[float, float]:
+    """Map an agent trace + final answer to graded ``(up, down)``.
+
+    Preference order (this is the exact logic that governs the rank-metric score;
+    emitting 0/0 on abstention is what collapsed LB to 0.488):
+      1. ``submit_graded`` args → clamped graded pair (best — continuous scores).
+      2. ``submit_answer`` A/B/C → hard pair via ``parse_answer``.
+      3. an ``<answer>`` tag / free-text parse of ``final_text``.
+      4. neither parseable → the evidence prior for ``pert`` (never a blind 1/3).
+    """
+    graded: tuple[float, float] | None = None
+    submitted: str | None = None
+    for k in sorted(trace.keys() if isinstance(trace, dict) else []):
+        if not k.startswith("tool_name_"):
+            continue
+        step = k.split("_")[-1]
+        args_d = trace.get(f"tool_args_{step}", {}) or {}
+        if trace[k] == "submit_graded":
+            try:
+                graded = _clamp_pair(
+                    float(args_d.get("prediction_up")),
+                    float(args_d.get("prediction_down")),
+                )
+            except (TypeError, ValueError):
+                graded = None
+        elif trace[k] == "submit_answer":
+            submitted = (args_d.get("answer", "") or "").strip().upper()
+
+    if graded is not None:
+        return graded
+    if submitted in ("A", "B", "C"):
+        return parse_answer(submitted)
+
+    tag = extract_answer_tag(final_text)
+    source = tag if tag else (final_text or "")
+    pred = parse_answer(source, default=(None, None)) if source else (None, None)  # type: ignore[arg-type]
+    if pred == (None, None):
+        try:
+            pred = prior_fn(pert)
+        except Exception:
+            pred = parse_answer("")
+    return pred
+
+
+def predict_row(
+    react: Any,
+    pert: str,
+    gene: str,
+    prior_fn: Callable[[str], tuple[float, float]] = prior_scores,
+) -> tuple[float, float]:
+    """Run the ReAct ``react`` agent on one (pert, gene) row → graded ``(up, down)``.
+
+    ``react`` is any callable returning an object with ``.answer`` and
+    ``.trajectory`` (so it can be faked in tests). A raised agent falls back to the
+    evidence prior via :func:`extract_prediction`.
+    """
+    try:
+        result = react(question=format_prompt(pert, gene))
+        final_text = getattr(result, "answer", "") or ""
+        trace = getattr(result, "trajectory", {}) or {}
+    except Exception:
+        final_text, trace = "", {}
+    return extract_prediction(trace, final_text, pert, prior_fn=prior_fn)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -448,19 +557,11 @@ def main() -> None:
     # output is never leaderboard-valid. The real run uses gpt-oss-120b via the
     # 'openai_compatible' provider (Bing's Ollama/vLLM endpoint).
     if args.provider == "openrouter":
-        # Hosted gpt-oss-120b via OpenRouter (litellm native routing). This IS
-        # the fixed challenge model, so output is leaderboard-valid. Cheap
-        # pay-per-token; pair with --limit for smoke tests.
+        # Hosted gpt-oss-120b via OpenRouter — the fixed challenge model,
+        # leaderboard-valid. Cheap pay-per-token; pair with --limit for smoke tests.
         or_model = os.getenv("BIOREASONING_OPENROUTER_MODEL", "openai/gpt-oss-120b")
-        litellm_model = or_model if or_model.startswith("openrouter/") else f"openrouter/{or_model}"
         model_name = args.model_name or or_model
-        lm = dspy.LM(
-            model=litellm_model,
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-            max_tokens=args.max_tokens,
-            temperature=1.0,
-            num_retries=args.max_retries,
-        )
+        lm = build_openrouter_lm(args.max_tokens, args.max_retries)
     elif args.provider == "anthropic":
         claude_model = os.getenv("BIOREASONING_ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
         litellm_model = (
@@ -504,30 +605,11 @@ def main() -> None:
             reasoning_effort=args.reasoning_effort,
             allowed_openai_params=["reasoning_effort"],
         )
-    dspy.configure(
-        lm=lm,
-        adapter=dspy.ChatAdapter(use_native_function_calling=False),
-    )
-
-    tool_list = [
-        lookup_pert,
-        lookup_gene,
-        direction_prior,
-        gene_info,
-        protein_interactions,
-        submit_graded,
-        submit_answer,
-    ]
-    num_distinct_tools = len(tool_list)
-    if num_distinct_tools > 100:
-        parser.error(f"Too many tools ({num_distinct_tools}), competition limit is 100.")
-    print(f"Tools: {num_distinct_tools}, max_iters: {args.max_iters}")
-
-    react = dspy.ReAct(
-        BioPredict,
-        tools=tool_list,
-        max_iters=args.max_iters,
-    )
+    tool_list = default_tools()
+    if len(tool_list) > 100:
+        parser.error(f"Too many tools ({len(tool_list)}), competition limit is 100.")
+    print(f"Tools: {len(tool_list)}, max_iters: {args.max_iters}")
+    react = build_react_agent(lm, args.max_iters, tool_list)
 
     # ── Load data and cache ───────────────────────────────────────────
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -621,44 +703,8 @@ def main() -> None:
             trace = {"error": str(e)}
         tokens = _tokens_from_history(lm, history_before)
 
-        # Prefer the agent's graded submission (continuous scores lift AUROC);
-        # fall back to a hard A/B/C letter, then to the free-text answer.
-        graded: tuple[float, float] | None = None
-        submitted = None
-        for k in sorted(trace.keys() if isinstance(trace, dict) else []):
-            if not k.startswith("tool_name_"):
-                continue
-            step = k.split("_")[-1]
-            args_d = trace.get(f"tool_args_{step}", {})
-            if trace[k] == "submit_graded":
-                try:
-                    graded = _clamp_pair(
-                        float(args_d.get("prediction_up")),
-                        float(args_d.get("prediction_down")),
-                    )
-                except (TypeError, ValueError):
-                    graded = None
-            elif trace[k] == "submit_answer":
-                submitted = args_d.get("answer", "").strip().upper()
-
-        if graded is not None:
-            pred_up, pred_down = graded
-        elif submitted in ("A", "B", "C"):
-            pred_up, pred_down = parse_answer(submitted)
-        else:
-            tag = extract_answer_tag(final_text)
-            source = tag if tag else (final_text or "")
-            # Sentinel default so an unparseable answer is distinguishable.
-            pred = parse_answer(source, default=(None, None)) if source else (None, None)
-            if pred == (None, None):
-                # Agent never produced a usable answer (e.g. the adapter parse-miss
-                # loop that burns tokens to max_iters). Fall back to the evidence
-                # prior for this pert instead of an uninformative 1/3.
-                try:
-                    pred = prior_scores(row["pert"])
-                except Exception:
-                    pred = parse_answer("")
-            pred_up, pred_down = pred
+        # Prefer graded → hard A/B/C → free-text tag → evidence prior (never 0/0).
+        pred_up, pred_down = extract_prediction(trace, final_text, row["pert"])
 
         with cache_lock:
             cache["rows"][rid] = {
@@ -712,7 +758,7 @@ def main() -> None:
                 "tokens_used": int(c.get("tokens_used", 0)),
                 "num_tool_calls": int(c.get("num_tool_calls", 0)),
                 "prompt_tokens": prompt_tokens,
-                "num_distinct_tools": num_distinct_tools,
+                "num_distinct_tools": len(tool_list),
                 "model_name": c.get("model_name", model_name),
             }
         )
