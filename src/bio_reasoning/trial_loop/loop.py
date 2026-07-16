@@ -16,6 +16,7 @@ with fakes; the CLI wires the real gpt-oss-120b caller / agent.
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pandas as pd
@@ -141,15 +142,19 @@ def make_prompt_row_predictor(infer_fn: InferFn) -> RowPredictor:
     return _predict
 
 
-def make_agent_row_predictor(agent_fn: AgentFn) -> RowPredictor:
+def make_agent_row_predictor(agent_fn: AgentFn, concurrency: int = 1) -> RowPredictor:
     """Track B predictor: run the agent per row → graded (up, down).
 
     ``get_examples`` is ignored — the agent gathers evidence via tools rather than
-    few-shot exemplars.
+    few-shot exemplars. ``concurrency`` runs the (slow) agents in a thread pool, as
+    the Track B harness does; ``ex.map`` preserves row order.
     """
 
     def _predict(rows, variant, seed, get_examples):
-        return [agent_fn(str(r["pert"]), str(r["gene"]), seed) for r in rows]
+        if concurrency <= 1:
+            return [agent_fn(str(r["pert"]), str(r["gene"]), seed) for r in rows]
+        with ThreadPoolExecutor(max_workers=concurrency) as ex:
+            return list(ex.map(lambda r: agent_fn(str(r["pert"]), str(r["gene"]), seed), rows))
 
     return _predict
 

@@ -37,6 +37,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -149,10 +150,20 @@ def _build_track_b_predictor(df, args):
     lm = tba.build_openrouter_lm(args.max_tokens, args.max_retries)
     react = tba.build_react_agent(lm, args.max_iters)
 
-    def agent_fn(pert: str, gene: str, seed: int) -> tuple[float, float]:
-        return tba.predict_row(react, pert, gene)
+    # Lightweight progress: agent runs are slow (~seconds/row); a silent multi-hour
+    # run is hard to trust, so print a heartbeat every 50 rows.
+    done = {"n": 0}
+    lock = threading.Lock()
 
-    return make_agent_row_predictor(agent_fn)
+    def agent_fn(pert: str, gene: str, seed: int) -> tuple[float, float]:
+        pair = tba.predict_row(react, pert, gene)
+        with lock:
+            done["n"] += 1
+            if done["n"] % 50 == 0:
+                print(f"[track-b] {done['n']} rows done", flush=True)
+        return pair
+
+    return make_agent_row_predictor(agent_fn, concurrency=args.concurrency)
 
 
 def _report(rec: TrialRecord) -> None:
