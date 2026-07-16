@@ -24,7 +24,7 @@ Three layered gates enforce quality before code reaches `main`:
 | Gate | When | What runs |
 |---|---|---|
 | **Pre-commit hook** | every `git commit` | black, ruff (lint), mypy on `src/`, hygiene checks (trailing-whitespace, EOF, large files, etc.) — config in `.pre-commit-config.yaml` |
-| **`/pr-open` skill** | branch → PR | full lint + typecheck + tests; then a 4-agent quality gate run in parallel (`@code-review`, `@security-audit`, `@docs-review`, `@wiki-lint`); then push + `gh pr create` + tick matching roadmap items with `(#N)`. Security findings are HARD blocks; other findings are surfaced for review. |
+| **`/pr-open` skill** | branch → PR | full lint + typecheck + tests; then a 4-agent quality gate run in parallel (`@code-review`, `@security-audit`, `@docs-review`, `@wiki-lint`); then (if the project keeps `reports/progress-report.md`) a user-gated proposal to add a report-worthy result that rides this PR; then push + `gh pr create` + tick matching roadmap items with `(#N)`. Security findings are HARD blocks; other findings are surfaced for review. |
 | **Human squash-merge** | PR → main | reviewer clicks "Squash and merge" in GitHub UI (the only enabled merge type) |
 
 Three skills support the flow:
@@ -32,11 +32,12 @@ Three skills support the flow:
 - `/dev-setup` — one-time onboarding after `git clone`: `uv sync`, `uv run
   pre-commit install`, verify `gh` + `kaggle` auth, check `.env`.
 - `/pr-open` — runs the PR-time gate above.
-- `/pr-merge` — after the human squash-merges in GitHub: verify, archive
-  the `mb/active/<slug>.md` tracking file, prune the worktree, delete
-  the local branch. Layout-aware — in a plain `git clone` (no umbrella /
-  no worktree) the archive + worktree-prune steps are skipped and `main`
-  is checked out in place.
+- `/pr-merge` — after the human squash-merges in GitHub: verify, sync
+  `main`, verify progress-report freshness (read-only — writes nothing to
+  `main`), archive the `mb/active/<slug>.md` tracking file, prune the
+  worktree, delete the local branch. Layout-aware — in a plain `git clone`
+  (no umbrella / no worktree) the archive + worktree-prune steps are
+  skipped and `main` is checked out in place.
 
 ## Why
 
