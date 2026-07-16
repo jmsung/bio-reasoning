@@ -391,13 +391,24 @@ def main() -> None:
     parser.add_argument(
         "--eval",
         action="store_true",
-        help="Leak-free CV mode: run on a labeled holdout from TRAIN_CSV "
-        "(doubly-disjoint fold) and score with mean(AUROC_de,AUROC_dir) vs the "
-        "0.529 Track A floor. Tools are restricted to the fold's train partition.",
+        help="Leak-free eval mode: run on a labeled holdout from TRAIN_CSV "
+        "(see --split for fold vs dual-OOD holdout) and score with "
+        "mean(AUROC_de,AUROC_dir) vs the split's prior floor. Tools are "
+        "restricted to the eval split's train partition.",
     )
     parser.add_argument("--eval-n", type=int, default=None, help="Cap holdout rows in --eval.")
-    parser.add_argument("--fold-k", type=int, default=5, help="CV folds for --eval split.")
-    parser.add_argument("--fold-seed", type=int, default=0, help="Seed for --eval split.")
+    parser.add_argument(
+        "--fold-k", type=int, default=5, help="CV folds for --eval split (fold mode)."
+    )
+    parser.add_argument("--fold-seed", type=int, default=0, help="Seed for the --eval split.")
+    parser.add_argument(
+        "--split",
+        default="fold",
+        choices=["fold", "holdout"],
+        help="--eval split: 'fold' = doubly_disjoint_folds (legacy leak-free CV); "
+        "'holdout' = holdout_split dual-OOD val (perts+genes disjoint — the "
+        "authoritative fitness gate; baselines: no-signal 0.500, prior 0.533).",
+    )
     args = parser.parse_args()
 
     model_name = args.model_name or args.model
@@ -519,13 +530,26 @@ def main() -> None:
 
     eval_labels = None
     if args.eval:
-        # Leak-free CV: hold out an entire (pert, gene)-disjoint fold from train,
-        # and restrict the lookup tools to that fold's TRAIN partition so the
-        # agent can't read the holdout row's own label.
-        from bio_reasoning.eval.split import doubly_disjoint_folds
+        # Leak-free eval: hold out labeled rows from train and restrict the lookup
+        # tools to the TRAIN partition so the agent can't read a holdout row's own
+        # label. 'fold' = doubly-disjoint CV fold; 'holdout' = the dual-OOD val
+        # split (perts+genes disjoint — the authoritative fitness gate).
+        from bio_reasoning.eval.split import (
+            assert_leak_free,
+            doubly_disjoint_folds,
+            holdout_split,
+        )
 
         train_full = pd.read_csv(TRAIN_CSV)
-        tr_idx, ev_idx = doubly_disjoint_folds(train_full, k=args.fold_k, seed=args.fold_seed)[0]
+        if args.split == "holdout":
+            tr_idx, ev_idx = holdout_split(train_full, seed=args.fold_seed)
+        else:
+            tr_idx, ev_idx = doubly_disjoint_folds(train_full, k=args.fold_k, seed=args.fold_seed)[
+                0
+            ]
+        # The whole eval's validity rests on zero pert/gene overlap — fail loud if
+        # column names or hashing ever drift.
+        assert_leak_free(train_full, tr_idx, ev_idx)
         _set_train_df(train_full.iloc[tr_idx])  # tools see disjoint train only
         ev = train_full.iloc[ev_idx].reset_index(drop=True)
         if args.eval_n is not None:
@@ -538,10 +562,14 @@ def main() -> None:
             }
         )
         eval_labels = ev["label"].astype(str).to_numpy()
+        split_desc = (
+            f"dual-OOD holdout (seed={args.fold_seed})"
+            if args.split == "holdout"
+            else f"fold k={args.fold_k} seed={args.fold_seed}"
+        )
         print(
-            f"--eval: leak-free CV on {len(test_df)} holdout rows "
-            f"(fold k={args.fold_k} seed={args.fold_seed}); tools restricted to "
-            f"{len(tr_idx)} disjoint train rows."
+            f"--eval: leak-free {args.split} on {len(test_df)} holdout rows "
+            f"({split_desc}); tools restricted to {len(tr_idx)} disjoint train rows."
         )
     else:
         test_df = pd.read_csv(args.test_csv)
@@ -686,7 +714,9 @@ def main() -> None:
 
         up = sub_df["prediction_up"].to_numpy(dtype=float)
         down = sub_df["prediction_down"].to_numpy(dtype=float)
-        floor = 0.529
+        # Reference baseline on the same split: the dual-OOD holdout has an honest
+        # prior floor of 0.533 (no-signal 0.500); the fold CV compares to LB 0.529.
+        floor = 0.533 if args.split == "holdout" else 0.529
         try:
             s = score_preds(eval_labels, up, down)
         except ValueError as e:
@@ -697,23 +727,26 @@ def main() -> None:
             return
         metrics = {
             "n_rows": int(len(sub_df)),
-            "fold_k": args.fold_k,
+            "split": args.split,
+            # fold_k is meaningless for the holdout split (it uses no folds)
+            **({"fold_k": args.fold_k} if args.split == "fold" else {}),
             "fold_seed": args.fold_seed,
             "model_name": model_name,
             "auroc_de": float(s["auroc_de"]),
             "auroc_dir": float(s["auroc_dir"]),
             "mean": float(s["mean"]),
-            "track_a_floor": floor,
+            "prior_floor": floor,
             "beats_floor": bool(s["mean"] > floor),
         }
         metrics_path = args.output_dir / "eval_metrics.json"
         metrics_path.write_text(json.dumps(metrics, indent=2))
         verdict = "BEATS" if s["mean"] > floor else "does NOT beat"
+        title = "dual-OOD val" if args.split == "holdout" else "leak-free CV"
         print(
-            f"\n=== Leak-free CV (Track B, {len(sub_df)} rows) ===\n"
+            f"\n=== Track B {title} ({len(sub_df)} rows, split={args.split}) ===\n"
             f"  mean(AUROC_de, AUROC_dir) = {s['mean']:.3f}  "
             f"(de={s['auroc_de']:.3f}, dir={s['auroc_dir']:.3f})\n"
-            f"  vs Track A floor {floor:.3f} -> {verdict} the floor\n"
+            f"  vs prior floor {floor:.3f} -> {verdict} the floor\n"
             f"Wrote {sub_path}\nWrote {metrics_path}"
         )
         return
