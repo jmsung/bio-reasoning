@@ -61,12 +61,14 @@ Ordered by priority — understand → plan → build.
     evidence prior ignores). Beats the prior on the leak-free dual-OOD CV
     (~0.56 vs 0.534). Char-ngram/string-stat features were at chance — symbols
     are arbitrary; GO terms transfer across unseen perts/genes. Submission:
-    `scripts/track_a_two_stage_submission.py`.
+    `scripts/track_a_two_stage_submission.py`. **LB 0.561** (2026-07-16) vs prior
+    0.529 — +0.032, OOD-val↔LB gap ~0.00. New Track A best.
 13. [ ] **Track B two-stage direction blend** — rank-blend the two-stage model's
     direction into the floor-to-prior submission (DE magnitude kept). Lifts
     OOD-val 0.5647 → 0.5712, beating the champion for every blend weight in
     (0,1). Submission: `scripts/track_b_blend_two_stage_submission.py`; eval:
-    `scripts/track_b_two_stage_ood_val.py`. Awaits an LB confirm (current 0.568).
+    `scripts/track_b_two_stage_ood_val.py`. **LB 0.578** (2026-07-16, w=0.7) vs
+    floor-to-prior 0.568 — +0.010, LB > OOD-val. New Track B best.
 
 ## Completed
 
