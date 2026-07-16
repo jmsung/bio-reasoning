@@ -695,6 +695,8 @@ def main() -> None:
         agent_down = c.get("prediction_down", 0.0)
         if args.blend_alpha < 1.0:
             # Mix the prior into every row (any alpha<1 lifts (0,0) ties too).
+            # Note: unlike floor-to-prior, a failed/missing (0,0) row blends to
+            # (1-alpha)*prior — a shrunk prior, not the full floor.
             pred_up, pred_down = blend(agent_up, agent_down, row["pert"], args.blend_alpha)
         else:
             # Default: floor only zero-signal (0,0) ties to the prior so no row is
