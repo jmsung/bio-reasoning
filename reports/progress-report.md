@@ -23,7 +23,9 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
 | **Track A — evidence prior** | functional-category direction prior (no LLM) | **0.529** (Kaggle LB; CV 0.534) | our real floor; ~0 CV↔LB gap; **direction carries the signal, DE-vs-none is nearly flat** |
 | **Track B — agent harness (v1)** | multi-agent tool-use (direction-prior + GO-evidence tools) on `gpt-oss-120b` | local CV **0.675** → LB **0.488** | **did not transfer** — the agent abstained on ~72% of rows, submitting `0/0`; ties collapse the rank metric to ~random. Local CV was inflated ~0.19 over LB. |
 | **Track B — floor-to-prior (v2)** | v1 predictions, every `(0,0)` tie floored to the graded prior (no re-inference) | **0.568** (Kaggle LB) | **first Track B above the floor** — removing the 72% ties recovers the 0.529 prior; the 506 agent-signal rows add **+0.039** on top. Reasoning helps once it can't delete the prior. |
-| Public leaderboard (top) | — | ≈ 0.65 | on the same AUROC scale |
+| **Track A — two-stage GO (v2)** | learned `P(DE)·P(up\|DE)` heads over GO:BP term features for the perturbation *and* the target gene | **0.561** (Kaggle LB; OOD-val ~0.56) | **new Track A best** (+0.032 over the 0.529 prior); GO functional features carry it — our char-ngram / gene-name string features scored at chance (but see caveat: the public field reaches ~0.693 with gene-name n-grams, so name structure *is* exploitable — we haven't captured it) |
+| **Track B — DIR-blend (v3)** | rank-blends the two-stage model's direction into the floored submission (w=0.7) | **0.578** (Kaggle LB; OOD-val 0.571) | **new Track B best** (+0.010 over the 0.568 floor-to-prior champion); the direction signal generalized to the full test set |
+| Public leaderboard (top) | — | A ≈ 0.693 / B ≈ 0.752 | on the same AUROC scale — **we remain well below the field** |
 
 **Two findings drive the plan:**
 1. **The direction axis carries the signal; DE-vs-none is nearly flat** — split optimization
@@ -79,6 +81,36 @@ LLM+tools can genuinely differentiate — is **real external gene knowledge** (G
 pathway) fed to the agent, plus **TabPFN over functional features** (SOTA per Palla 2026,
 unused by the field). Spawned two priorities: the two-stage decomposition and
 functional-knowledge Track B tools.
+
+## Update (feat/two-stage-de-dir + test/verify-two-stage-lb — landed)
+
+The two-stage **DE×DIR decomposition** from the competitor survey is built and
+**verified on the leaderboard** — two new public-LB bests, both confirmed by the
+dual-OOD split.
+
+| Track | submission | OOD-val | **public LB** | baseline | Δ | gap |
+|---|---|---|---|---|---|---|
+| A | two-stage GO-term | ~0.56 | **0.561** | prior 0.529 | **+0.032** | ~0.00 |
+| B | DIR-blend (w=0.7) | 0.571 | **0.578** | floor-to-prior 0.568 | **+0.010** | +0.007 (LB > OOD-val) |
+
+**Track A** learns `P(DE)` and `P(up|DE)` heads separately over GO:BP term features
+for *both* the perturbation and the **target gene** — the axis the direction prior
+ignores — and recombines to the metric's two AUROCs. The functional features carry
+it: our char-ngram / gene-name string features scored at chance on the dual-OOD
+split. **Caveat worth chasing:** the public field reaches ~0.693 with gene-name
+n-grams + classical ML, so name structure *is* strongly predictive — our n-gram
+implementation simply failed to extract it, and at 0.561 we remain well below the
+field. GO terms are a *complementary* functional lever, not a replacement for the
+string signal we're still leaving on the table. **Track B** rank-blends the
+two-stage model's direction into the floored champion (w=0.7), +0.010 on top of
+floor-to-prior — a *different* lever from the earlier α·agent+prior blend (which
+was exhausted); mixing in an orthogonal learned direction still lifts.
+
+**The dual-OOD split was predictive for both.** Track A LB 0.561 ≈ OOD-val ~0.56
+(gap ~0.00); Track B LB 0.578 *exceeded* OOD-val 0.571, so the single-split lift was
+real, not seed noise (though σ≈0.05–0.06 on this split keeps the exact figures soft).
+The CV-inflation trap that sank the raw agent (0.675→0.488) stayed absent — the
+honest split now reliably predicts the leaderboard.
 
 ## Approach
 
