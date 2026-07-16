@@ -45,7 +45,7 @@ from typing import Any
 import dspy
 import pandas as pd
 from dotenv import load_dotenv
-from tools.direction_prior import direction_prior
+from tools.direction_prior import direction_prior, prior_scores
 
 from mlgenx import format_prompt, parse_answer
 from mlgenx.prompts import _PROMPT_ZERO, CELL_DESC
@@ -347,8 +347,12 @@ def main() -> None:
     parser.add_argument(
         "--max-iters",
         type=int,
-        default=250,
-        help="Max ReAct iterations (tool-call rounds per row)",
+        default=40,
+        help="Max ReAct iterations (tool-call rounds per row). Real rows finish "
+        "in <10; the low default caps runaway rows where the adapter can't parse "
+        "the model's output and would otherwise loop to the competition ceiling "
+        "(250) burning ~10x the tokens. Raise toward 250 only if legitimate rows "
+        "hit the cap.",
     )
     parser.add_argument("--test-csv", type=Path, default=TEST_CSV)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "track_b" / "default")
@@ -600,12 +604,22 @@ def main() -> None:
 
         if graded is not None:
             pred_up, pred_down = graded
+        elif submitted in ("A", "B", "C"):
+            pred_up, pred_down = parse_answer(submitted)
         else:
-            source = submitted if submitted in ("A", "B", "C") else None
-            if source is None:
-                tag = extract_answer_tag(final_text)
-                source = tag if tag else (final_text or "")
-            pred_up, pred_down = parse_answer(source)
+            tag = extract_answer_tag(final_text)
+            source = tag if tag else (final_text or "")
+            # Sentinel default so an unparseable answer is distinguishable.
+            pred = parse_answer(source, default=(None, None)) if source else (None, None)
+            if pred == (None, None):
+                # Agent never produced a usable answer (e.g. the adapter parse-miss
+                # loop that burns tokens to max_iters). Fall back to the evidence
+                # prior for this pert instead of an uninformative 1/3.
+                try:
+                    pred = prior_scores(row["pert"])
+                except Exception:
+                    pred = parse_answer("")
+            pred_up, pred_down = pred
 
         with cache_lock:
             cache["rows"][rid] = {

@@ -50,12 +50,25 @@ TOOL_SCHEMA = {
 }
 
 
+def _category_and_scores(pert: str, cache_path: str | Path) -> tuple[str, float, float]:
+    """Return (category, pred_up, pred_down) for a perturbation. Shared by the
+    text tool and the numeric fallback so both use one code path."""
+    category = annotate_perts([pert], cache_path)[pert]
+    up, down = track_a_prior.predict([pert], {pert: category})
+    return category, float(up[0]), float(down[0])
+
+
+def prior_scores(pert: str, cache_path: str | Path = _CACHE) -> tuple[float, float]:
+    """Numeric (pred_up, pred_down) from the perturbation's category prior.
+    Used as an evidence-grounded fallback when the agent fails to submit."""
+    _, up, down = _category_and_scores(pert, cache_path)
+    return up, down
+
+
 def _prior_for(pert: str, cache_path: str | Path) -> str:
     """Core logic, with an injectable cache path (offline-testable)."""
-    category = annotate_perts([pert], cache_path)[pert]
+    category, up_v, down_v = _category_and_scores(pert, cache_path)
     u, d = track_a_prior.PRIORS[category]
-    up, down = track_a_prior.predict([pert], {pert: category})
-    up_v, down_v = float(up[0]), float(down[0])
 
     lean = "up" if u > 0.5 else "down" if u < 0.5 else "neither"
     return (

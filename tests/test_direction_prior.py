@@ -58,6 +58,14 @@ def test_unknown_terms_fall_back_to_other(cache):
     assert "pred_down = 0.202" in out
 
 
+def test_prior_scores_numeric_fallback(cache):
+    # Used as the informed fallback when the agent fails to submit.
+    up, down = direction_prior.prior_scores("Rpl13", cache)
+    assert (round(up, 3), round(down, 3)) == (0.455, 0.195)  # housekeeping
+    up2, down2 = direction_prior.prior_scores("Stat1", cache)
+    assert (round(up2, 3), round(down2, 3)) == (0.220, 0.330)  # immune
+
+
 def test_public_tool_uses_default_cache():
     # The public tool wraps _prior_for with the shared cache path; just assert
     # the signature the DSPy ReAct loop calls exists and takes a single arg.
