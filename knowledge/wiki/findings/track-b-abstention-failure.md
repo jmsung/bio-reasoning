@@ -67,13 +67,23 @@ Three are now measured:
   (PR #20). The full ladder: hard A/B/C 0.507 → graded-but-over-abstaining 0.488
   → floor-to-prior 0.568. The agent's ~28% signal rows add real lift *on top of*
   the recovered prior — reasoning helps once it can't delete the prior.
-- **blend `α·agent + (1−α)·prior`** — ❌ **no gain; lever exhausted** (PR #21).
+- **blend `α·agent + (1−α)·prior`** — ❌ **no gain; that lever exhausted** (PR #21).
   OOD-val α-sweep: best α=0.9 → 0.5654 vs floor-to-prior 0.5647 (+0.0007, noise).
   The agent's signal rows are already well-calibrated, so shrinking them toward
   the prior doesn't help; and a *raw* blend can't beat floor-to-prior by
   construction — it gives `(0,0)` ties only `(1−α)·prior` vs the full prior.
+- **blend a learned model's *direction*** — ✅ **works: Kaggle LB 0.578**
+  (2026-07-16, two-stage-de-dir). A *different* lever than the α-blend above: keep
+  floor-to-prior's DE magnitude untouched but rank-average the **two-stage GO-term
+  model's** direction into `up/(up+down)`. Beats floor-to-prior for every blend
+  weight in (0,1); OOD-val 0.5647 → 0.5712 (w=0.7), LB 0.568 → **0.578** (+0.010).
+  The two-stage DE axis is near-chance and stays unused; only its *direction* is
+  complementary. So mixing predictions is not exhausted — mixing toward the
+  *coarse prior* is; mixing in an *orthogonal learned signal* still lifts.
 - **scoring-not-labeling** (continuous DE-likelihood) — still open.
 
-**Takeaway:** the Track B ceiling is set by **evidence quality** (the prior +
-better tools), not by post-hoc prediction mixing. The remaining levers are
-better knowledge tools and scoring-not-labeling, not more blending.
+**Takeaway:** floor-to-prior's DE ceiling is set by **evidence quality** (the
+prior + better tools) — shrinking the agent toward the prior can't beat it. But
+the **direction** axis is not capped there: blending in an orthogonal learned
+signal (the two-stage GO-term model) lifted the LB to 0.578. Remaining levers:
+better knowledge tools, scoring-not-labeling, and stronger learned direction.
