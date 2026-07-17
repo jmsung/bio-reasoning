@@ -6,7 +6,7 @@ cites:
   - findings/direction-transfers-de-doesnt.md
   - findings/neighbor-retrieval-direction-lever.md
   - findings/track-a-eda.md
-  - source/2026-yuan-plausibility-not-prediction-llm-perturbation.md
+  - domains/ai-reasoning/source/2026-yuan-plausibility-not-prediction-llm-perturbation.md
 ---
 
 # LLM self-consistency does not crack the DE axis — near-chance, like every other channel
@@ -49,7 +49,7 @@ dual-OOD **by construction** — `none` negatives are count-matched per gene, DE
 flat across perturbations, functional association predicts DE only weakly ([[track-a-eda]]).
 And LLMs specifically carry a **systematic over-DE bias** — Yuan 2026 measured a
 representative LLM predicting "responds" for 92% of queries at a 29% true rate
-([[../source/2026-yuan-plausibility-not-prediction-llm-perturbation]]). Self-consistency
+("Plausibility Is Not Prediction"). Self-consistency
 averages *variance*; it cannot remove a *systematic bias*, and a confident-but-near-chance
 signal still scores AUROC_de ≈ 0.5 on a rank metric.
 

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 from pathlib import Path
 
 import numpy as np
@@ -68,7 +69,8 @@ def query_text(
     ``client`` is a single reused Anthropic client (building one per call leaks the
     connection pool and degrades badly). gpt-oss / OpenAI-compatible endpoints go
     through the stdlib post_chat_completion instead. Temperature 1.0 so the K
-    self-consistency samples differ.
+    self-consistency samples differ. (The anthropic path ignores ``seed`` — the API
+    has none — and ``timeout_s``, which is set on the reused client instead.)
     """
     if cfg.provider == "anthropic":
         assert client is not None
@@ -92,15 +94,13 @@ def query_text(
 
 
 def _parse_answer(text: str) -> str:
-    """Extract the final up/down/none token from a reasoning-model response."""
-    low = text.lower()
-    # prefer the last occurrence (the model's final answer line)
-    best, best_pos = "", -1
-    for tok in ("up", "down", "none"):
-        pos = low.rfind(tok)
-        if pos > best_pos:
-            best, best_pos = tok, pos
-    return best
+    """Extract the final up/down/none token from a reasoning-model response.
+
+    Word-boundary matches only (so "upregulated"/"downregulated"/"group" don't
+    count), taking the last one — the model's final answer follows its reasoning.
+    """
+    matches = re.findall(r"\b(up|down|none)\b", text.lower())
+    return matches[-1] if matches else ""
 
 
 def main() -> None:

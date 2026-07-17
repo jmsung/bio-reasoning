@@ -51,8 +51,10 @@ def logprobs_to_scores(token_logprobs: dict[str, float]) -> tuple[float, float, 
     """Softmax over the up/down/none answer-token logprobs → ``(p_up, p_down, p_none)``.
 
     ``token_logprobs`` maps a candidate answer token to its log-probability (as returned
-    in an OpenAI-compatible ``top_logprobs``). A candidate missing from the dict is
-    floored to a very small probability rather than dropped.
+    in an OpenAI-compatible ``top_logprobs``). Keys must be the canonical lowercase
+    ``up``/``down``/``none`` (unlike ``votes_to_scores``, this does not canonicalize — a
+    non-canonical key is treated as absent). A candidate missing from the dict is floored
+    to a very small probability rather than dropped.
     """
     lps = [token_logprobs.get(k, _MISSING_LOGPROB) for k in _VALID]
     m = max(lps)
