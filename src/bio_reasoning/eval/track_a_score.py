@@ -31,6 +31,12 @@ def evaluate(labels, pred_up, pred_down) -> dict[str, float]:
     pred_up = np.asarray(pred_up, dtype=float)
     pred_down = np.asarray(pred_down, dtype=float)
 
+    # Fail loud on an empty eval. A degenerate scorer (e.g. the agentic predictor
+    # returning no valid rows) otherwise yields nan AUROCs and a meaningless mean
+    # that can spuriously "beat" the baseline — the n_val=0 / 0.547 phantom win.
+    if labels.size == 0:
+        raise ValueError("evaluate() got 0 rows — empty eval (scorer produced no predictions)")
+
     de_true = (labels != "none").astype(int)
     de_score = pred_up + pred_down
     auroc_de = roc_auc_score(de_true, de_score) if len(set(de_true.tolist())) > 1 else float("nan")
