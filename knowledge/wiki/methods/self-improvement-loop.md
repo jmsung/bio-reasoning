@@ -90,6 +90,33 @@ P9 gate-feasibility signal that drives loop-until-dry.
 - **Practical gotcha:** gpt-oss-120b emits harmony/reasoning tokens first, so a
   small `max_tokens` cap returns empty content — budget generously.
 
+## The prompt-wording axis (`feat/loop-prompt-wording-axis`)
+
+Until this branch the Track A lane searched only *how* the prompt was assembled
+(few-shot count, retrieval mode, sample count) — the **instruction wording** was pinned
+to the mlgenx PerturbQA default, so the team's EDA never reached the model. The wording
+is now a first-class searched axis (`trial_loop/prompt_variants.py`):
+
+- **Named registry, not free-form.** `PROMPT_VARIANTS` maps a name → template; proposers
+  select a name and it is validated (`is_valid_prompt`) exactly like `retrieval`. Names —
+  not model-emitted strings — keep it token-capped and **leak-safe** (the Track A rule bars a
+  prompt that contains the expected outputs). `default` is a `None` sentinel → the mlgenx
+  path, so the historical grid and ids are byte-stable until a wording is opted in.
+- **Composes with few-shot (no inert knob).** Every non-default template carries an
+  `{examples_block}` slot; `loop._format` renders exemplars into it, so `n_few_shot > 0` +
+  a knowledge wording shows both — dodging the same silent-inert-knob trap the retrieval
+  key_fn hit (below) and the tool lane calls out.
+- **Knowledge shipped:** `direction_prior` injects the housekeeping-up / immune-down
+  tendency ([[../findings/track-a-eda]] §4, [[../findings/direction-transfers-de-doesnt]]);
+  `go_context` asks the model to state the pert's functional class + the target's function
+  before deciding ([[../findings/track-a-eda]] "Implications for modeling"). Both are
+  grounded in measured EDA, never a test label.
+- **Wired end-to-end:** crossed into `de_variant_grid(prompts=…)`, selectable by the
+  `llm_proposer` (`prompt` field), and advertised in the optimizer schema
+  (`scripts/self_improve_loop.py`). This is the first real prompt-*optimization* surface —
+  the axis the strategy note flags as the shared foundation that lifts Track A directly and
+  seeds the Track B agent's base prompt.
+
 ## Gotcha caught in review — thread the retrieval key_fn
 
 The DE variant space includes a `go_category` few-shot **retrieval** knob. It was
