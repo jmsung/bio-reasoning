@@ -55,15 +55,24 @@ PROMPT = (
 )
 
 
-def query_text(cfg: ProviderConfig, prompt: str, seed: int, max_tokens: int, timeout_s: int) -> str:
+def query_text(
+    cfg: ProviderConfig,
+    client: Anthropic | None,
+    prompt: str,
+    seed: int,
+    max_tokens: int,
+    timeout_s: int,
+) -> str:
     """Return the model's text for a prompt, dispatching on the configured provider.
 
-    gpt-oss / OpenAI-compatible endpoints go through post_chat_completion; the
-    ``anthropic`` provider (dev fallback) uses the Messages API. Temperature 1.0 in
-    both paths so the K self-consistency samples actually differ.
+    ``client`` is a single reused Anthropic client (building one per call leaks the
+    connection pool and degrades badly). gpt-oss / OpenAI-compatible endpoints go
+    through the stdlib post_chat_completion instead. Temperature 1.0 so the K
+    self-consistency samples differ.
     """
     if cfg.provider == "anthropic":
-        msg = Anthropic(api_key=cfg.api_key, base_url=cfg.api_base).messages.create(
+        assert client is not None
+        msg = client.messages.create(
             model=cfg.model,
             max_tokens=max_tokens,
             temperature=1.0,
@@ -115,6 +124,12 @@ def main() -> None:
     )
 
     cfg = load_provider_config()
+    # Build the Anthropic client ONCE and reuse it (per-call construction leaks sockets).
+    client = (
+        Anthropic(api_key=cfg.api_key, base_url=cfg.api_base, timeout=float(args.timeout_s))
+        if cfg.provider == "anthropic"
+        else None
+    )
     pred_up = np.zeros(len(val))
     pred_down = np.zeros(len(val))
     for i, row in val.iterrows():
@@ -123,6 +138,7 @@ def main() -> None:
         for s in range(args.k_samples):
             text = query_text(
                 cfg,
+                client,
                 prompt,
                 seed=args.seed * 1000 + s,
                 max_tokens=args.max_tokens,
@@ -131,8 +147,8 @@ def main() -> None:
             answers.append(_parse_answer(text))
         p_up, p_down, _ = votes_to_scores(answers)
         pred_up[i], pred_down[i] = p_up, p_down
-        if (i + 1) % 25 == 0:
-            print(f"  {i + 1}/{len(val)} rows")
+        if (i + 1) % 10 == 0:
+            print(f"  {i + 1}/{len(val)} rows", flush=True)
 
     res = evaluate(val["label"].to_numpy(), pred_up, pred_down)
     print("\n=== DE self-consistency kill-test ===")
