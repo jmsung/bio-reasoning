@@ -6,7 +6,9 @@ Append-only history of ingests and queries.
 - Insights filed: 1 (real-board confirmation)
 - Updated pages: findings/direction-transfers-de-doesnt.md (status draft→measured + real-LB
   confirmation), findings/contrastive-de-core-assessment.md (Perturb-seq lane OPEN→CLOSED),
-  findings/dir-ceiling-equal-weight-fusion.md (real-LB update)
+  findings/dir-ceiling-equal-weight-fusion.md (real-LB update), findings/curated-edges-fail-de-axis.md
+  + findings/marginal-de-caps-at-degree.md (status draft→measured, kb-epistemic cleanup),
+  index.md (pbio-agent-for-tracks orphan indexed)
 - Source: `research/perturb-seq-real-lb-overlap` — the one reserved real-LB read landed baseline
   `fuse([GO,neighbour])` 0.585 → +external PerturbQA 0.586 (Δ+0.001, 66% cov). Confirms
   end-to-end that external measured data moves DE nothing and the dual-OOD split is honest; the
