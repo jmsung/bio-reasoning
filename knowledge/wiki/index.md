@@ -157,6 +157,7 @@ _(none yet)_
 ### Methods
 
 - [Assessing external Perturb-seq datasets — compute plan & tooling](methods/perturb-seq-data-assessment.md) — 2026-06-08
+- [Adapting PBio-Agent (LINCSQA) to our Track A/B task](methods/pbio-agent-for-tracks.md) — proposed
 
 ### Decisions
 
