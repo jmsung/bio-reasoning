@@ -24,9 +24,11 @@ Ordered by priority — understand → plan → build.
 1. [x] (#4) **EDA on training data** — Perturb-seq distributions, class
    balance, missingness, train/test overlap, and GO / functional
    predictive-signal analysis.
-2. [ ] **Audit augmentation candidates** — PerturbQA, Tahoe-100M (and other
+2. [x] **Audit augmentation candidates** — PerturbQA, Tahoe-100M (and other
    external Perturb-seq sources) as potential training augmentation.
-   (split out of the original EDA item)
+   (split out of the original EDA item) — **LANE CLOSED end-to-end
+   (2026-07-17): real-LB confirmed NO-GO; LINCS ruled out.** External
+   Perturb-seq / external-data adds no robust OOD lift over internal proxies.
    - [x] test housekeeping-perturbation cell-type-invariance on Track A data
      (transferability hypothesis — see [[housekeeping-transfer-hypothesis]]) —
      **done via PerturbQA Stage-0 probe: transfer is selection-inflated on the
@@ -50,8 +52,10 @@ Ordered by priority — understand → plan → build.
    - PBio-Agent (LINCSQA) ingested; adaptation to our Track A/B worked out in
      [[pbio-agent-for-tracks]] — KG-reasoning agents + `none`-abstain judge.
      Prototype candidate for Track B.
-6. [ ] **Foundation model survey for Track C** — open <10B candidates (Qwen,
-   Llama, Gemma, …). Tracks A/B are locked to GPT-OSS-120B.
+6. ~~**Foundation model survey for Track C** — open <10B candidates (Qwen,
+   Llama, Gemma, …).~~ **N/A — RETIRED (2026-07-17).** Track C is not
+   registered; the synthpert / Track-C fine-tune lane is retired (a bespoke FT
+   is illegal in A/B, which are locked to gpt-oss-120B).
 7. [ ] **Draft track-specific approach plans + per-member action plan** —
    A: prompt engineering, B: agent + tool design, C: FT recipe; architecture
    decisions; who owns what.
@@ -80,8 +84,8 @@ Ordered by priority — understand → plan → build.
     neighbour-retrieval direction (STRING-neighbour label borrowing, leak-free) into
     the two-stage GO submission via `fuse()`; DE kept, direction blended.
     `scripts/track_a_de_dir_submission.py` (feat/de-retrieval finding: DE-AUROC ~chance
-    but DIR 0.651 vs 0.58). **LB 0.585** (2026-07-16) vs two-stage 0.561 — +0.024, and
-    beats the prior overall best 0.578; OOD-val predicted +0.027. **New Track A + overall best.**
+    but DIR 0.651 vs 0.58). **LB 0.586** (2026-07-17, +external-fold real-LB read, +0.001
+    over 0.585) vs two-stage 0.561 — +0.025; OOD-val predicted +0.027. **New Track A best.**
     (feat/de-dir-weight-tuning: swept the direction blend weight — broad OOD-val plateau at
     w~0.7-0.8 (mean 0.588) vs 0.584 equal-weight; submission default now `DIR_WEIGHT=0.75`,
     +0.004 OOD-val, not resubmitted so LB 0.585 stands. Sweep: `scripts/de_dir_weight_sweep.py`.)
@@ -92,6 +96,15 @@ Ordered by priority — understand → plan → build.
     `scripts/track_b_de_dir_submission.py` (builder) + `track_b_de_dir_ood_val.py` (eval).
     **Kaggle LB 0.597** (2026-07-17) vs 0.578 — **+0.019, new Track B best**; OOD-val 0.5916
     predicted it (LB came in +0.005 higher, split held again).
+16. [x] **Self-improving-loop program** — automated trial loop that proposes,
+    runs, and scores submission variants against the dual-OOD gate. Merged to `main`:
+    - [x] (#53) loop environment + bandit variant selection
+    - [x] (#54) Traxler real-label fold
+    - [x] (#55) rl/llm variant proposer
+    - [x] (#56) agentic tool-use
+    - [x] (#57) deadlock fix
+    - **Current blocker: throughput** (~1.4–2.8 h/trial); heavy loop
+      optimization deferred.
 
 ## Completed
 
