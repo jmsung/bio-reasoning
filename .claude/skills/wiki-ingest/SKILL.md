@@ -101,10 +101,13 @@ TARGET="$SOURCE/<stem>.md"
 # Also check the synced domains/ mirror — a paper may already exist there (promoted
 # earlier) even if the flat copy was retired. Re-ingesting a synced page is a no-op waste.
 DOMAIN_HIT=$(find "$REPO_ROOT/knowledge/domains" -path '*/source/<stem>.md' 2>/dev/null | head -1)
-if [ -f "$TARGET" ] || [ -n "$DOMAIN_HIT" ]; then
-  echo "Page already exists: ${TARGET:-$DOMAIN_HIT}${DOMAIN_HIT:+ (synced mirror — edit upstream, don't re-ingest)}"
+if [ -f "$TARGET" ]; then
+  echo "Page already exists (flat): $TARGET"
   echo "Choose: [s]kip / [o]verwrite / [v]new-version (append -v2 to stem)"
   read CHOICE
+elif [ -n "$DOMAIN_HIT" ]; then
+  echo "Page already exists in synced mirror: $DOMAIN_HIT — edit upstream in knowledge-base, don't re-ingest."
+  CHOICE=s   # never overwrite a synced mirror
 fi
 ```
 

@@ -29,7 +29,7 @@ upstream in `knowledge-base` and re-pull.
 
 > **Mid-migration caveat (2026-07):** the domains/ migration and the knowledge-base
 > subscription are **in progress and incomplete**. Today the corpus straddles both
-> layouts — ~10 un-migrated flat pages plus ~200 synced domain pages — and skill/collection
+> layouts — ~90 un-migrated flat pages plus ~200 synced domain pages — and skill/collection
 > naming isn't fully standardized yet. Treat the pipeline above as the intended end-state,
 > not a finished fact. Don't assume every flat page has a domain twin, or vice versa.
 
