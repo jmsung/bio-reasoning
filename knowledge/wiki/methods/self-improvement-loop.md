@@ -6,6 +6,7 @@ cites:
   - findings/direction-transfers-de-doesnt.md
   - findings/curated-edges-fail-de-axis.md
   - findings/contrastive-de-core-assessment.md
+  - findings/track-a-eda.md
   - methods/pbio-agent-for-tracks.md
 ---
 

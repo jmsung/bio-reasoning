@@ -135,7 +135,10 @@ def _format(pert: str, gene: str, variant: Variant, examples: list[dict[str, str
     """
     tmpl = variant.prompt_template
     if tmpl is None:
-        tmpl = PROMPT_VARIANTS.get(variant.prompt)  # "default"/unknown -> None -> mlgenx path
+        # KeyError on an unknown name — proposers pre-validate, so a miss is a bug, not
+        # a silent fall-through to the default wording under a misleading id. "default"
+        # maps to None → the mlgenx path below.
+        tmpl = PROMPT_VARIANTS[variant.prompt]
     if tmpl is None:
         return format_prompt(pert, gene, examples=examples)
     return tmpl.format(
