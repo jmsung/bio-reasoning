@@ -40,6 +40,12 @@ def post_chat_completion(
     req = urllib.request.Request(url, data=data, method="POST")
     req.add_header("Content-Type", "application/json")
     req.add_header("Authorization", f"Bearer {api_key}")
+    # Force per-request connection teardown. Default HTTP keep-alive makes the
+    # server hold each socket open (ESTABLISHED) for reuse that urllib never does;
+    # under the sustained trial-loop these pile up (observed ~230/worker) until the
+    # socket layer stalls new connections and the inference ThreadPoolExecutor
+    # deadlocks. Closing per request keeps live sockets ≈ concurrency.
+    req.add_header("Connection", "close")
 
     with urllib.request.urlopen(req, timeout=timeout_s) as resp:
         out = json.loads(resp.read().decode())
