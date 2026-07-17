@@ -26,11 +26,18 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from bio_reasoning.trial_loop.archive import archive, load_trials
-from bio_reasoning.trial_loop.de_variants import make_de_proposer
 from bio_reasoning.trial_loop.driver import self_improve_loop
 from bio_reasoning.trial_loop.inference import make_openrouter_infer_fn
 from bio_reasoning.trial_loop.loop import make_prompt_row_predictor
+from bio_reasoning.trial_loop.proposers import PROPOSERS, select_proposer
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
+
+_OPTIMIZER_PROMPT = (
+    "You are tuning a prompt-only gpt-oss classifier for differential-expression. "
+    "Given the trial history (variant id + OOD mean-AUROC), propose the NEXT config to try. "
+    'Reply with ONLY a JSON object: {{"n_few_shot": <0|2|4|8>, "retrieval": '
+    '"random"|"go_category", "n_samples": <3|5>}}.\n\nTrial history:\n{reflection}'
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
@@ -46,6 +53,13 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--train-csv", type=Path, default=DEFAULT_TRAIN_CSV)
     ap.add_argument("--baseline-id", default="jsagent", help="Starting baseline variant id.")
+    ap.add_argument(
+        "--proposer",
+        choices=PROPOSERS,
+        default="grid",
+        help="Search policy: grid (walk once) | bandit (UCB resample) | llm (gpt-oss optimizer). "
+        "bandit/llm never self-converge — pair with --max-trials or --budget-usd.",
+    )
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2], help="Gate split seeds.")
     ap.add_argument("--noise-band", type=float, default=None, help="Override; default measured.")
     ap.add_argument("--dry-rounds", type=int, default=2, help="Stop after K non-improving rounds.")
@@ -76,6 +90,14 @@ def main() -> None:
     )
     predictor = make_prompt_row_predictor(infer)
 
+    def _propose_fn(reflection: str) -> str:
+        # single gpt-oss completion proposing the next config; counts toward the budget.
+        return infer([_OPTIMIZER_PROMPT.format(reflection=reflection)], 0)[0]
+
+    proposer = select_proposer(
+        args.proposer, propose_fn=_propose_fn if args.proposer == "llm" else None
+    )
+
     def spent_usd() -> float:
         t = infer.token_totals  # type: ignore[attr-defined]
         return t["prompt_tokens"] * PRICE_IN + t["completion_tokens"] * PRICE_OUT
@@ -99,7 +121,7 @@ def main() -> None:
 
     res = self_improve_loop(
         df,
-        make_de_proposer(),
+        proposer,
         predictor,
         Variant(id=args.baseline_id, seeds=(42, 43, 44)),
         seeds=tuple(args.seeds),
@@ -113,7 +135,15 @@ def main() -> None:
     )
 
     errs = int(infer.token_totals.get("errors", 0.0))  # type: ignore[attr-defined]
-    print(f"\n[loop] stopped: {res.stopped_reason}  spent=${res.spent:.3f}  errors={errs}")
+    # A/B metric: trials-to-best = index of the highest-mean trial (lower = faster search).
+    if res.records:
+        best_i = max(range(len(res.records)), key=lambda i: res.records[i].metrics["mean"])
+        best = res.records[best_i]
+        print(
+            f"\n[loop] proposer={args.proposer}  trials={len(res.records)}  "
+            f"trials-to-best={best_i + 1} (mean={best.metrics['mean']:.3f}, {best.variant.id})"
+        )
+    print(f"[loop] stopped: {res.stopped_reason}  spent=${res.spent:.3f}  errors={errs}")
     if res.accepted:
         winners = ", ".join(v.id for v in res.accepted)
         print(f"[loop] gate-SURVIVING variant(s): {winners}")
