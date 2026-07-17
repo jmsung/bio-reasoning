@@ -53,6 +53,8 @@ def fuse_direction_channels(
         )
         decisions.append((name, bool(passed), stats))
         if passed:
+            # Gate scores direction on DE rows only, but fuse the FULL r: on non-DE rows
+            # the model's low s_de damps `up/down = s_de·r`, so their direction barely counts.
             admitted.append(Channel(name, s_de=None, r=r))
 
     channels = [Channel("model", s_de=np.asarray(model_s_de, dtype=float), r=model_r), *admitted]
