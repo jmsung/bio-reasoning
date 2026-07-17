@@ -352,10 +352,44 @@ endpoint ever lands.
 lane team-wide:** prompt/framing cannot move DE-vs-none on this task. It
 reinforces, with fresh evidence plus an external-paper cross-check, the standing
 conclusion that **only new *measured* signal moves DE** → the **Perturb-seq data
-lane** (Replogle / PerturbQA / Tahoe) is the path to rank-1. Negative result, dev
+lane** (Replogle / PerturbQA / Tahoe) was the last untested lane with theoretical
+DE headroom (**now empirically closed — see the next Update**). Negative result, dev
 measurement on the OOD split — **nothing submitted** (LB 0.597 stands). Full
 argument + measurement:
 [`knowledge/wiki/findings/contrastive-de-core-assessment.md`](../knowledge/wiki/findings/contrastive-de-core-assessment.md).
+
+## Update (research/perturb-seq-transfer-probe — landed)
+
+**The external Perturb-seq data lane — the only lane with headroom toward the
+field's 0.693 — is empirically closed.** We ran the Stage-0 gate the
+`dir-ceiling-probe` fork pointed to: do external *measured* CRISPRi DE/direction
+labels (PerturbQA — curated Replogle K562/RPE1/HepG2/Jurkat) transfer to our
+Track A labels above chance? Leakage-clean by construction (Track A is mouse
+macrophage, PerturbQA is human — disjoint species *and* cell type).
+
+**The overlap gate looked like a DE breakthrough, then the honest split killed
+it.** On the 242 train-overlap pairs, external→Track-A scored **DE-AUROC 0.722 /
+DIR-AUROC 0.951** (shuffle control 0.50 — real signal). The DE transfer is
+*marginal, not pair-specific* (per-pert LOO 0.676, per-gene LOO 0.538 = chance) —
+conserved pert-level responsiveness that even **beat our internal STRING-degree
+marginal-DE proxy (0.536, `feat/marginal-property-de`)**. It was lookup-able for
+64/96 (67%) of test perts. On paper, the first DE lever with real teeth.
+
+**But the dual-OOD fusion test refuted it.** Fused into the GO+neighbour-DIR
+baseline (0.5819) over seeds 0/1/2, the lift is **+0.0075 mean and entirely
+one-seed noise** (seed1 +0.022; seeds 0/2 ≈ 0). On the covered OOD-val rows the
+external DE-AUROC **collapses to ~0.53** (0.504 / 0.565 / 0.517), not 0.68 — the
+0.72/0.95 were **selection-inflated**: the overlap is exactly the set of
+robustly-DE, unambiguous *easy* pairs. The CFA orthogonality gate passes only
+**1/3 seeds**, direction-only adds +0.002 (redundant with neighbour-DIR), and the
+whole thing lands in the same ballpark as the internal marginal proxy (+0.008).
+
+**Verdict: no-go, no submission, no quota spent — the ~0.585 direction-fusion
+ceiling stands.** This exhausts the last lane with theoretical DE headroom: the
+only remaining DE shot is model-based logprob (Bing-gated). Its lasting value is
+methodological — a textbook case of the recurring lesson that
+**overlap/small-CV numbers inflate; only the honest dual-OOD split is truth** (a
++0.72 overlap gate → chance on OOD).
 
 ## Approach
 

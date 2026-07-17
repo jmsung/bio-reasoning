@@ -60,6 +60,22 @@ The published field independently reproduces the asymmetry:
   housekeeping core → the transferable slice is housekeeping/essential, consistent
   with [[housekeeping-transfer-hypothesis]].
 
+### Measured on our task — PerturbQA → Track A (2026-07, `research/perturb-seq-transfer-probe`)
+
+We directly tested external measured transfer, and it is a **textbook
+selection-inflation trap**. On the 242 exact-pair overlap (PerturbQA human CRISPRi
+→ Track A mouse), external labels scored **DE-AUROC 0.722 / DIR-AUROC 0.951**
+(shuffle control 0.50 — real signal), and the DE part was *marginal pert-propensity*
+(per-pert LOO 0.68, per-gene LOO 0.54 = chance) that even beat our internal
+STRING-degree marginal-DE proxy (0.536). It looked like the first real DE lever.
+**But it collapsed on the honest dual-OOD split**: fused into GO+neighbour-DIR the
+lift is **+0.0075 mean and one-seed noise** (seed1 +0.022; seeds 0/2 ≈ 0), external
+OOD DE-AUROC falls to **~0.53** (0.504/0.565/0.517), CFA passes **1/3** seeds, and
+direction is redundant with neighbour-DIR (+0.002). The overlap is the robustly-DE
+*easy* pairs. **Rule: gate on the dual-OOD fusion delta across seeds, never a
+standalone overlap AUROC** — the 4th instance of this trap (field char-ngram
+0.693→0.552; Track B CV 0.675→LB 0.488; internal marginal-DE overlap).
+
 ## Why the asymmetry holds
 
 DE for a *specific* unseen pair is dominated by **cell-state / context**, not by a
@@ -76,13 +92,14 @@ housekeeping-up / immune-down). So any signal source — feature, edge, retrieva
    The only untried DE crack is **model-based**: token-logprob self-consistency over
    {up,down,none} (renormalized answer-token probabilities), which needs a logprob
    endpoint.
-2. **External Perturb-seq data won't be a silver bullet** — it reinforces direction
-   (already our strong axis → bounded marginal EV), not DE (see the
-   `mb/notes/perturb-seq-data-lane.md` full investigation).
+2. **External Perturb-seq data is not a silver bullet — now measured, not just
+   predicted.** The PerturbQA→Track A test (above) gives *no* robust DE or direction
+   lift on the dual-OOD split; the promising overlap transfer was selection-inflated.
+   The lane is empirically closed.
 3. **The honest model ceiling is ~0.60–0.65** (DIR maxed ~0.65–0.70 + DE pinned
-   ~0.55), ~0.10 below the field's *unverified* 0.75. Rank 1 by an honest direction
-   model is unlikely; it needs either the model-based DE crack or the field's tops
-   sitting on an easier-than-dual-OOD split.
+   ~0.55), well below the field's *unverified* tops (**0.693 Track A / 0.752 Track
+   B**). Rank 1 by an honest direction model is unlikely; it needs either the
+   model-based DE crack or the field's tops sitting on an easier-than-dual-OOD split.
 
 ## See also
 
