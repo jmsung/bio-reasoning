@@ -25,6 +25,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
+from bio_reasoning.models.fuse import Channel
+
 CELL_LINES = ("k562", "rpe1", "hepg2", "jurkat")
 
 # GO:BP keyword -> slice. Housekeeping/essential = the transferable core; immune =
@@ -165,3 +167,48 @@ def _safe_auroc(y: list[int], s: list[float]) -> float:
     if len(set(y)) < 2:
         return float("nan")
     return float(roc_auc_score(y, s))
+
+
+def _pert_marginals(store: dict[tuple[str, str], dict]) -> dict[str, tuple[float, float]]:
+    """Per-pert ``(de_propensity, dir_propensity)`` aggregated over the pert's targets.
+
+    ``de_propensity`` = mean ``de_score`` over all measured targets of the pert
+    (its conserved responsiveness); ``dir_propensity`` = mean ``dir_score`` over the
+    targets it calls DE (its directional bias), ``nan`` if it has none.
+    """
+    de: dict[str, list[float]] = {}
+    di: dict[str, list[float]] = {}
+    for (pert, _gene), rec in store.items():
+        de.setdefault(pert, []).append(rec["de_score"])
+        if not np.isnan(rec["dir_score"]):
+            di.setdefault(pert, []).append(rec["dir_score"])
+    return {
+        p: (float(np.mean(vals)), float(np.mean(di[p])) if p in di else np.nan)
+        for p, vals in de.items()
+    }
+
+
+def external_pert_channel(
+    queries: pd.DataFrame, store: dict[tuple[str, str], dict]
+) -> tuple[Channel, np.ndarray]:
+    """External marginal DE + direction :class:`Channel` for ``queries`` rows.
+
+    For each ``(pert, gene)`` query: use the exact pair's ``de_score``/``dir_score``
+    when it exists in ``store``, else fall back to the query pert's marginal
+    propensities (the transferable signal — pair/gene-specific DE does not transfer).
+    Perts absent from the external corpus stay ``NaN`` (uncovered), so :func:`fuse`
+    defers to the other channels. Returns the channel and a boolean ``covered`` mask.
+    """
+    marg = _pert_marginals(store)
+    n = len(queries)
+    s_de = np.full(n, np.nan)
+    r = np.full(n, np.nan)
+    covered = np.zeros(n, dtype=bool)
+    for i, (p, g) in enumerate(zip(queries["pert"], queries["gene"], strict=True)):
+        hp, hg = to_human(p), to_human(g)
+        rec = store.get((hp, hg))
+        if rec is not None:
+            s_de[i], r[i], covered[i] = rec["de_score"], rec["dir_score"], True
+        elif hp in marg:
+            s_de[i], r[i], covered[i] = marg[hp][0], marg[hp][1], True
+    return Channel(name="external_perturbqa", s_de=s_de, r=r), covered

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 from bio_reasoning.features.external_labels import (
     classify_pert,
+    external_pert_channel,
     to_human,
     transfer_agreement,
 )
@@ -68,3 +70,39 @@ def test_transfer_agreement_ignores_pairs_absent_from_store():
     store = _store({("A", "X"): (1.0, 1.0)})  # Z/W absent → dropped
     r = transfer_agreement(track, store)
     assert r["n_de"] == 1
+
+
+def _full_store():
+    # pert A: 3 targets (2 DE: one up one down; 1 none). pert B: 1 target, none.
+    return {
+        ("A", "X"): {"de_score": 1.0, "dir_score": 1.0, "n_de": 1, "n_dir": 1},
+        ("A", "Y"): {"de_score": 1.0, "dir_score": 0.0, "n_de": 1, "n_dir": 1},
+        ("A", "Z"): {"de_score": 0.0, "dir_score": np.nan, "n_de": 1, "n_dir": 0},
+        ("B", "W"): {"de_score": 0.0, "dir_score": np.nan, "n_de": 1, "n_dir": 0},
+    }
+
+
+def test_external_channel_pair_level_lookup():
+    store = _full_store()
+    q = pd.DataFrame({"pert": ["A"], "gene": ["X"]})  # exact pair present
+    ch, covered = external_pert_channel(q, store)
+    assert covered.tolist() == [True]
+    assert ch.s_de[0] == 1.0 and ch.r[0] == 1.0
+
+
+def test_external_channel_pert_marginal_fallback():
+    store = _full_store()
+    q = pd.DataFrame({"pert": ["A"], "gene": ["NOVEL"]})  # unseen gene -> pert marginal
+    ch, covered = external_pert_channel(q, store)
+    assert covered.tolist() == [True]
+    # pert A DE-propensity = mean(1,1,0) = 2/3 ; direction = mean(1,0) over DE-with-dir = 0.5
+    assert abs(ch.s_de[0] - 2 / 3) < 1e-9
+    assert abs(ch.r[0] - 0.5) < 1e-9
+
+
+def test_external_channel_uncovered_is_nan():
+    store = _full_store()
+    q = pd.DataFrame({"pert": ["ZZZ"], "gene": ["QQQ"]})  # pert absent
+    ch, covered = external_pert_channel(q, store)
+    assert covered.tolist() == [False]
+    assert np.isnan(ch.s_de[0]) and np.isnan(ch.r[0])
