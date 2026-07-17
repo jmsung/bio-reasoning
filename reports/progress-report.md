@@ -39,6 +39,27 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
    DE-likelihood — only order matters for AUROC). And measurement must move onto a **dual-OOD
    validation split** that reproduces the real train/test disjointness, so CV stops lying.
 
+## Update (feat/tabpfn-functional-features — landed)
+
+Closed the "TabPFN over functional features" lane the competitor survey flagged
+as open (Palla 2026) — for the *combiner* framing. Trained TabPFN as a learned
+nonlinear combiner over the three DIRECTION channels (GO / neighbour / embedding)
+on the dual-OOD holdout, leak-free (out-of-fold channel features, cross-fit over
+doubly-disjoint inner folds).
+
+**DIR-AUROC 0.613 ± 0.039 (5 seeds) < neighbour-DIR 0.651 / equal-weight fusion
+0.642** on identical val rows — does **not** clear the ~0.65 hand-fused ceiling
+(−0.037). A nonlinear learned head over the same saturated channels underperforms
+the direct neighbour lookup; corroborates #37/#38 (direction saturates,
+corr-diversity ≠ marginal lift). Goal 3 (submission) gated on clearing → skipped;
+neighbour-DIR LB 0.585 stands. Nothing submitted.
+
+**Strategic read:** the ~0.65 DIR ceiling is a **data/feature ceiling, not a
+combiner-form ceiling**. TabPFN derivatives (TabICLv2 / TabDPT / TabForestPFN) are
+near-zero EV as combiner swaps; the open TabPFN lane is framing #2 — a tabular FM
+as a **primary predictor over rich pair features**, still untried. Full finding:
+[`knowledge/wiki/findings/tabpfn-for-perturbation-tracks.md`](../knowledge/wiki/findings/tabpfn-for-perturbation-tracks.md).
+
 ## Update (test/real-test-difficulty-probe — landed)
 
 A **measurement-only probe** answering the question that gates the whole rank-1
