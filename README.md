@@ -82,15 +82,19 @@ by the trial-loop below.
   validation split, then propose → run → reflect → archive over a grid.
 - `src/bio_reasoning/trial_loop/` — the importable harness (loop, reflect,
   archive, types).
-- `scripts/self_improve_loop.py` — the 24/7 self-improvement runner: propose
-  (live DE-votes variants, KB-ruled-out channels filtered; search policy via
-  `--proposer {grid,bandit,llm}`) → triple-verify
-  (a candidate must beat baseline on every OOD split by more than the seed
-  noise band; when a Traxler real-label fold is supplied, an OOD-survivor must
-  *also* beat baseline on that held-out in-domain fold) → promote, until dry or
-  budget-capped. It never submits — a gate-surviving variant is surfaced for a
-  human-gated Kaggle submission.
-  Backed by `trial_loop.{inference,proposers,de_variants,bandit,llm_proposer,gate,ruled_out,driver,submission}`.
+- `scripts/self_improve_loop.py` — the 24/7 self-improvement runner: propose →
+  triple-verify (a candidate must beat baseline on every OOD split by more than
+  the seed noise band; when a Traxler real-label fold is supplied, an OOD-survivor
+  must *also* beat baseline on that held-out in-domain fold) → promote, until dry
+  or budget-capped. Two lanes share the gate: the default **DE-votes** lane (live
+  prompt variants, KB-ruled-out channels filtered; search policy via
+  `--proposer {grid,bandit,llm}`) and the **agentic** lane (`--agentic`) that
+  searches Track B tool configs — which real-data tools (GO/STRING/Traxler
+  direction) a per-variant ReAct agent may call — with the tool-free agent as
+  baseline (leak-safe: the Traxler tool is dropped whenever its fold is the eval).
+  It never submits — a gate-surviving variant is surfaced for a human-gated
+  Kaggle submission.
+  Backed by `trial_loop.{inference,proposers,de_variants,bandit,llm_proposer,agent_variants,tools,gate,ruled_out,driver,submission}`.
 - `scripts/build_traxler_labels.py` — regenerates the Traxler native real-label
   validation fold (`data/external/traxler_labels.csv`, gitignored — a reproducible
   artifact like `train.csv`) that the gate's optional external check scores against.
