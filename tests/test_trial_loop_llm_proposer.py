@@ -49,6 +49,17 @@ def test_ruled_out_approach_falls_back():
     assert p("", []).id == "fallback-bandit"
 
 
+def test_ruled_out_approach_with_spaces_still_caught():
+    # slugify → "string degree" becomes "string-degree" → trips the denylist → fallback
+    def fn(r):
+        return (
+            '{"n_few_shot": 2, "retrieval": "random", "n_samples": 3, "approach": "String Degree"}'
+        )
+
+    p = make_llm_proposer(fn, fallback=_fallback())
+    assert p("", []).id == "fallback-bandit"
+
+
 def test_bad_sample_count_falls_back():
     fn = lambda r: '{"n_few_shot": 2, "retrieval": "random", "n_samples": 99}'  # noqa: E731
     p = make_llm_proposer(fn, fallback=_fallback())

@@ -44,7 +44,9 @@ def _parse_variant(raw: str) -> Variant | None:
         return None
     if not isinstance(n_few_shot, int) or n_few_shot < 0:
         return None
-    approach = str(cfg.get("approach", "")).strip()
+    # slugify the free-text approach so a spaced concept ("string degree") still trips
+    # the hyphenated denylist and no odd chars land in the archived variant id.
+    approach = re.sub(r"[^a-z0-9]+", "-", str(cfg.get("approach", "")).lower()).strip("-")
     tag = f"{approach}-" if approach else ""
     vid = f"llm-{tag}nfs{n_few_shot}-{retrieval}-s{n_samples}"
     if is_ruled_out(vid):  # LLM wandered into a dead static channel → reject

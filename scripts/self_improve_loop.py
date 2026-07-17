@@ -19,6 +19,7 @@ Backend + key resolution: see ``bio_reasoning.trial_loop.inference`` (OpenRouter
 from __future__ import annotations
 
 import argparse
+import math
 import os
 from pathlib import Path
 
@@ -137,7 +138,12 @@ def main() -> None:
     errs = int(infer.token_totals.get("errors", 0.0))  # type: ignore[attr-defined]
     # A/B metric: trials-to-best = index of the highest-mean trial (lower = faster search).
     if res.records:
-        best_i = max(range(len(res.records)), key=lambda i: res.records[i].metrics["mean"])
+
+        def _mean_at(i: int) -> float:
+            m = res.records[i].metrics["mean"]
+            return float("-inf") if math.isnan(m) else m  # nan gates never win trials-to-best
+
+        best_i = max(range(len(res.records)), key=_mean_at)
         best = res.records[best_i]
         print(
             f"\n[loop] proposer={args.proposer}  trials={len(res.records)}  "
