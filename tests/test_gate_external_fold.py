@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from bio_reasoning.trial_loop.gate import score_external_fold, triple_verify
 from bio_reasoning.trial_loop.types import Variant
@@ -56,6 +57,12 @@ def test_score_external_fold_matches_accuracy():
     chance = _dual_oracle(lambda vid, ext: 0.0)
     assert score_external_fold(fold, Variant(id="v"), perfect) == 1.0
     assert score_external_fold(fold, Variant(id="v"), chance) == 0.5  # constant preds → AUROC 0.5
+
+
+def test_score_external_fold_rejects_empty_fold():
+    empty = pd.DataFrame(columns=["pert", "gene", "label"])
+    with pytest.raises(ValueError, match="empty"):
+        score_external_fold(empty, Variant(id="v"), _dual_oracle(lambda vid, ext: 1.0))
 
 
 def test_accepts_when_holds_on_both_challenge_and_external():

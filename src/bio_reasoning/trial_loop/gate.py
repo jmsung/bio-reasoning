@@ -14,6 +14,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
+import pandas as pd
 
 from bio_reasoning.eval.track_a_score import evaluate
 from bio_reasoning.trial_loop.loop import RowPredictor, run_variant
@@ -21,7 +22,7 @@ from bio_reasoning.trial_loop.types import Variant
 
 
 def score_external_fold(
-    fold_df,
+    fold_df: pd.DataFrame,
     variant: Variant,
     row_predictor: RowPredictor,
     metric: str = "mean",
@@ -33,6 +34,8 @@ def score_external_fold(
     scored against the fold's own labels. Zero-shot: exemplars come from the
     challenge train, wired separately (Goal 3), so nothing here leaks the fold.
     """
+    if fold_df.empty:
+        raise ValueError("external fold is empty — check the fold csv / subsample.")
     rows = fold_df.to_dict("records")
     per_seed = [
         np.array(row_predictor(rows, variant, s, lambda _r: None), dtype=float)
@@ -100,7 +103,7 @@ def triple_verify(
     seeds: Sequence[int] = (0, 1, 2),
     metric: str = "mean",
     noise_band: float | None = None,
-    external_fold=None,
+    external_fold: pd.DataFrame | None = None,
     external_margin: float = 0.0,
     **run_kwargs: object,
 ) -> GateResult:
