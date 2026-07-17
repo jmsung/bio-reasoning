@@ -9,7 +9,7 @@ cites:
   - source/2026-bioreasoning-challenge-overview.md
 ---
 
-# The direction ceiling is ~0.65 — equal-weight fusion can't beat the single best DIR channel
+# The direction ceiling is ~0.65 — no fusion (equal-weight, weighted, or learned) beats the single best DIR channel
 
 [[../home]] | [[../index]]
 
