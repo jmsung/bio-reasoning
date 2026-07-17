@@ -88,12 +88,16 @@ def test_example_key_fn_is_threaded_to_go_category_variant():
     # random few-shot. The driver has to thread example_key_fn → triple_verify → run_variant.
     df = _frame()
     captured: dict[str, object] = {}
+    key_calls: list[tuple[str, str]] = []
 
     def capturing_predictor(rows, variant, seed, get_examples):
         captured[variant.id] = get_examples(rows[0]) if rows else None
         return [(0.0, 0.0) for _ in rows]
 
-    key_fn = lambda pert, gene: "catA"  # noqa: E731 — all perts share one category
+    def key_fn(pert, gene):
+        key_calls.append((pert, gene))
+        return "catA"
+
     cand = Variant(
         id="de-votes-nfs2-go_category-s3", n_few_shot=2, retrieval="go_category", seeds=(42,)
     )
@@ -107,7 +111,10 @@ def test_example_key_fn_is_threaded_to_go_category_variant():
         example_key_fn=key_fn,
         dry_rounds=1,
     )
-    assert captured["de-votes-nfs2-go_category-s3"]  # non-None, non-empty exemplar list
+    # The real guard: go_category retrieval only invokes key_fn if it was threaded
+    # through. With the bug (example_key_fn not forwarded), key_fn is never called.
+    assert key_calls, "example_key_fn was not threaded to the go_category variant"
+    assert captured["de-votes-nfs2-go_category-s3"]  # keyed exemplars present
     assert captured["base"] is None  # zero-shot baseline gets no exemplars
 
 
