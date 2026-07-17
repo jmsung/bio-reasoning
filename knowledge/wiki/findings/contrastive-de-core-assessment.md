@@ -1,6 +1,6 @@
 ---
 title: CORE contrastive-LLM-DE likely won't transfer to our dual-OOD task — two concrete reasons
-status: draft
+status: measured
 cites:
   - domains/ai-reasoning/source/2026-yuan-plausibility-not-prediction-llm-perturbation.md
   - findings/direction-transfers-de-doesnt.md
@@ -66,9 +66,23 @@ our 0.498 channel. But it's the one untested cell, so it earns a *cheap, gated* 
 STOP and declare the LLM-DE angle exhausted → the **Perturb-seq data lane** ([[direction-transfers-de-doesnt]]:
 "only new measured signal can move DE") is the path to rank-1. No moving the goalpost.
 
-## Recommendation
+## Measured (feat/de-contrastive-core, 2026-07-17) — CORE-Voting KILLED empirically
 
-Because Reasons 1–2 pre-answer most of the question, the build should be **minimal**: skip
-CORE-Voting entirely (it's our 0.498 channel), test **only CORE-Reasoning** as a rank-AUROC
-kill-test on OOD-val. If the endpoint (Bing logprobs) is unavailable or the reasoning variant
-lands ≈0.50, this is a clean, cited kill of the whole LLM-DE angle.
+Built the CORE machinery (`features/contrastive_context.py`, `models/core_de_scorer.py`) and ran
+the voting variant on our dual-OOD split (`scripts/core_de_eval.py`, 5 seeds):
+
+- **CORE-Voting DE-AUROC = 0.498 ± 0.006** (99% coverage) — **bit-for-bit the neighbour-retrieval-DE
+  floor.** Does not clear the 0.55 kill bar. Reason 1 is now *measured*, not just argued: on our
+  zero-overlap, sparse-KG regime the contrastive-aggregation mechanism is dead chance.
+- **CORE-Reasoning** (LLM over the contrastive set) — **not run: endpoint-blocked** (Bing logprobs,
+  same wall as `track-b-scoring-not-labeling`). Prior remains low (Reason 2: its gains are
+  bias-correction, and AUROC is bias-invariant).
+
+## Verdict
+
+**The LLM-DE angle is exhausted** (7th DE approach at chance). CORE-Voting = 0.498 empirically;
+CORE-Reasoning is a low-prior, endpoint-gated cell not worth waiting on. This closes the
+prompt/framing lane for DE for the whole team: **only new measured signal moves DE**
+([[direction-transfers-de-doesnt]]) → the **Perturb-seq data lane** (Replogle/PerturbQA/Tahoe) is
+the path to rank-1. The CORE machinery is kept so the reasoning cell can be run in one script if a
+logprob endpoint ever lands — but the expected value is low; do not gate the roadmap on it.
