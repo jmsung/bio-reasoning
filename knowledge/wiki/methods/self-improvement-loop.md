@@ -39,7 +39,10 @@ UCB1 reward so a one-seed phantom regresses before it's trusted; **llm**
 (`llm_proposer.py`) lets gpt-oss read the reward history and propose the next config,
 falling back to the bandit on any invalid/ruled-out output. All three share the same
 `Proposer` seam and inherit the `ruled_out` denylist — bandit/llm never self-converge,
-so pair them with `--max-trials` / `--budget-usd`.
+so pair them with `--max-trials` / `--budget-usd`. Why resample at all:
+[[../findings/resampling-beats-try-each-once-under-noise]] — the grid's one-pull-per-arm can be
+permanently fooled by a single lucky sample (the one-seed phantom), the bandit resamples so the
+estimate regresses before it's trusted.
 
 ## The 3-tier verification structure (P9-templated)
 
