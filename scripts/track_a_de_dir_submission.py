@@ -36,6 +36,9 @@ STRING_CACHE = ROOT / "data/external/string_partners_submission.json"
 SAMPLE = ROOT / "configs/sample_submissions/track_a_sample_submission.csv"
 OUT = ROOT / "submissions/track_a_de_dir.csv"
 MODEL_NAME = "track-a-two-stage-go+neighbour-dir"
+# Neighbour-vs-model direction weight, tuned on OOD-val (feat/de-dir-weight-tuning):
+# broad plateau w~0.7-0.8 (mean 0.588) vs equal-weight 0.584. 0.5 = the LB-0.585 baseline.
+DIR_WEIGHT = 0.75
 
 
 def fetch_string_partners(symbols: list[str]) -> dict[str, set[str]]:
@@ -75,7 +78,10 @@ def build_submission(train: pd.DataFrame, test: pd.DataFrame, partners) -> pd.Da
     # min_support=3 tuned on OOD-val (feat/de-retrieval); don't lower without re-validating.
     nb = neighbor_channel(test[["pert", "gene"]].astype(str), train, pnb, gnb, min_support=3)
 
-    fu, fd = fuse([Channel("model", s_de=s_de, r=r), Channel("neighbour", s_de=None, r=nb.r)])
+    fu, fd = fuse(
+        [Channel("model", s_de=s_de, r=r), Channel("neighbour", s_de=None, r=nb.r)],
+        weights=[1 - DIR_WEIGHT, DIR_WEIGHT],
+    )
     cov = np.isfinite(nb.r).mean()
     print(f"neighbour direction coverage on test: {cov:.1%}", flush=True)
 

@@ -75,6 +75,9 @@ Ordered by priority — understand → plan → build.
     `scripts/track_a_de_dir_submission.py` (feat/de-retrieval finding: DE-AUROC ~chance
     but DIR 0.651 vs 0.58). **LB 0.585** (2026-07-16) vs two-stage 0.561 — +0.024, and
     beats the prior overall best 0.578; OOD-val predicted +0.027. **New Track A + overall best.**
+    (feat/de-dir-weight-tuning: swept the direction blend weight — broad OOD-val plateau at
+    w~0.7-0.8 (mean 0.588) vs 0.584 equal-weight; submission default now `DIR_WEIGHT=0.75`,
+    +0.004 OOD-val, not resubmitted so LB 0.585 stands. Sweep: `scripts/de_dir_weight_sweep.py`.)
 
 ## Completed
 
