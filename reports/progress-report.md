@@ -282,6 +282,20 @@ Lower bound, equal-weight — this is a dev measurement on the OOD split, **not 
 (no submission generated; LB 0.597 stands). Full lattice + mechanism:
 [`knowledge/wiki/findings/dir-ceiling-equal-weight-fusion.md`](../knowledge/wiki/findings/dir-ceiling-equal-weight-fusion.md).
 
+**Closed by `feat/weighted-direction-fuse`.** The fork above asked whether a *weighted*
+or *learned* combiner clears 0.651 at all. Both were run on the same 5-seed dual-OOD split
+(`scripts/weighted_direction_fuse.py`): **weighted rank-fusion** (up-weight neighbour-DIR,
+GO/embedding at 1) peaks at **0.660** (w≈4) — +0.010 over neighbour-alone but **within seed
+σ≈0.05, not robust** (a shallow interior optimum; the weak channels only tie-break neighbour's
+~2% uncovered rows). A **leak-free out-of-fold learned stacker** (logistic + pairwise
+interactions, `models/direction_stacker.py`) lands **0.641 ± 0.051** — *below* neighbour-alone
+(−0.010). Neither robustly beats the single best channel → **~0.65 is the HARD direction
+ceiling** (upgraded from the lower bound above); the weak channels carry no direction signal
+neighbour-DIR lacks. With DE ~0.55, the honest mean-AUROC ceiling is **~0.60 &lt; the field's
+unverified 0.693 — rank-1 by direction alone is off the table.** Dev-only on the OOD split;
+**nothing submitted** (LB 0.597 stands). Next per the fork: submit neighbour-DIR's weighted
+best (w≈4, ~0.66) **once**, read the real LB gap, then decide the Perturb-seq data lane.
+
 ## Approach
 
 1. **Honest fitness signal first** — a dual-OOD validation split (perturbations + genes

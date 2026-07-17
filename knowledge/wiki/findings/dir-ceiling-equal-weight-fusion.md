@@ -1,6 +1,6 @@
 ---
-title: The direction ceiling is ~0.65 — equal-weight fusion can't beat the single best DIR channel
-status: draft
+title: The direction ceiling is ~0.65 — no fusion (equal-weight, weighted, or learned) beats the single best DIR channel
+status: measured
 cites:
   - findings/neighbor-retrieval-direction-lever.md
   - findings/direction-transfers-de-doesnt.md
@@ -9,11 +9,12 @@ cites:
   - source/2026-bioreasoning-challenge-overview.md
 ---
 
-# The direction ceiling is ~0.65 — equal-weight fusion can't beat the single best DIR channel
+# The direction ceiling is ~0.65 — no fusion (equal-weight, weighted, or learned) beats the single best DIR channel
 
 [[../home]] | [[../index]]
 
-**Status: draft — from the `explore/dir-ceiling-probe` branch, 2026-07-17.**
+**Status: measured — `explore/dir-ceiling-probe` (equal-weight) + `feat/weighted-direction-fuse`
+(weighted + learned), 2026-07-17. Question closed.**
 
 Bottom line: with DE disproven ([[direction-transfers-de-doesnt]]), rank-1 rides on
 **direction**. We measured how high *fused* direction can go by rank-fusing all three
@@ -78,8 +79,25 @@ a gate slot but only lifts if it is strong enough to survive fusion. Note #37's 
 (`max_abs_corr=0.9`), so it admits all three — the *gate* does not prevent the drag; **channel
 strength does.**
 
-## Caveat
+## Closed by `feat/weighted-direction-fuse` — weighting and a learned stacker both confirm ~0.65
 
-This is a **lower bound**: pure-DIR-AUROC, equal-weight rank-fusion of the current channels. The
-open question `direction_fusion` leaves is whether a *weighted* combiner (up-weighting neighbour-DIR)
-clears 0.651 at all — re-run this probe with learned weights to close it.
+The open question ("does a *weighted* or *learned* combiner clear 0.651 at all?") is now settled —
+`scripts/weighted_direction_fuse.py`, same 5-seed dual-OOD split:
+
+- **Weighted rank-fusion** (up-weight neighbour-DIR, GO/embedding at 1): a *shallow interior
+  optimum* at w≈4 → **0.660**, +0.010 over neighbour-alone but **within seed σ≈0.05**. Not a
+  pure asymptote — the weak channels help as tie-breakers on neighbour-DIR's ~2% uncovered rows —
+  but not a robust win.
+- **Learned stacker** (`models/direction_stacker.py`: logistic + pairwise interactions, evaluated
+  **out-of-fold within val DE rows** so it's leak-free): **0.641 ± 0.051** — *below* neighbour-alone
+  (−0.010) and weighted-best (−0.019). Non-linearity does **not** extract complementary direction
+  signal; adding the weak channels via a learned model slightly hurts (noise injection).
+
+**Verdict: ~0.65 is the hard direction ceiling.** No fusion — equal-weight (0.642), weighted
+(0.660, noise), or learned (0.641) — robustly clears the single best channel, neighbour-DIR
+alone (0.651). The weak channels (GO-DIR 0.595, embedding-DIR 0.574) carry no direction signal
+neighbour-DIR lacks. **The direction lane is closed:** with DE pinned ~0.55, the honest
+mean-AUROC ceiling is ~0.60 < the field's unverified 0.693. Next = push neighbour-DIR's weighted
+best (w≈4, ~0.66), **submit once, read the real LB gap**, then decide the Perturb-seq data lane
+(the `perturb-seq-data-lane-decision` backlog item) —
+rank-1 by direction alone is not on the table.

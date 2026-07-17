@@ -64,7 +64,7 @@ _(none yet)_
 - [Competitor landscape — the public field is LLM-free string-ML](findings/competitor-landscape.md) — 2026-07-16
 - [Neighbour-retrieval fails DE but is a robust direction lever (+0.027)](findings/neighbor-retrieval-direction-lever.md) — 2026-07-16
 - [Direction transfers, DE doesn't — the axis-asymmetry principle (lit-corroborated)](findings/direction-transfers-de-doesnt.md) — 2026-07-17
-- [The direction ceiling is ~0.65 — equal-weight fusion can't beat the single best DIR channel](findings/dir-ceiling-equal-weight-fusion.md) — 2026-07-17
+- [The direction ceiling is ~0.65 — no fusion (equal-weight, weighted, or learned) beats the single best DIR channel](findings/dir-ceiling-equal-weight-fusion.md) — 2026-07-17
 - [Curated-edge DBs are too sparse/weak to crack the DE axis — go model-based](findings/curated-edges-fail-de-axis.md) — 2026-07-16
 
 ### Methods
