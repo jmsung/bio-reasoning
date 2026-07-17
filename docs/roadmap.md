@@ -33,6 +33,11 @@ Ordered by priority — understand → plan → build.
      overlap and gives no robust OOD lift; lane closed**
    - enumerate Tahoe's 50-line panel; flag myeloid/monocytic lines (THP-1,
      U937, …) closest to macrophages
+   - **Perturb-seq lane go/no-go** → [`perturb-seq-lane-decision.md`](perturb-seq-lane-decision.md):
+     analysis done — leakage/coverage not blockers, DE transfer is *marginal* not
+     pair-specific, direction already ~0.65-capped. **Conditional NO-GO on the
+     expensive Replogle pipeline**; the cheap PerturbQA-CSV shot is gated on
+     `research/perturb-seq-transfer-probe` Goal 5 (OOD fusion lift ≥ +0.005 + CFA ADMIT).
 3. [ ] **Port Track-A EDA scripts into the repo** — move the GO-annotation /
    enrichment / interaction scripts into `scripts/`, repoint to `data/raw/`,
    add the `mygene` dep, resolve the GO-cache (>500 KB) location. (follow-up

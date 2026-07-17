@@ -67,4 +67,52 @@ The probe's uppercase-ortholog map covers **64/96 (67%) of TEST perts** and 242 
 
 ## Decision
 
-_Pending — see [Goal 2 criteria + recommendation]. Gated on `research/perturb-seq-transfer-probe` Goal 5 (OOD-val fusion lift vs 0.5663)._
+The final flip is the team's call and is **auto-resolved by one number** — probe
+Goal 5's fused OOD-val mean-AUROC on `holdout_split`. The rule below is written so it
+decides itself the moment that number lands.
+
+### Go/no-go criteria (decision rule)
+
+Let `L` = the external-retrieval channel's fused OOD-val mean-AUROC (`holdout_split`,
+averaged across seeds) vs the **0.5663** baseline, and let the **CFA gate** verdict be
+ADMIT/REJECT for orthogonality vs the existing GO-DIR + neighbour-DIR channels
+(`research/perturb-seq-transfer-probe` Goal 4–5).
+
+- **GO (cheap)** — build the PerturbQA-CSV external-direction channel into the live
+  submission and spend **one** Kaggle read — **iff** `L ≥ +0.005` across all/most seeds
+  **AND** the CFA gate **ADMITs** the channel. (This is the probe's own pre-registered bar.)
+- **NO-GO** — if `L < +0.005` (within seed noise) **OR** the CFA gate **REJECTs** the
+  channel as redundant. Close the lane: the external signal is already captured by
+  existing direction/marginal channels; do not build further.
+- **Scope guard even on GO** — GO authorizes only the **cheap PerturbQA-CSV channel +
+  one LB read**, *never* the genome-scale Replogle pipeline (tens–100+ GB, ortholog +
+  pseudobulk + new deps). Replogle is justified **only** if the cheap channel shows a
+  *real LB lift* **and** a mechanism for **pair-specific** (not just marginal pert-level)
+  DE emerges — neither is on the table today.
+
+### Recommendation (conditional, skeptical prior)
+
+**Lean: complete probe Goal 5; take the one cheap submission only if it clears the bar;
+otherwise close the data lane. Do not open the expensive Replogle pipeline on current
+evidence.** The prior points to NO-GO / redundant:
+
+1. The transferable DE is **marginal (pert-level), not pair-specific** (per-gene LOO
+   0.538 = chance) — it may already be captured by our channels and get CFA-rejected.
+2. It reinforces **direction, which is already ~0.65-capped**, and the external DIR 0.95
+   is **selection-inflated**; the honest ceiling stays ~0.60–0.65.
+3. The field's 0.693 target is **unverified** and does not reproduce on a true dual-OOD
+   split, so "beat the field" may not be a real target from a data lane at all.
+
+The counterweight is that the **cheap** route is genuinely cheap (PerturbQA CSVs, pandas)
+and Stage-0 surprisingly cleared — so finishing the fusion test and taking one bounded
+shot costs little. The expensive lane, by contrast, has **bounded EV against a ~0.65
+ceiling** and should stay closed unless the cheap shot changes the picture.
+
+**What would change this:** a fused OOD lift materially above +0.005 that the CFA gate
+admits, *and* an LB read confirming it — or a mechanism that turns marginal pert-DE into
+**pair-specific** DE (the true bottleneck). Absent those, the higher-EV rank-1 bet is the
+**model-based DE crack** (token-logprob self-consistency; `feat/de-logprob-self-consistency`),
+not this data lane.
+
+_Decision status: **conditional NO-GO on the expensive lane; cheap-shot pending probe Goal 5.**
+When `research/perturb-seq-transfer-probe` reports `L` + the CFA verdict, apply the rule above._
