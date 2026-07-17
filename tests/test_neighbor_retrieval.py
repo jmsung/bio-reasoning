@@ -9,9 +9,11 @@ query's own pair — so it stays leak-free under the dual-OOD split.
 
 import numpy as np
 import pandas as pd
+from scipy.stats import rankdata
 
 from bio_reasoning.features.neighbor_retrieval import (
     build_neighbor_graph,
+    fuse_neighbour_direction,
     neighbor_channel,
     retrieve_neighbor_labels,
 )
@@ -99,3 +101,45 @@ def test_neighbor_channel_builds_aligned_buses():
     assert ch.s_de.shape == (2,) and ch.r.shape == (2,)
     assert np.isfinite(ch.s_de[0])  # Q covered via Pa
     assert np.isnan(ch.s_de[1])  # Z uncovered
+
+
+# --- Goal 1: track-agnostic neighbour-direction fusion helper -----------------
+
+
+def test_fuse_neighbour_direction_preserves_de_ranking_and_reports_coverage():
+    # Track-agnostic: fuse the neighbour direction into ANY base (up, down) — e.g. a
+    # Track B floored submission. Only the base feeds the s_de bus and fuse()
+    # rank-normalizes it, so the DE *ranking* (AUROC_de) is preserved while direction
+    # gets the neighbour lift.
+    train = _train()
+    queries = pd.DataFrame({"pert": ["Q", "Zz"], "gene": ["Gq", "Yy"]})
+    base_up = np.array([0.3, 0.1])
+    base_down = np.array([0.2, 0.3])  # base DE = [0.5, 0.4] (distinct → real ranks)
+    pert_nb = {"Q": {"Pa", "Pb"}}  # Q covered; Zz not
+    gene_nb: dict[str, set] = {}
+    fu, fd, covered = fuse_neighbour_direction(
+        queries, base_up, base_down, train, pert_nb, gene_nb, min_support=1
+    )
+    assert fu.shape == fd.shape == (2,)
+    # DE ranking preserved (fused DE = up+down is rank-monotonic with the base DE)
+    assert np.array_equal(rankdata(fu + fd), rankdata(base_up + base_down))
+    # per-row mask: Q covered via its neighbour, Zz not
+    assert covered.tolist() == [True, False]
+    assert covered.mean() == 0.5
+    # valid graded simplex
+    assert np.all(fu >= 0) and np.all(fd >= 0) and np.all(fu + fd <= 1 + 1e-9)
+
+
+def test_fuse_neighbour_direction_no_coverage_falls_back_to_base_direction():
+    train = _train()
+    queries = pd.DataFrame({"pert": ["Zz", "Yy"], "gene": ["Aa", "Bb"]})  # no neighbours
+    base_up = np.array([0.3, 0.1])
+    base_down = np.array([0.2, 0.3])
+    fu, fd, covered = fuse_neighbour_direction(
+        queries, base_up, base_down, train, {}, {}, min_support=1
+    )
+    assert not covered.any()
+    # with no neighbour cover, direction ranking == the base direction ranking
+    base_r = base_up / (base_up + base_down)
+    fused_r = fu / (fu + fd)
+    assert np.array_equal(rankdata(fused_r), rankdata(base_r))

@@ -67,10 +67,12 @@ harness ([[curated-edges-fail-de-axis]] describes the harness).
 
 ## Caveats & next
 
-- The +0.027 is measured against the two-stage GO **model**, not the live-LB-0.578
-  floor-to-prior + DIR-blend pipeline. The lift on the *actual* submission needs
-  neighbour-`r` wired into that pipeline (test-set inference + a Kaggle submission)
-  to confirm — it could shrink if the 0.578 blend already captures part of the
-  direction signal. Pure feature channel, no LLM/Bing dependency, directly submittable.
+- **Update (feat/track-b-neighbour-dir-parity):** neighbour-`r` is now wired into the
+  live Track B floored pipeline (`scripts/track_b_de_dir_submission.py`). It did **not**
+  shrink — OOD-val **0.5916** vs the floored base 0.5647 (+0.028) and the 0.5712 dir-blend
+  best (+0.020); dir 0.570→0.624 at 98% coverage. So the 0.578 blend did *not* already
+  capture the neighbour direction. Kaggle LB still pending (user/Bing-gated upload) — the
+  OOD-val↔LB gap has held to ~0.004 historically, so the LB should confirm. Pure feature
+  channel, no LLM/Bing dependency.
 - DE remains the unsolved rank-1 bottleneck; the only untried DE family is model-based
   token-logprob self-consistency (needs a logprob endpoint).

@@ -61,7 +61,8 @@ Three are now measured:
   Baselines on it: no-signal 0.500, evidence prior **0.533**. It reproduces the
   leaderboard (the eventual fix's LB↔OOD-val gap was **0.004**), so it is the
   trusted offline fitness gate — a 60-row CV is not.
-- **floor-to-prior / never-`0/0`** — ✅ **works, and is the best Track B config.**
+- **floor-to-prior / never-`0/0`** — ✅ **works** (first Track B above the floor; the
+  base every later direction lever builds on).
   Flooring every `(0,0)` tie to the pert's graded prior: **Kaggle LB 0.568**
   (PR #16, first Track B above the 0.529 floor), confirmed on OOD-val at **0.564**
   (PR #20). The full ladder: hard A/B/C 0.507 → graded-but-over-abstaining 0.488
@@ -80,10 +81,17 @@ Three are now measured:
   The two-stage DE axis is near-chance and stays unused; only its *direction* is
   complementary. So mixing predictions is not exhausted — mixing toward the
   *coarse prior* is; mixing in an *orthogonal learned signal* still lifts.
+- **fuse a neighbour-retrieval *direction*** — ✅ **new offline best: OOD-val 0.5916**
+  (feat/track-b-neighbour-dir-parity). The same neighbour-direction lever that took
+  Track A to LB 0.585, applied to the floored Track B base via
+  `fuse_neighbour_direction`: dir 0.570→0.624 (98% coverage), **+0.028** vs the floored
+  base and **+0.020** vs the two-stage dir-blend (0.5712). **Kaggle LB 0.597** (2026-07-17, +0.019 over 0.578).
+  Confirms "stronger learned direction" is the live Track B lever, not a dead end.
 - **scoring-not-labeling** (continuous DE-likelihood) — still open.
 
 **Takeaway:** floor-to-prior's DE ceiling is set by **evidence quality** (the
 prior + better tools) — shrinking the agent toward the prior can't beat it. But
-the **direction** axis is not capped there: blending in an orthogonal learned
-signal (the two-stage GO-term model) lifted the LB to 0.578. Remaining levers:
-better knowledge tools, scoring-not-labeling, and stronger learned direction.
+the **direction** axis is not capped there: each stronger direction signal lifts it —
+two-stage GO (LB 0.578) and now neighbour-retrieval (**LB 0.597**, OOD-val 0.5916).
+Remaining levers: better knowledge tools, scoring-not-labeling, and stronger learned
+direction (the one that keeps paying).

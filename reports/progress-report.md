@@ -26,6 +26,7 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
 | **Track A — two-stage GO (v2)** | learned `P(DE)·P(up\|DE)` heads over GO:BP term features for the perturbation *and* the target gene | **0.561** (Kaggle LB; OOD-val ~0.56) | **new Track A best** (+0.032 over the 0.529 prior); GO functional features carry it — our char-ngram / gene-name string features scored at chance (but see caveat: the public field reaches ~0.693 with gene-name n-grams, so name structure *is* exploitable — we haven't captured it) |
 | **Track B — DIR-blend (v3)** | rank-blends the two-stage model's direction into the floored submission (w=0.7) | **0.578** (Kaggle LB; OOD-val 0.571) | new Track B best (+0.010 over the 0.568 floor-to-prior champion); the direction signal generalized to the full test set |
 | **Track A — neighbour-DIR fusion (v4)** | fuse the neighbour-retrieval direction (STRING-neighbour label borrowing, leak-free) into the two-stage GO submission via `fuse()`; DE kept, direction blended | **0.585** (Kaggle LB) | **new Track A + overall best** (+0.024 over two-stage 0.561, past the 0.578 Track B); DE stayed ~chance across 4 channel families — the retrieval signal lives in *direction* |
+| **Track B — neighbour-DIR fusion (v5)** | fuse the same neighbour-retrieval direction into the floored Track B submission via `fuse_neighbour_direction` — the #28 lever, different base | **0.597** (Kaggle LB; OOD-val 0.5916) | **new Track B best** (+0.019 over the 0.578 DIR-blend); direction 0.570→0.624 at 98% coverage, DE unchanged — the 0.578 blend had *not* already captured the neighbour direction; LB came in +0.005 above OOD-val |
 | Public leaderboard (top) | — | A ≈ 0.693 / B ≈ 0.752 | on the same AUROC scale — **we remain well below the field** |
 
 **Two findings drive the plan:**
@@ -49,6 +50,24 @@ were ruled out at ~chance (`feat/de-detector`), then neighbour-retrieval was rev
 LB-confirmed. DE-vs-none stayed near-chance across four channel families — direction is where the
 external-signal gains are. Pure feature channel, no LLM/Bing dependency. Next: stack the same
 direction fusion onto the Track B blend (0.578).
+
+## Update (feat/track-b-neighbour-dir-parity — landed)
+
+Ported the #28 neighbour-direction lever (Track A LB 0.585) to Track B — the free
+follow-through flagged at the end of the last update. The now track-agnostic
+`fuse_neighbour_direction` rank-fuses the STRING-neighbour direction into the floored
+Track B submission (DE ranking + agent metadata untouched; only `up/(up+down)` moves).
+**OOD-val 0.5916** — direction **0.570→0.624** at 98% coverage, DE unchanged
+(0.559→0.560) — **+0.028 over the floored base (0.5647)** and **+0.020 over the prior
+Track B best** (two-stage DIR-blend 0.5712 / LB 0.578). New Track B best offline. The
+neighbour channel standalone confirms it's a pure direction lever (DIR-AUROC 0.651 ± 0.047
+over 5 seeds; DE 0.498 = chance). Two things this settles: the 0.578 blend had *not*
+already absorbed the neighbour direction (the lift didn't shrink on the live pipeline),
+and "stronger learned direction" is the Track B lever that keeps paying — same as Track A.
+**Kaggle LB 0.597** (2026-07-17) — a new Track B best, +0.019 over 0.578; OOD-val 0.5916
+predicted it and the board came in **+0.005 higher**, so the dual-OOD split held once more.
+Pure feature channel, no LLM/Bing dependency. Schema-valid submission (1,813 rows, 99.6%
+coverage, 0 nulls) archived at `mb/findings/solutions/track-b-de-dir-LB0.597.csv`.
 
 ## Update (feat/ood-val-split — landed)
 
