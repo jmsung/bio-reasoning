@@ -67,6 +67,44 @@ def render_leaderboard(history: list[TrialRecord]) -> str:
     return header + "\n" + "\n".join(rows) + note
 
 
+def compare_agentic_vs_prompt(history: list[TrialRecord]) -> dict[str, object]:
+    """Split ``history`` into agentic (``variant.tools is not None``) vs prompt-only.
+
+    Returns ``{agentic_best, prompt_best, delta}`` where each ``*_best`` is that arm's
+    top TrialRecord by OOD-val mean (``None`` if the arm is empty) and ``delta`` is
+    ``agentic_best.mean − prompt_best.mean`` (``None`` if either arm is missing) — the
+    honest A/B: does giving the agent real tools beat the prompt-only baseline?
+    """
+    agentic = [r for r in history if r.variant.tools is not None]
+    prompt = [r for r in history if r.variant.tools is None]
+    a_best = best_trial(agentic) if agentic else None
+    p_best = best_trial(prompt) if prompt else None
+    delta = None if a_best is None or p_best is None else _mean(a_best) - _mean(p_best)
+    return {"agentic_best": a_best, "prompt_best": p_best, "delta": delta}
+
+
+def render_agentic_vs_prompt(history: list[TrialRecord]) -> str:
+    """Render the agentic-vs-prompt-only A/B as a short markdown block."""
+    cmp = compare_agentic_vs_prompt(history)
+
+    def _fmt(rec: TrialRecord | None) -> str:
+        return "—" if rec is None else f"{rec.variant.id} ({_mean(rec):.3f})"
+
+    lines = [
+        "## Agentic vs prompt-only (dual-OOD mean AUROC)",
+        "",
+        f"- prompt-only best: {_fmt(cmp['prompt_best'])}",  # type: ignore[arg-type]
+        f"- agentic best: {_fmt(cmp['agentic_best'])}",  # type: ignore[arg-type]
+    ]
+    delta = cmp["delta"]
+    lines.append(
+        "- delta: — (one arm missing)"
+        if delta is None
+        else f"- delta (agentic − prompt): {delta:+.3f}"
+    )
+    return "\n".join(lines)
+
+
 def archive(output_dir: Path, history: list[TrialRecord]) -> dict[str, Path]:
     """Write ``leaderboard.md`` and ``best_variant.json`` for ``history``.
 

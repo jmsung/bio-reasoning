@@ -165,26 +165,44 @@ def make_agent_row_predictor(agent_fn: AgentFn, concurrency: int = 1) -> RowPred
 
 # agent_fn_for(variant) -> the AgentFn for that variant's tool config.
 AgentFnFor = Callable[[Variant], AgentFn]
+# critic(pert, gene, initial_pair) -> revised (up, down) after a self-critique pass.
+Critic = Callable[[str, str, "tuple[float, float]"], "tuple[float, float]"]
+
+
+def with_self_critique(agent_fn: AgentFn, critic: Critic) -> AgentFn:
+    """Wrap ``agent_fn`` with a second self-critique/verify pass.
+
+    The base agent produces a first prediction; ``critic`` then reviews it (in the
+    CLI, a second LLM call re-examines the evidence) and returns a possibly-revised
+    ``(up, down)``. Offline-testable: inject a deterministic ``critic``.
+    """
+
+    def _fn(pert: str, gene: str, seed: int) -> tuple[float, float]:
+        return critic(pert, gene, agent_fn(pert, gene, seed))
+
+    return _fn
 
 
 def make_configurable_agent_row_predictor(
     agent_fn_for: AgentFnFor, concurrency: int = 1
 ) -> RowPredictor:
-    """Track B predictor whose agent (tool set) is chosen per ``Variant.tools``.
+    """Track B predictor whose agent is chosen per ``(Variant.tools, self_critique)``.
 
-    ``agent_fn_for(variant)`` builds the agent for that variant's tool config; the
-    result is cached by ``variant.tools`` so each (expensive) agent is built once
-    and reused across rows and self-consistency seeds. Delegates per-config to
-    :func:`make_agent_row_predictor`, so the same split/score/gate harness drives
-    the agentic tool-config search. Offline-testable with a fake ``agent_fn_for``.
+    ``agent_fn_for(variant)`` builds the agent for that variant's tool config and
+    critique setting; the result is cached by ``(tools, self_critique)`` so each
+    (expensive) agent is built once and reused across rows and self-consistency
+    seeds. Delegates per-config to :func:`make_agent_row_predictor`, so the same
+    split/score/gate harness drives the agentic search. Offline-testable with a
+    fake ``agent_fn_for``.
     """
     cache: dict[object, RowPredictor] = {}
 
     def _predict(rows, variant, seed, get_examples):
-        rp = cache.get(variant.tools)
+        key = (variant.tools, variant.self_critique)
+        rp = cache.get(key)
         if rp is None:
             rp = make_agent_row_predictor(agent_fn_for(variant), concurrency)
-            cache[variant.tools] = rp
+            cache[key] = rp
         return rp(rows, variant, seed, get_examples)
 
     return _predict

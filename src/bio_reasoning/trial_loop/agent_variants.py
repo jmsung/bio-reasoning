@@ -41,13 +41,16 @@ def agent_variant_grid(
     subsets: dict[str, tuple[str, ...]] | None = None,
     sample_counts: Sequence[int] = (1, 3),
     include_traxler: bool = True,
+    self_critique: Sequence[bool] = (False,),
 ) -> list[Variant]:
     """Enumerate agentic tool-config variants (all id-prefixed ``agent-``).
 
-    Each variant fixes a tool subset and a self-consistency sample count (its
-    ``seeds`` length). ``include_traxler=False`` drops every subset naming
-    ``traxler_direction`` — used when the Traxler fold is the eval, so the tool can
-    never leak the labels it is validated against.
+    Each variant fixes a tool subset, a self-consistency sample count (its ``seeds``
+    length), and whether the agent runs a self-critique pass (id suffix ``-crit``).
+    ``self_critique`` defaults to off-only so the grid stays lean; pass
+    ``(False, True)`` to A/B the critique. ``include_traxler=False`` drops every
+    subset naming ``traxler_direction`` — used when the Traxler fold is the eval, so
+    the tool can never leak the labels it is validated against.
     """
     subsets = subsets or AGENT_TOOL_SUBSETS
     grid: list[Variant] = []
@@ -55,7 +58,9 @@ def agent_variant_grid(
         if not include_traxler and "traxler_direction" in tools:
             continue
         for nc in sample_counts:
-            grid.append(Variant(id=f"agent-{name}-s{nc}", tools=tools, seeds=_seeds(nc)))
+            for crit in self_critique:
+                vid = f"agent-{name}-s{nc}" + ("-crit" if crit else "")
+                grid.append(Variant(id=vid, tools=tools, seeds=_seeds(nc), self_critique=crit))
     return grid
 
 

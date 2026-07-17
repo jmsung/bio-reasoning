@@ -8,8 +8,10 @@ from bio_reasoning.trial_loop.agent_variants import (
 )
 from bio_reasoning.trial_loop.archive import (
     archive,
+    compare_agentic_vs_prompt,
     leaderboard,
     load_trials,
+    render_agentic_vs_prompt,
     render_leaderboard,
     write_trials,
 )
@@ -32,6 +34,7 @@ from bio_reasoning.trial_loop.loop import (
     run_loop,
     run_variant,
     sample_examples,
+    with_self_critique,
 )
 from bio_reasoning.trial_loop.reflect import Proposer, best_trial, make_grid_proposer, reflect
 from bio_reasoning.trial_loop.ruled_out import RULED_OUT, is_ruled_out
@@ -66,6 +69,9 @@ __all__ = [
     "agent_variant_grid",
     "make_agent_proposer",
     "make_configurable_agent_row_predictor",
+    "with_self_critique",
+    "compare_agentic_vs_prompt",
+    "render_agentic_vs_prompt",
     "RULED_OUT",
     "is_ruled_out",
     "build_track_a_submission",

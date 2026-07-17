@@ -28,6 +28,9 @@ class Variant:
             agent may call (see ``trial_loop.tools``). ``None`` → prompt-only
             (Track A); a tuple (possibly empty) marks an agentic variant, and its
             identity keys the per-config agent cache.
+        self_critique: Track B agentic knob — when ``True`` the agent runs a
+            second self-critique/verify pass over its first prediction. Inert for
+            prompt-only (``tools is None``) variants; part of the agent cache key.
     """
 
     id: str
@@ -36,6 +39,7 @@ class Variant:
     retrieval: str = "random"
     seeds: tuple[int, ...] = (42, 43, 44)
     tools: tuple[str, ...] | None = None
+    self_critique: bool = False
 
 
 @dataclass
