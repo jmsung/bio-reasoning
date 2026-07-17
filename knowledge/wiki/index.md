@@ -159,6 +159,7 @@ _(none yet)_
 
 - [Assessing external Perturb-seq datasets — compute plan & tooling](methods/perturb-seq-data-assessment.md) — 2026-06-08
 - [Adapting PBio-Agent (LINCSQA) to our Track A/B task](methods/pbio-agent-for-tracks.md) — proposed
+- [The self-improvement loop — P9-style triple-verify search over the live LLM DE lane](methods/self-improvement-loop.md) — 2026-07-17
 
 ### Decisions
 
