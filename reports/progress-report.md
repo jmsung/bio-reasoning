@@ -210,6 +210,44 @@ key (LLM embedding of gene function) transfers direction where a *naming-convent
 (char/prefix family) did not. Dev result on the OOD split, not submitted (0.574 &lt;
 the live LB 0.597).
 
+## Update (explore/dir-ceiling-probe — landed)
+
+A measurement-only probe **bounding the fused-direction ceiling** on the dual-OOD
+split — the number that gates the rank-1-vs-data-lane decision. Standalone DIR-AUROC:
+neighbour-DIR **0.651 ± 0.047**, GO-DIR 0.595, embedding-DIR 0.574. Rank-fusing all
+three (`fuse()`, equal-weight) over the full subset lattice:
+
+| subset | DIR-AUROC |
+|---|---|
+| **neighbour** | **0.651** |
+| GO + neighbour | 0.648 |
+| neighbour + embedding | 0.644 |
+| GO + neighbour + embedding | 0.642 |
+| GO + embedding | 0.599 |
+| GO | 0.595 |
+| embedding | 0.574 |
+
+**Equal-weight fusion of all three (0.642) sits *below* the single best channel,
+neighbour-DIR alone (0.651)** — every arm added drags it (+GO −0.002, +embedding
+−0.007, +both −0.009). Averaging unequal-quality rankers lands below the best ranker;
+the 0.19-correlation embedding channel earns a fuse *slot* but is too weak (0.574) to
+convert its independence into lift under equal weights. **Low correlation earns a slot;
+only channel strength lifts the fusion.** This independently corroborates the
+just-merged **#37 (`fuse-direction-channels`)**, which reached the same wall from the
+production side — 3-way = 2-way = +0.027, "direction saturated at 2 channels; CFA
+corr-diversity ≠ marginal lift."
+
+**The strategic read:** the naive direction ceiling is **~0.65**; with DE pinned ~0.55
+(#36 / marginal-DE), the honest **mean-AUROC ceiling of the current lane is ~0.60** —
+below the field's *unverified* 0.693. Beating equal-weight requires a weighted combiner
+that up-weights neighbour-DIR (cf. #31, w≈0.75), but headroom is small (the other
+channels top out ~0.60). **Fork:** push neighbour-DIR to its weighted best, **submit
+once and read the real LB gap**, then decide whether rank-1 needs a *new signal source*
+(Perturb-seq expression data — Replogle / PerturbQA), not more direction channels.
+Lower bound, equal-weight — this is a dev measurement on the OOD split, **not submitted**
+(no submission generated; LB 0.597 stands). Full lattice + mechanism:
+[`knowledge/wiki/findings/dir-ceiling-equal-weight-fusion.md`](../knowledge/wiki/findings/dir-ceiling-equal-weight-fusion.md).
+
 ## Approach
 
 1. **Honest fitness signal first** — a dual-OOD validation split (perturbations + genes
