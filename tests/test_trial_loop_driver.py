@@ -83,6 +83,34 @@ def test_stops_on_budget():
     assert len(res.records) >= 1  # at least one candidate evaluated before the cap tripped
 
 
+def test_example_key_fn_is_threaded_to_go_category_variant():
+    # regression: go_category variants must receive keyed exemplars, not collapse to
+    # random few-shot. The driver has to thread example_key_fn → triple_verify → run_variant.
+    df = _frame()
+    captured: dict[str, object] = {}
+
+    def capturing_predictor(rows, variant, seed, get_examples):
+        captured[variant.id] = get_examples(rows[0]) if rows else None
+        return [(0.0, 0.0) for _ in rows]
+
+    key_fn = lambda pert, gene: "catA"  # noqa: E731 — all perts share one category
+    cand = Variant(
+        id="de-votes-nfs2-go_category-s3", n_few_shot=2, retrieval="go_category", seeds=(42,)
+    )
+    self_improve_loop(
+        df,
+        make_grid_proposer([cand]),
+        capturing_predictor,
+        Variant(id="base"),  # zero-shot baseline
+        seeds=(0,),
+        noise_band=0.1,
+        example_key_fn=key_fn,
+        dry_rounds=1,
+    )
+    assert captured["de-votes-nfs2-go_category-s3"]  # non-None, non-empty exemplar list
+    assert captured["base"] is None  # zero-shot baseline gets no exemplars
+
+
 def test_converges_when_grid_exhausted():
     df = _frame()
     predictor = _variant_oracle({"base": 0.5, "a": 1.0})

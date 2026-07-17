@@ -58,6 +58,17 @@ def main() -> None:
     args = ap.parse_args()
 
     df = pd.read_csv(args.train_csv)
+
+    # go_category variants retrieve exemplars sharing the query pert's GO category;
+    # without this key_fn they collapse to random few-shot (identical prompts/scores).
+    from bio_reasoning.features.gene_function import annotate_perts
+
+    cats = annotate_perts(
+        sorted(df["pert"].astype(str).unique()),
+        ROOT / "data" / "interim" / "pert_go_category.json",
+    )
+    example_key_fn = lambda pert, gene: cats.get(pert, "other")  # noqa: E731
+
     infer = make_openrouter_infer_fn(
         max_tokens=args.max_tokens,
         reasoning_effort=args.reasoning_effort,
@@ -97,6 +108,7 @@ def main() -> None:
         budget=args.budget_usd,
         spent_fn=spent_usd if args.budget_usd is not None else None,
         max_trials=args.max_trials,
+        example_key_fn=example_key_fn,
         on_record=persist,
     )
 

@@ -34,15 +34,11 @@ def de_variant_grid(
     sample count.
     """
     grid: list[Variant] = []
-    seen: set[str] = set()
     for nfs in few_shots:
         rets = ("random",) if nfs == 0 else tuple(retrievals)
         for ret in rets:
             for nc in sample_counts:
                 vid = f"de-votes-nfs{nfs}" + (f"-{ret}" if nfs > 0 else "") + f"-s{nc}"
-                if vid in seen:
-                    continue
-                seen.add(vid)
                 grid.append(Variant(id=vid, n_few_shot=nfs, retrieval=ret, seeds=_SAMPLE_SEEDS[nc]))
     return grid
 

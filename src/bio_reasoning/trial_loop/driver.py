@@ -16,7 +16,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 from bio_reasoning.trial_loop.gate import triple_verify
-from bio_reasoning.trial_loop.loop import RowPredictor
+from bio_reasoning.trial_loop.loop import ExampleKeyFn, RowPredictor
 from bio_reasoning.trial_loop.reflect import Proposer, reflect
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
@@ -49,6 +49,7 @@ def self_improve_loop(
     budget: float | None = None,
     spent_fn: Callable[[], float] | None = None,
     max_trials: int | None = None,
+    example_key_fn: ExampleKeyFn | None = None,
     on_record: Callable[[TrialRecord], None] | None = None,
 ) -> SelfImproveResult:
     """Drive propose → triple-verify → promote until a stop condition trips.
@@ -57,6 +58,8 @@ def self_improve_loop(
     top of each round, so at most one extra candidate is evaluated past the cap.
     ``noise_band`` is forwarded to :func:`triple_verify` (``None`` → measured from the
     baseline each round). A promoted baseline is compared against on subsequent rounds.
+    ``example_key_fn`` supplies the relevance key for ``retrieval="go_category"``
+    variants; without it those variants collapse to random few-shot (same exemplars).
     """
     records: list[TrialRecord] = []
     accepted: list[Variant] = []
@@ -78,7 +81,14 @@ def self_improve_loop(
             break
 
         gate = triple_verify(
-            df, cand, baseline, row_predictor, seeds=seeds, metric=metric, noise_band=noise_band
+            df,
+            cand,
+            baseline,
+            row_predictor,
+            seeds=seeds,
+            metric=metric,
+            noise_band=noise_band,
+            example_key_fn=example_key_fn,
         )
         rec = TrialRecord(
             variant=cand,
