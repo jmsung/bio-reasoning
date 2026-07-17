@@ -12,7 +12,8 @@ cites:
 
 [[../home]] | [[../index]]
 
-**Status: draft — brainstorm, not yet built or measured.**
+**Status: draft — combiner framing measured (negative, below); primary-predictor
+framing not yet built.**
 
 Can a general-purpose **tabular foundation model** (TabPFN / TabICL — Prior-Fitted
 Networks that do zero-shot in-context inference, no training) serve as the
@@ -99,9 +100,30 @@ the best signal-per-call" open question).
   models are allowed as tools (the "fixed LLM, no fine-tuning" clause implies yes,
   but `docs/kaggle-rules.md` is currently silent on Track B tool scope).
 
+## Measured: TabPFN-as-combiner is a dead frame (`feat/tabpfn-functional-features`)
+
+TabPFN trained as a *learned combiner* over the three DIRECTION channels (GO /
+neighbour / embedding) — leak-free, out-of-fold features on the dual-OOD holdout —
+scored **DIR-AUROC 0.613 ± 0.039**, *below* neighbour-DIR (0.651) and equal-weight
+fusion (0.642) on identical val rows. It does not clear the ~0.65 hand-fused
+ceiling. Consistent with the paper's own thesis above: **featurization is the
+lever, not combiner form** — swapping equal-weight rank-fusion for a nonlinear
+TabPFN head over 3 saturated channels (~250 OOD rows) invents no new signal.
+
+Corollary for **derivatives** (TabICLv2, TabDPT, TabForestPFN, LimiX, TabPFN v2.5):
+they differ in *scale* and *priors*, not in ability to conjure signal a 3-feature /
+250-row combiner lacks — so as a **combiner swap** they are near-zero EV. The open
+lane is the *other* use: a tabular FM as the **primary predictor over rich pair
+features** (below), where a retrieval-augmented derivative (TabDPT) is the
+interesting candidate — but it still meets the OOD-both-axes wall (Palla: only
+modestly positive in the hardest genome-wide setting). Deps note: pin
+`tabpfn>=2.1,<2.2` (v8+ adds a `TABPFN_TOKEN` license gate that breaks offline
+runs); TabICL is Apache-open.
+
 ## Next step
 
 Cheap experiment: `feat/tabpfn-track-a` — featurize pairs → TabPFN classifier →
 `prediction_up/down` → validate on `doubly_disjoint_folds` vs the 0.529 floor. If
 it clears the floor at near-zero effort, it becomes both a strong Track A baseline
-*and* the anchor tool for a Track B agent.
+*and* the anchor tool for a Track B agent. (This is framing #2 — primary predictor
+over rich features — and remains untried; the combiner framing above is closed.)

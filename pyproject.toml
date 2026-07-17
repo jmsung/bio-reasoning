@@ -37,6 +37,14 @@ track-b = [
 eval = [
     "scikit-learn>=1.7.0",
 ]
+tabpfn = [
+    # Pin to v2.1.x: it downloads weights from HuggingFace offline. v8+ added a
+    # mandatory license-token gate (TABPFN_TOKEN) that breaks headless/offline runs.
+    # 2.1.x needs scikit-learn <1.7 (unlike the eval group's >=1.7), so the two
+    # groups are declared mutually exclusive under [tool.uv] conflicts below.
+    "tabpfn>=2.1,<2.2",
+    "scikit-learn>=1.2,<1.7",
+]
 azure = [
     "azure-identity>=1.23.0",
 ]
@@ -49,6 +57,12 @@ serve = [
 # suite (eval → sklearn, track-b → dspy). Without these, test collection fails on
 # ModuleNotFoundError. azure/serve stay opt-in (deployment-only, not needed for tests).
 default-groups = ["dev", "eval", "track-b"]
+# tabpfn 2.1.x caps pandas <3 in its metadata, but runs fine on the project's
+# pandas 3. Override so the tabpfn group resolves without downgrading pandas.
+override-dependencies = ["pandas>=3.0.3"]
+# tabpfn needs scikit-learn <1.7; eval needs >=1.7. Mutually exclusive — resolved
+# into separate universes. Run the tabpfn probe with `--no-group eval --group tabpfn`.
+conflicts = [[{ group = "eval" }, { group = "tabpfn" }]]
 
 [tool.black]
 line-length = 100
