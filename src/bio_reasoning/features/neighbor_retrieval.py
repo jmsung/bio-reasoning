@@ -22,6 +22,26 @@ import pandas as pd
 from bio_reasoning.models.fuse import Channel, fuse
 
 
+def neighbour_mask(
+    pert: str,
+    gene: str,
+    train_df: pd.DataFrame,
+    pert_neighbors: dict[str, set[str]],
+    gene_neighbors: dict[str, set[str]],
+) -> pd.Series:
+    """Boolean mask of train rows neighbouring the query, excluding its own pair.
+
+    A neighbour is a train row whose ``pert`` is in ``pert_neighbors[pert]`` OR whose
+    ``gene`` is in ``gene_neighbors[gene]``. Shared by :func:`retrieve_neighbor_labels`
+    and the CORE contrastive builder so the leak-free retrieval lives in one place.
+    """
+    pn = pert_neighbors.get(pert, set())
+    gn = gene_neighbors.get(gene, set())
+    mask = train_df["pert"].isin(pn) | train_df["gene"].isin(gn)
+    mask &= ~((train_df["pert"] == pert) & (train_df["gene"] == gene))
+    return mask
+
+
 def retrieve_neighbor_labels(
     pert: str,
     gene: str,
@@ -37,10 +57,7 @@ def retrieve_neighbor_labels(
     fewer than ``min_support`` retrieved rows the evidence is too thin → ``nan``
     (uncovered). ``r`` defaults to ``0.5`` when retrieved rows carry no DE row.
     """
-    pn = pert_neighbors.get(pert, set())
-    gn = gene_neighbors.get(gene, set())
-    mask = train_df["pert"].isin(pn) | train_df["gene"].isin(gn)
-    mask &= ~((train_df["pert"] == pert) & (train_df["gene"] == gene))
+    mask = neighbour_mask(pert, gene, train_df, pert_neighbors, gene_neighbors)
     labels = train_df.loc[mask, "label"].to_numpy()
     if len(labels) < min_support:
         return float("nan"), float("nan")

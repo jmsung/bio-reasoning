@@ -29,17 +29,20 @@ class _MockClient:
     def __init__(self, p_yes):
         self.p_yes = p_yes
         self.last_prompt = None
+        self.last_model = "unset"
 
     def score_yes(self, prompt, model=None):
         self.last_prompt = prompt
+        self.last_model = model
         return self.p_yes
 
 
 def test_reasoning_pde_uses_client_and_embeds_context():
     client = _MockClient(0.73)
     refs = _refs(1, 2)
-    p = reasoning_pde("Pfoo", "Gbar", refs, client)
+    p = reasoning_pde("Pfoo", "Gbar", refs, client, model="qwen")
     assert p == 0.73
+    assert client.last_model == "qwen"  # model kwarg forwarded to the client
     # the contrastive set + query are in the prompt the client saw
     assert "Pfoo" in client.last_prompt and "Gbar" in client.last_prompt
     assert "up" in client.last_prompt and "none" in client.last_prompt

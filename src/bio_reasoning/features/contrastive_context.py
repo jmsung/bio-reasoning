@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from bio_reasoning.features.neighbor_retrieval import neighbour_mask
+
 Reference = tuple[str, str, str]  # (pert, gene, label)
 
 
@@ -34,10 +36,7 @@ def contrastive_references(
     the query's own pair (leak-free). Both lists empty when fewer than ``min_support``
     neighbours are retrieved (evidence too thin).
     """
-    pn = pert_neighbors.get(pert, set())
-    gn = gene_neighbors.get(gene, set())
-    mask = train_df["pert"].isin(pn) | train_df["gene"].isin(gn)
-    mask &= ~((train_df["pert"] == pert) & (train_df["gene"] == gene))
+    mask = neighbour_mask(pert, gene, train_df, pert_neighbors, gene_neighbors)
     hits = train_df.loc[mask, ["pert", "gene", "label"]]
     if len(hits) < min_support:
         return {"positive": [], "negative": []}

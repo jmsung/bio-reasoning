@@ -56,7 +56,8 @@ def _seed(df: pd.DataFrame, partners: dict, seed: int) -> tuple[float, float]:
 
 def main() -> None:
     df = pd.read_csv(TRAIN)
-    partners = {k: set(v) for k, v in json.load(open(STRING_CACHE)).items()}
+    with open(STRING_CACHE) as f:
+        partners = {k: set(v) for k, v in json.load(f).items()}
     print(f"train: {len(df)} rows; STRING partners {len(partners)}", flush=True)
 
     rows = [_seed(df, partners, s) for s in range(5)]
