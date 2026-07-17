@@ -70,6 +70,18 @@ def test_infer_fn_accumulates_token_totals():
     assert infer.token_totals["total_tokens"] == 24.0  # 3 calls * 8
 
 
+def test_infer_fn_degrades_to_empty_on_persistent_error():
+    def raising_poster(**_kw):
+        raise RuntimeError("503")
+
+    infer = make_openrouter_infer_fn(
+        api_base="b", api_key="k", model="m", max_retries=0, concurrency=1, poster=raising_poster
+    )
+    out = infer(["p"], seed=0)
+    assert out == [""]  # neutral fallback, loop survives
+    assert infer.token_totals["errors"] == 1.0
+
+
 def test_wires_into_prompt_row_predictor_and_parses():
     # votes/text self-consistency: parse_answer maps texts -> discrete (up, down)
     poster, _ = _fake_poster({"P-up": "A) upregulation", "P-down": "B) down-regulation"})
