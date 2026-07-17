@@ -81,9 +81,10 @@ Ordered by priority — understand → plan → build.
 15. [x] **Track B neighbour-direction fusion (parity with Track A)** — apply the same
     neighbour-direction lever to the Track B floored submission via the now track-agnostic
     `fuse_neighbour_direction`. **OOD-val 0.5916** (dir 0.570→0.624, 98% cov) vs the floored
-    base 0.5647 (+0.028) and the prior Track B best dir-blend 0.5712 / LB 0.578 (+0.020) —
-    **new Track B best offline.** `scripts/track_b_de_dir_submission.py` (builder) +
-    `track_b_de_dir_ood_val.py` (eval). Kaggle LB pending (user/Bing-gated upload).
+    base 0.5647 (+0.028) and the prior Track B best dir-blend 0.5712 / LB 0.578 (+0.020).
+    `scripts/track_b_de_dir_submission.py` (builder) + `track_b_de_dir_ood_val.py` (eval).
+    **Kaggle LB 0.597** (2026-07-17) vs 0.578 — **+0.019, new Track B best**; OOD-val 0.5916
+    predicted it (LB came in +0.005 higher, split held again).
 
 ## Completed
 

@@ -85,13 +85,13 @@ Three are now measured:
   (feat/track-b-neighbour-dir-parity). The same neighbour-direction lever that took
   Track A to LB 0.585, applied to the floored Track B base via
   `fuse_neighbour_direction`: dir 0.570→0.624 (98% coverage), **+0.028** vs the floored
-  base and **+0.020** vs the two-stage dir-blend (0.5712). Kaggle LB pending upload.
+  base and **+0.020** vs the two-stage dir-blend (0.5712). **Kaggle LB 0.597** (2026-07-17, +0.019 over 0.578).
   Confirms "stronger learned direction" is the live Track B lever, not a dead end.
 - **scoring-not-labeling** (continuous DE-likelihood) — still open.
 
 **Takeaway:** floor-to-prior's DE ceiling is set by **evidence quality** (the
 prior + better tools) — shrinking the agent toward the prior can't beat it. But
 the **direction** axis is not capped there: each stronger direction signal lifts it —
-two-stage GO (LB 0.578) and now neighbour-retrieval (OOD-val 0.5916, LB pending).
+two-stage GO (LB 0.578) and now neighbour-retrieval (**LB 0.597**, OOD-val 0.5916).
 Remaining levers: better knowledge tools, scoring-not-labeling, and stronger learned
 direction (the one that keeps paying).
