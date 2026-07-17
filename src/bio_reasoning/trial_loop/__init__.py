@@ -8,6 +8,7 @@ from bio_reasoning.trial_loop.archive import (
     render_leaderboard,
     write_trials,
 )
+from bio_reasoning.trial_loop.inference import make_openrouter_infer_fn
 from bio_reasoning.trial_loop.loop import (
     make_agent_row_predictor,
     make_prompt_row_predictor,
@@ -29,6 +30,7 @@ __all__ = [
     "sample_examples",
     "retrieve_examples",
     "make_prompt_row_predictor",
+    "make_openrouter_infer_fn",
     "make_agent_row_predictor",
     "reflect",
     "best_trial",
