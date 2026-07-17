@@ -67,7 +67,19 @@ actually lifts the fusion.**
    LB gap** before investing in the expensive data lane — exactly the strategic fork in the
    rank-1 plan.
 
+## Independently confirmed by `feat/fuse-direction-channels` (#37)
+
+The production fusion entry point (`bio_reasoning.models.direction_fusion.fuse_direction_channels`,
+a CFA-gated N-channel fuse over `model + admitted candidates`) reached the same conclusion from
+the other side: the **2-way** fusion (GO + neighbour) reproduces the +0.027 / LB-0.585 lift, but
+the **3-way** (+embedding-DIR) adds **no marginal lift** — "direction saturated at 2 channels;
+**CFA corr-diversity ≠ marginal lift**." Same lesson, two setups: a low-correlation channel earns
+a gate slot but only lifts if it is strong enough to survive fusion. Note #37's gate is permissive
+(`max_abs_corr=0.9`), so it admits all three — the *gate* does not prevent the drag; **channel
+strength does.**
+
 ## Caveat
 
-This is a **lower bound**: measured on the *current* channels under equal-weight fusion.
-Re-run against `feat/fuse-direction-channels`'s weighted/learned fusion once it lands.
+This is a **lower bound**: pure-DIR-AUROC, equal-weight rank-fusion of the current channels. The
+open question `direction_fusion` leaves is whether a *weighted* combiner (up-weighting neighbour-DIR)
+clears 0.651 at all — re-run this probe with learned weights to close it.
