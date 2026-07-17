@@ -1,6 +1,6 @@
 ---
 title: The direction ceiling is ~0.65 — no fusion (equal-weight, weighted, or learned) beats the single best DIR channel
-status: draft
+status: measured
 cites:
   - findings/neighbor-retrieval-direction-lever.md
   - findings/direction-transfers-de-doesnt.md
@@ -13,7 +13,8 @@ cites:
 
 [[../home]] | [[../index]]
 
-**Status: draft — from the `explore/dir-ceiling-probe` branch, 2026-07-17.**
+**Status: measured — `explore/dir-ceiling-probe` (equal-weight) + `feat/weighted-direction-fuse`
+(weighted + learned), 2026-07-17. Question closed.**
 
 Bottom line: with DE disproven ([[direction-transfers-de-doesnt]]), rank-1 rides on
 **direction**. We measured how high *fused* direction can go by rank-fusing all three
@@ -98,5 +99,5 @@ alone (0.651). The weak channels (GO-DIR 0.595, embedding-DIR 0.574) carry no di
 neighbour-DIR lacks. **The direction lane is closed:** with DE pinned ~0.55, the honest
 mean-AUROC ceiling is ~0.60 < the field's unverified 0.693. Next = push neighbour-DIR's weighted
 best (w≈4, ~0.66), **submit once, read the real LB gap**, then decide the Perturb-seq data lane
-(see `mb/notes/perturb-seq-data-lane.md` / the `perturb-seq-data-lane-decision` backlog item) —
+(the `perturb-seq-data-lane-decision` backlog item) —
 rank-1 by direction alone is not on the table.

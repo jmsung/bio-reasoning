@@ -64,6 +64,10 @@ def _stacker_oof_auroc(rs: dict, labels: np.ndarray, seed: int, n_splits: int = 
     """
     de = labels != "none"
     is_up = (labels[de] == "up").astype(int)
+    # Deliberate asymmetry: the stacker sees RAW channel r (logistic is invariant to monotonic
+    # per-feature transforms; only its pairwise interactions matter), while the weighted baseline
+    # feeds rank-normalized r via fuse(). Each is scored by its own AUROC, so the comparison is
+    # fair — don't "fix" this by rank-norming the stacker input.
     r_matrix = np.column_stack([rs[c] for c in CHANNELS])[de]
     if len(set(is_up.tolist())) < 2:
         return float("nan")
