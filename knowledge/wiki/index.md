@@ -63,6 +63,7 @@ _(none yet)_
 - [Track B — the agent underperformed its own prior (rank-metric abstention)](findings/track-b-abstention-failure.md) — 2026-07-16
 - [Competitor landscape — the public field is LLM-free string-ML](findings/competitor-landscape.md) — 2026-07-16
 - [Neighbour-retrieval fails DE but is a robust direction lever (+0.027)](findings/neighbor-retrieval-direction-lever.md) — 2026-07-16
+- [Direction transfers, DE doesn't — the axis-asymmetry principle (lit-corroborated)](findings/direction-transfers-de-doesnt.md) — 2026-07-17
 - [Curated-edge DBs are too sparse/weak to crack the DE axis — go model-based](findings/curated-edges-fail-de-axis.md) — 2026-07-16
 
 ### Methods

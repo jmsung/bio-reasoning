@@ -2,6 +2,7 @@
 title: Neighbour-retrieval fails the DE axis but is a robust direction lever (+0.027 mean)
 status: measured
 cites:
+  - findings/direction-transfers-de-doesnt.md
   - findings/curated-edges-fail-de-axis.md
   - findings/track-a-eda.md
   - findings/competitor-landscape.md

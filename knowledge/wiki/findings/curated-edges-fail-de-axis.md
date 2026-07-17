@@ -2,6 +2,7 @@
 title: Curated-edge databases are too sparse/weak to crack the DE axis — go model-based
 status: draft
 cites:
+  - findings/direction-transfers-de-doesnt.md
   - findings/neighbor-retrieval-direction-lever.md
   - findings/competitor-landscape.md
   - findings/track-a-eda.md
