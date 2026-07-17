@@ -39,6 +39,20 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
    DE-likelihood — only order matters for AUROC). And measurement must move onto a **dual-OOD
    validation split** that reproduces the real train/test disjointness, so CV stops lying.
 
+## Update (feat/richer-marginal-de — landed)
+
+Closed the "richer marginal features" lead from `feat/marginal-property-de`: does adding gene
+**essentiality** to the marginal DE head push it past the 0.55 gate? **No.** DepMap ternary
+essentiality (common-essential +1 / nonessential −1) adds nothing on top of STRING degree —
+**+essentiality DE-AUROC 0.534 ± 0.006 vs degree-only 0.536 ± 0.007 (Δ −0.001)** across seeds 0–4
+(the degree-only head reproduces the prior 0.536 exactly → harness validated). Mechanism:
+common-essential genes are high-degree STRING hubs, so essentiality is **collinear with degree** —
+a second connectivity-correlated marginal can't help. Verdict: **marginal DE is capped at ~0.536**;
+with six pairwise channels at chance and two connectivity marginals capping identically, the
+**static/data DE route is exhausted**. The only untried DE crack stays model-based (token-logprob
+self-consistency; separate branch). No submit (no lift; LB 0.585 stands). Filed:
+`findings/marginal-de-caps-at-degree.md`.
+
 ## Update (feat/tabpfn-functional-features — landed)
 
 Closed the "TabPFN over functional features" lane the competitor survey flagged
