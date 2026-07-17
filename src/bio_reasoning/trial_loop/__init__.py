@@ -8,6 +8,12 @@ from bio_reasoning.trial_loop.archive import (
     render_leaderboard,
     write_trials,
 )
+from bio_reasoning.trial_loop.gate import (
+    GateResult,
+    measure_noise_band,
+    score_across_seeds,
+    triple_verify,
+)
 from bio_reasoning.trial_loop.inference import make_openrouter_infer_fn
 from bio_reasoning.trial_loop.loop import (
     make_agent_row_predictor,
@@ -31,6 +37,10 @@ __all__ = [
     "retrieve_examples",
     "make_prompt_row_predictor",
     "make_openrouter_infer_fn",
+    "triple_verify",
+    "GateResult",
+    "measure_noise_band",
+    "score_across_seeds",
     "make_agent_row_predictor",
     "reflect",
     "best_trial",
