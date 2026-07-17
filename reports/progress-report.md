@@ -1,7 +1,7 @@
 # BioReasoning Challenge 2026 — Progress Report
 
 *Updated as branches land — the merge workflow proposes report-worthy additions per PR.*
-*Last updated: 2026-07-16.*
+*Last updated: 2026-07-17.*
 
 ## Goal
 
@@ -183,6 +183,32 @@ bottleneck**; direction (~0.58) is fine. The next lever is a real DE-detector fo
 `(pert, gene)` pairs — a vetted recon plan points to a **CollecTRI signed TF-regulon feature**
 (regulon membership = DE, edge sign under CRISPRi = direction). These were dev variants, not
 submitted — all ≤ the live LB 0.578.
+
+## Update (feat/gene-embedding-dir — landed)
+
+A GenePert-style **gene-embedding DIRECTION channel** — the first DIR channel that is
+both predictive *and* diverse. `text-embedding-3-small` (1536-d) embeds each symbol's
+GO:BP text; a leak-free ridge (fit on **train DE rows only**, features `[pert_emb ⊕
+gene_emb]`) predicts `P(up|DE)`. Multi-seed dual-OOD
+(`scripts/gene_embedding_eval.py`):
+
+| metric | value | vs incumbent |
+|---|---|---|
+| DIR-AUROC | **0.574 ± 0.027** | below neighbour-DIR 0.647 |
+| corr vs neighbour-DIR | **0.19 ± 0.06** | nearly independent |
+| coverage | **100%** | neighbour ~98%, char-family 42% |
+| gate (DIR-AUROC ≥ 0.55 ∧ \|corr\| ≤ 0.5) | admitted **3/5 seeds** | — |
+
+Weaker standalone than neighbour-DIR (0.647), but the **0.19 correlation** means it
+carries *new* direction information — value is as a **fusion arm on the DIR bus**, not a
+standalone winner. It's the second gate-passing DIR channel (with neighbour-DIR), so a
+DIR portfolio the fuse harness can actually stack now exists — vs the five DE channel
+families that all sat at chance. The **fused lift over 0.647 is unmeasured** (future
+work). Two takeaways: (1) a channel earns a fuse slot on *low correlation*, not
+standalone AUROC; (2) the key-vs-mechanism thesis extends to featurization — a *content*
+key (LLM embedding of gene function) transfers direction where a *naming-convention* key
+(char/prefix family) did not. Dev result on the OOD split, not submitted (0.574 &lt;
+the live LB 0.597).
 
 ## Approach
 
