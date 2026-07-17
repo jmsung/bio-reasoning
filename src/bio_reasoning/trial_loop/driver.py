@@ -52,6 +52,7 @@ def self_improve_loop(
     example_key_fn: ExampleKeyFn | None = None,
     external_fold=None,
     external_margin: float = 0.0,
+    val_n: int | None = None,
     on_record: Callable[[TrialRecord], None] | None = None,
 ) -> SelfImproveResult:
     """Drive propose → triple-verify → promote until a stop condition trips.
@@ -62,6 +63,9 @@ def self_improve_loop(
     baseline each round). A promoted baseline is compared against on subsequent rounds.
     ``example_key_fn`` supplies the relevance key for ``retrieval="go_category"``
     variants; without it those variants collapse to random few-shot (same exemplars).
+    ``val_n`` (DEV-ONLY) truncates each split's val to its first N rows for a fast
+    smoke — makes the gate UNtrustworthy, never promote off it (see
+    :func:`bio_reasoning.trial_loop.loop.predict_variant`).
     """
     records: list[TrialRecord] = []
     accepted: list[Variant] = []
@@ -93,6 +97,7 @@ def self_improve_loop(
             external_fold=external_fold,
             external_margin=external_margin,
             example_key_fn=example_key_fn,
+            val_n=val_n,
         )
         rec = TrialRecord(
             variant=cand,

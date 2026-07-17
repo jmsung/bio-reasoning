@@ -72,3 +72,27 @@ driver (`trial_loop.driver`) is file-free and unit-tested; the runner wires Open
 inference (`trial_loop.inference`), the archive ledger, and the launchd / `claude -p` cadence.
 The loop never submits — a gate survivor is bridged to a schema-valid frame
 (`trial_loop.submission`) for a human-gated Kaggle submission.
+
+#### Fast dev verification (`make verify`)
+
+The full-val gate scores ~1276 rows × 6 seed-scorings per trial (~1.4–2.8 h), so a bug
+(deadlock, auth-401, empty responses, empty-eval) or a no-signal verdict can burn a whole
+night. `make verify` runs a **cheap DEV pipeline** that exercises a *real* trial end-to-end
+in **minutes** — a dev/verify tool, **not** the trustworthy gate:
+
+1. **Preflight** (`scripts/verify_loop.py` → `trial_loop.preflight`): one real smoke trial on
+   a `--val-n` subsample, asserting the loop is genuinely working — **non-empty response
+   content, `n_val>0`, a real (non-nan) mean, and a written archive**. Codifies the lesson
+   that *liveness ≠ working* (an auth-401 and an empty-eval both once passed as "verified" off
+   connection health; see the loop deadlock / throughput-verification finding).
+   Exits non-zero — and stops the pipeline — on any degenerate mode.
+2. **Signal read** (`scripts/self_improve_loop.py --val-n N`): a short subsample search that
+   prints a `DEV SIGNAL READ` line — baseline vs best-variant mean and their Δ. On a
+   subsample the triple-verify gate is **untrustworthy** (noise dominates), so this reports
+   the raw baseline-vs-best delta as a fast go/no-go, ignoring accept/reject.
+
+Interpretation: **signal** (a variant beats baseline) ⇒ escalate to a full-val run or the
+throughput-opt work; **near-chance** (nothing beats baseline) ⇒ file a negative-result
+finding rather than sink hours into a full run. The `--val-n` knob is DEV-ONLY and **never**
+promotes a survivor — the full-val partition stays the only trustworthy gate. Tune with
+`make verify VAL_N=120 MAX_TRIALS=8`.

@@ -16,7 +16,9 @@ surfaced for a human-gated submission, Goal 5):
     uv run python scripts/self_improve_loop.py --agentic --budget-usd 5
 
 The gate is only trustworthy on the FULL val partition (each candidate is scored on
-3 independent dual-OOD splits); there is deliberately no ``--val-n`` smoke here.
+3 independent dual-OOD splits). ``--val-n N`` is a DEV-ONLY smoke knob that truncates
+val to its first N rows so a real trial runs in minutes — for fast iteration / bug
+detection only, NEVER to promote a survivor (the subsampled gate is untrustworthy).
 Backend + key resolution: see ``bio_reasoning.trial_loop.inference`` (OpenRouter env).
 """
 
@@ -205,6 +207,16 @@ def main() -> None:
         "or --budget-usd. Ignored under --agentic.",
     )
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2], help="Gate split seeds.")
+    ap.add_argument(
+        "--val-n",
+        type=int,
+        default=None,
+        help="DEV-ONLY smoke: score only the first N val rows per split (deterministic) "
+        "so a real trial finishes in minutes. Makes the gate UNtrustworthy — for fast "
+        "iteration / bug detection, never to promote a survivor. Omit for the full-val gate. "
+        "Keep N reasonably large (>=~50): a tiny prefix can be single-class and yield a nan "
+        "AUROC/mean (a deterministic false-fail, not flakiness).",
+    )
     ap.add_argument("--noise-band", type=float, default=None, help="Override; default measured.")
     ap.add_argument("--dry-rounds", type=int, default=2, help="Stop after K non-improving rounds.")
     ap.add_argument("--budget-usd", type=float, default=None, help="Spend cap (USD).")
@@ -270,6 +282,7 @@ def main() -> None:
         max_trials=args.max_trials,
         example_key_fn=example_key_fn,
         external_fold=external_fold,
+        val_n=args.val_n,
         on_record=persist,
     )
 
@@ -288,6 +301,30 @@ def main() -> None:
             f"\n[loop] search={search}  trials={len(res.records)}  "
             f"trials-to-best={best_i + 1} (mean={best.metrics['mean']:.3f}, {best.variant.id})"
         )
+        if args.val_n is not None:
+            # DEV signal read: on a subsample the gate is UNtrustworthy (noise dominates),
+            # so ignore accept/reject and report the raw baseline-vs-best delta as a fast
+            # go/no-go — does any variant beat baseline at all? Never promote off this.
+            base_mean = res.records[0].metrics["baseline_mean"]
+            delta = best.metrics["mean"] - base_mean
+            beats = not math.isnan(best.metrics["mean"]) and delta > 0
+            print(
+                f"[loop] ── DEV SIGNAL READ (val_n={args.val_n}, UNTRUSTWORTHY gate — never promote) ──"
+            )
+            print(
+                f"[loop]   baseline mean={base_mean:.3f}  best-variant mean={best.metrics['mean']:.3f} "
+                f"({best.variant.id})  Δ={delta:+.3f}"
+            )
+            if beats:
+                print(
+                    "[loop]   → SIGNAL: a variant beat baseline on the subsample — "
+                    "escalate to a full-val run / throughput-opt."
+                )
+            else:
+                print(
+                    "[loop]   → NO SIGNAL: nothing beat baseline (near-chance) — "
+                    "consider filing a negative-result finding."
+                )
     print(f"[loop] stopped: {res.stopped_reason}  spent=${res.spent:.3f}  errors={errors_fn()}")
     if res.accepted:
         winners = ", ".join(v.id for v in res.accepted)
