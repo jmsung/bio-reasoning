@@ -105,14 +105,18 @@ def _seed_row(df: pd.DataFrame, embeddings: dict, partners: dict, seed: int) -> 
     )
 
     clf = TabPFNClassifier(random_state=0).fit(x_fit, y_fit)
-    up_col = list(clf.classes_).index(1)
-    r_tab = clf.predict_proba(_impute(x_va))[:, up_col]
+    classes = list(clf.classes_)
+    proba = clf.predict_proba(_impute(x_va))
+    # Real train DE rows carry both directions, but guard the degenerate single-class fit.
+    r_tab = proba[:, classes.index(1)] if 1 in classes else np.full(len(x_va), float(classes[0]))
 
     labels = val_df["label"].to_numpy()
     de = labels != "none"
     is_up = (labels[de] == "up").astype(int)
 
-    # Incumbents on identical val rows.
+    # Incumbents on identical val rows. neighbour here is the raw impute-to-0.5 column, not
+    # the single-channel fuse() path dir_ceiling_probe uses — same rows, slightly different
+    # NaN handling, so this column is self-consistent but not byte-identical to that probe.
     r_nb = _impute(x_va[:, NB_COL])
     up, down = fuse([Channel(name=c, r=x_va[:, i]) for i, c in enumerate(CHANNELS)])
 
