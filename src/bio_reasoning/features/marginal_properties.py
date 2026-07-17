@@ -32,10 +32,10 @@ def marginal_features(
     heavy-tailed degree distribution while preserving order (recommended for a
     linear head).
 
-    When ``essentiality`` is given (symbol → gene-effect score, DepMap convention
-    where more-negative = more essential), two more columns are appended:
-    ``[pert_ess, gene_ess]``. Missing symbols score 0.0 (non-essential). ``log1p``
-    applies **only** to the non-negative degree columns, never the signed score.
+    When ``essentiality`` is given (symbol → a per-symbol score; the pipeline uses the
+    DepMap ternary of +1 essential / -1 nonessential), two more columns are appended:
+    ``[pert_ess, gene_ess]``. Missing symbols score 0.0 (unknown). ``log1p`` applies
+    **only** to the non-negative degree columns, never the signed score.
     """
     p = np.array([float(degree.get(str(s), 0.0)) for s in perts])
     g = np.array([float(degree.get(str(s), 0.0)) for s in genes])

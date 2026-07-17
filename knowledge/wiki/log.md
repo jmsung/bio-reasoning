@@ -2,6 +2,14 @@
 
 Append-only history of ingests and queries.
 
+## 2026-07-16 — Wiki-learn: marginal DE caps at STRING degree
+- Insights filed: 1
+- New pages: findings/marginal-de-caps-at-degree.md
+- Updated pages: index.md, findings/direction-transfers-de-doesnt.md (reverse cite)
+- Source: `feat/richer-marginal-de` — DepMap ternary essentiality adds nothing on top of
+  STRING degree (+ess 0.534±0.006 vs degree-only 0.536±0.007, Δ−0.001; essentiality
+  collinear with degree). Marginal DE capped ~0.536; static/data DE route exhausted.
+
 ## 2026-07-16 — Wiki-learn: neighbour-retrieval is a direction lever, not a DE lever
 - Insights filed: 1
 - New pages: findings/neighbor-retrieval-direction-lever.md
