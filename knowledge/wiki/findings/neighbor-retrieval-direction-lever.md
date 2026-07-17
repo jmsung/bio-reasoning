@@ -5,6 +5,7 @@ cites:
   - findings/curated-edges-fail-de-axis.md
   - findings/track-a-eda.md
   - findings/competitor-landscape.md
+  - findings/tabpfn-for-perturbation-tracks.md
 ---
 
 # Neighbour-retrieval fails the DE axis but is a robust direction lever (+0.027 mean)
@@ -40,6 +41,31 @@ co-regulated genes next to each other, so their up/down tendency transfers. A ch
 string-family key groups genes by *naming convention*, which does not track co-regulated
 direction on real OOD symbols — it carries neither DE nor DIR. When designing a retrieval
 channel, spend the design effort on the neighbour key, not the borrowing mechanism.
+
+## LLM gene embeddings are a diverse-but-weaker DIR arm (embedding-DIR, 2026-07-16)
+
+`feat/gene-embedding-dir` added a GenePert-style embedding DIR channel: `text-embedding-3-small`
+(1536-d) over per-gene GO:BP text → leak-free ridge (fit on TRAIN DE rows only, features =
+`[pert_emb ⊕ gene_emb]`) → `r = P(up|DE)`. Multi-seed dual-OOD (`scripts/gene_embedding_eval.py`):
+DIR-AUROC **0.574 ± 0.027** (0.581/0.614/0.587/0.547/0.542) — above chance but **below the
+incumbent neighbour-DIR 0.647**, with 2/5 seeds under the 0.55 bar. But **corr vs neighbour-DIR
+0.19 ± 0.06** (nearly independent) at **100% coverage** — embeddings generalize to *every* unseen
+symbol, the coverage win retrieval keys can't match (neighbour ~98%, char-family 42%). Gate
+admits 3/5 seeds (DIR-AUROC ≥ 0.55 AND |corr| ≤ 0.5).
+
+Two takeaways:
+1. **A channel earns a fuse slot on low correlation, not standalone AUROC.** Embedding-DIR is
+   weaker than neighbour-DIR yet its 0.19 correlation means it carries *new* direction info —
+   value is as a **fusion arm**, not a standalone winner. This is now the **second** gate-passing
+   DIR channel (with neighbour-DIR 0.647); the DIR portfolio the fuse harness needs finally exists.
+   The fused lift over 0.647 is unmeasured — that is `fuse-multiple-direction-channels`' job.
+2. **The key-vs-mechanism thesis extends to featurization.** A *content* key (LLM text embedding
+   of gene function) transfers DIR where a *naming-convention* key (char/prefix family) did not —
+   consistent with "spend design effort on what puts co-regulated genes near each other," whether
+   that's a labeled-pair graph neighbour or a semantic embedding.
+
+Operational gotcha: 1925 texts in one embedding request exceeded OpenAI's 300k-token/request cap
+→ chunk at 256/request and persist per batch (crash-safe incremental cache).
 
 ## Why it splits DE from direction
 
