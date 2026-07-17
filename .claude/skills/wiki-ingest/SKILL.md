@@ -5,19 +5,28 @@ description: Ingest an artifact (paper, web page, repo, talk) into knowledge/sou
 argument-hint: [--type <type>] <url-or-path>
 ---
 
-Ingest an external artifact: read it, draft a distilled summary, and (on user approval) write a single page at `knowledge/source/<slug>.md`. Layout is flat — type lives in frontmatter (`source_type:`), not folders.
+Ingest an external artifact: read it, draft a distilled summary, and (on user approval) write a single page at `knowledge/source/<slug>.md`. The **local** `source/` is flat — type lives in frontmatter (`source_type:`), not folders.
 
 **Human-gated.** The skill reads the source, drafts the distillation, and **proposes** the write. Nothing lands without per-artifact approval.
 
-**Three knowledge layers** (full spec in `knowledge/wiki/README.md`):
+**Knowledge layers** (full spec in `knowledge/wiki/README.md`):
 
 | Layer | Job | Written by |
 |---|---|---|
 | `knowledge/raw/` | Native originals (PDF, HTML) | gitignored — local cache |
-| `knowledge/source/` | One distilled markdown per artifact | this skill (`/wiki-ingest`) |
+| `knowledge/source/` | Flat, local ingest front door — one distilled markdown per artifact | this skill (`/wiki-ingest`) |
+| `knowledge/domains/<domain>/source/` | **Read-only synced mirror** of the central `knowledge-base` (per domain) | `/knowledge-sync` + `promote` — **NOT this skill** |
 | `knowledge/wiki/` | Hand-curated synthesis (findings, methods, decisions, concepts) | humans + `/wiki-learn` + `/wiki-query --file-back` |
 
-This skill writes ONLY to `knowledge/source/`. Synthesis pages in `knowledge/wiki/` are not created here.
+**This skill writes ONLY to the flat `knowledge/source/`.** It must **never** write into
+`knowledge/domains/**` — that tree is a read-only mirror synced down from the central
+`knowledge-base` repo (each page marked `<!-- synced from knowledge-base — do not edit here -->`);
+anything written there is clobbered by the next `/knowledge-sync`. Durable pages reach `domains/`
+via the separate **ingest-flat → human-gated `promote` → sync-down** lifecycle, not here.
+Synthesis pages in `knowledge/wiki/` are also not created here.
+
+> **Mid-migration note (2026-07):** the domains/ layout + knowledge-base subscription are
+> still rolling out. Keep ingesting flat as normal; promotion to `domains/` happens out-of-band.
 
 **Raw artifacts go to Drive** (`02-papers/`, `01-challenge/`, etc.), not the repo. Cite the Drive link from the source page's `drive:` field. `knowledge/raw/` is a local cache — gitignored.
 
@@ -89,18 +98,24 @@ Target path: `knowledge/source/<stem>.md` (flat — no type subfolder).
 
 ```bash
 TARGET="$SOURCE/<stem>.md"
-if [ -f "$TARGET" ]; then
-  echo "Page already exists: $TARGET"
+# Also check the synced domains/ mirror — a paper may already exist there (promoted
+# earlier) even if the flat copy was retired. Re-ingesting a synced page is a no-op waste.
+DOMAIN_HIT=$(find "$REPO_ROOT/knowledge/domains" -path '*/source/<stem>.md' 2>/dev/null | head -1)
+if [ -f "$TARGET" ] || [ -n "$DOMAIN_HIT" ]; then
+  echo "Page already exists: ${TARGET:-$DOMAIN_HIT}${DOMAIN_HIT:+ (synced mirror — edit upstream, don't re-ingest)}"
   echo "Choose: [s]kip / [o]verwrite / [v]new-version (append -v2 to stem)"
   read CHOICE
 fi
 ```
 
+Beyond the exact-stem check, also scan for a **title/DOI** match across both `source/` and
+`domains/**/source/` (stems can differ for the same paper) — if a match surfaces, prefer `s`kip.
+
 - **`s`** → stop. No writes.
-- **`o`** → continue to step 6 with existing stem.
+- **`o`** → continue to step 6 with existing stem. Never overwrite a `domains/` mirror page.
 - **`v`** → re-derive stem with `-v2` suffix (or `-v3` if `-v2` exists).
 
-No filename collision → continue.
+No collision in either layer → continue.
 
 ## 6. Draft distillation
 
@@ -184,8 +199,10 @@ EOF
 If qmd is available:
 
 ```bash
-PROJECT=$(basename "$REPO_ROOT" | sed 's/-cb-.*//; s/^cb-//')
-QMD_COLLECTION="${PROJECT}"
+# Pinned for this repo — see the note in wiki-query/SKILL.md on why the generic
+# basename-derivation misfires under the umbrella layout. `bio-reasoning` is also on
+# the harness skills' legacy-fallback list, so this stays forward-compatible.
+QMD_COLLECTION="bio-reasoning"
 command -v qmd >/dev/null && qmd collection list --json 2>/dev/null | \
   grep -q "\"$QMD_COLLECTION\"" && qmd embed -c "$QMD_COLLECTION"
 ```

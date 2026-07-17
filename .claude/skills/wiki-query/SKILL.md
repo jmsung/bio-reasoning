@@ -36,8 +36,11 @@ Read `$WIKI/home.md` (if it exists) for project orientation before searching.
 If the `qmd` CLI is on PATH AND a collection is registered for this project, use it for hybrid (BM25 + vector + LLM rerank) search:
 
 ```bash
-PROJECT=$(basename "$REPO_ROOT" | sed 's/-cb-.*//; s/^cb-//')   # strip worktree prefix
-QMD_COLLECTION="${PROJECT}-wiki"
+# Collection name is pinned for this repo. (The generic basename-derivation is
+# unreliable under the umbrella layout — `basename` of the cb worktree yields the
+# branch slug or "cb", never "bio-reasoning".) The collection indexes all of cb/
+# (knowledge/ + docs/ + reports/), so strategy wisdom is retrievable, not just papers.
+QMD_COLLECTION="bio-reasoning"
 if command -v qmd >/dev/null 2>&1 && qmd collection list --json 2>/dev/null | grep -q "\"$QMD_COLLECTION\""; then
   qmd query "<question>" -c "$QMD_COLLECTION" -n 10 --json --files
 fi
