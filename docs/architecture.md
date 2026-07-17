@@ -46,7 +46,12 @@ DE-votes / self-consistency signal — with KB-ruled-out static channels (`trial
 denylisted so budget is never burned on a dead basin. The **triple-verify gate**
 (`trial_loop.gate`) is the anti-false-positive filter: a candidate is promoted only if it
 beats the running baseline on *every* independent OOD split by *more than* the seed-to-seed
-noise band — conservative by design, preferring missed gains over phantom lifts. The pure
+noise band — conservative by design, preferring missed gains over phantom lifts. An optional
+**external real-label fold** (Traxler native macrophages, built by `scripts/build_traxler_labels.py`
+from `data.traxler_labels`) tightens this further: an OOD-survivor must *also* beat baseline on
+that held-out in-domain fold, proving the gain generalizes to real labels rather than overfitting
+the challenge-train distribution (scored only for OOD-survivors, since each fold eval is expensive).
+The pure
 driver (`trial_loop.driver`) is file-free and unit-tested; the runner wires OpenRouter
 inference (`trial_loop.inference`), the archive ledger, and the launchd / `claude -p` cadence.
 The loop never submits — a gate survivor is bridged to a schema-valid frame

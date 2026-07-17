@@ -50,6 +50,8 @@ def self_improve_loop(
     spent_fn: Callable[[], float] | None = None,
     max_trials: int | None = None,
     example_key_fn: ExampleKeyFn | None = None,
+    external_fold=None,
+    external_margin: float = 0.0,
     on_record: Callable[[TrialRecord], None] | None = None,
 ) -> SelfImproveResult:
     """Drive propose → triple-verify → promote until a stop condition trips.
@@ -88,6 +90,8 @@ def self_improve_loop(
             seeds=seeds,
             metric=metric,
             noise_band=noise_band,
+            external_fold=external_fold,
+            external_margin=external_margin,
             example_key_fn=example_key_fn,
         )
         rec = TrialRecord(
@@ -102,6 +106,12 @@ def self_improve_loop(
             reflection=(
                 f"vs {baseline.id}: margins={[round(m, 3) for m in gate.margins]} "
                 f"band={gate.noise_band:.3f} accepted={gate.accepted}"
+                + (
+                    f" | external Δ={gate.external_delta:+.3f} "
+                    f"(cand {gate.external_candidate:.3f} vs base {gate.external_baseline:.3f})"
+                    if gate.external_delta is not None
+                    else ""
+                )
             ),
         )
         records.append(rec)
