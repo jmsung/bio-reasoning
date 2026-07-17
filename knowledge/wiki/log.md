@@ -84,3 +84,8 @@ Search-and-ingest for macrophage gene-perturbation-prediction (Track A/B/C). 16 
 - Insights filed: 1
 - New pages: findings/tabpfn-for-perturbation-tracks.md
 - Updated pages: index.md, methods/pbio-agent-for-tracks.md
+
+## 2026-07-17 — Wiki-learn: direction transfers, DE doesn't (lit-corroborated)
+- Insights filed: 1
+- New pages: findings/direction-transfers-de-doesnt.md
+- Updated pages: index.md, findings/neighbor-retrieval-direction-lever.md, findings/curated-edges-fail-de-axis.md
