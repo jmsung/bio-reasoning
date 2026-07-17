@@ -41,7 +41,11 @@ from bio_reasoning.trial_loop.loop import (
     make_prompt_row_predictor,
 )
 from bio_reasoning.trial_loop.proposers import PROPOSERS, select_proposer
-from bio_reasoning.trial_loop.tools import make_cache_backend, make_tools
+from bio_reasoning.trial_loop.tools import (
+    make_cache_backend,
+    make_tools,
+    traxler_direction_lookup,
+)
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
 _OPTIMIZER_PROMPT = (
@@ -74,8 +78,10 @@ def _load_track_b_module():
     spec = importlib.util.spec_from_file_location(
         "track_b_agentic", scripts_dir / "track_b_agentic.py"
     )
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"cannot load {scripts_dir / 'track_b_agentic.py'}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    spec.loader.exec_module(module)
     return module
 
 
@@ -94,7 +100,12 @@ def _build_agentic_predictor(args, external_fold_df):
     tba = _load_track_b_module()
     lm = tba.build_openrouter_lm(args.max_tokens, args.max_retries)
     include_traxler = external_fold_df is None  # (A): no Traxler tool when its fold is the gate
-    backend = make_cache_backend(GO_CACHE, STRING_CACHE)  # traxler_direction unset → tool inert
+    # Leak-safe (A): the Traxler labels power the tool ONLY when they are NOT the gated
+    # fold (include_traxler) — so the tool is functional here, dropped when the fold gates.
+    traxler_fn = None
+    if include_traxler and DEFAULT_TRAXLER_FOLD.is_file():
+        traxler_fn = traxler_direction_lookup(pd.read_csv(DEFAULT_TRAXLER_FOLD))
+    backend = make_cache_backend(GO_CACHE, STRING_CACHE, traxler_direction=traxler_fn)
     all_tools = {t.__name__: t for t in make_tools(backend, include_traxler=include_traxler)}
 
     def agent_fn_for(variant: Variant):
