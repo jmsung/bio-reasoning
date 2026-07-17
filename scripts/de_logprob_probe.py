@@ -27,12 +27,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from anthropic import Anthropic
 from dotenv import load_dotenv
 
 from bio_reasoning.eval.split import holdout_split
 from bio_reasoning.eval.track_a_score import evaluate
 from bio_reasoning.models.de_logprob import votes_to_scores
-from bio_reasoning.utils.llm_clients import load_provider_config
+from bio_reasoning.utils.llm_clients import ProviderConfig, load_provider_config
 from bio_reasoning.utils.openai_compat import post_chat_completion
 
 _ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +53,33 @@ PROMPT = (
     "Does the expression of the target gene {gene} go up, down, or stay unchanged? "
     "Reason briefly, then answer on the last line with exactly one word: up, down, or none."
 )
+
+
+def query_text(cfg: ProviderConfig, prompt: str, seed: int, max_tokens: int, timeout_s: int) -> str:
+    """Return the model's text for a prompt, dispatching on the configured provider.
+
+    gpt-oss / OpenAI-compatible endpoints go through post_chat_completion; the
+    ``anthropic`` provider (dev fallback) uses the Messages API. Temperature 1.0 in
+    both paths so the K self-consistency samples actually differ.
+    """
+    if cfg.provider == "anthropic":
+        msg = Anthropic(api_key=cfg.api_key, base_url=cfg.api_base).messages.create(
+            model=cfg.model,
+            max_tokens=max_tokens,
+            temperature=1.0,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
+    text, _ = post_chat_completion(
+        api_base=cfg.api_base or "",
+        api_key=cfg.api_key,
+        model=cfg.model,
+        prompt=prompt,
+        seed=seed,
+        max_tokens=max_tokens,
+        timeout_s=timeout_s,
+    )
+    return text
 
 
 def _parse_answer(text: str) -> str:
@@ -93,11 +121,9 @@ def main() -> None:
         prompt = PROMPT.format(pert=row["pert"], gene=row["gene"])
         answers = []
         for s in range(args.k_samples):
-            text, _ = post_chat_completion(
-                api_base=cfg.api_base or "",
-                api_key=cfg.api_key,
-                model=cfg.model,
-                prompt=prompt,
+            text = query_text(
+                cfg,
+                prompt,
                 seed=args.seed * 1000 + s,
                 max_tokens=args.max_tokens,
                 timeout_s=args.timeout_s,
