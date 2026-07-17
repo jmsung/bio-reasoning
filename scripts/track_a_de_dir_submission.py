@@ -2,29 +2,25 @@
 
 Keeps the two-stage model's DE score (``prediction_up + prediction_down``) but
 rank-fuses its direction ``P(up|DE)`` with the neighbour-retrieval channel's
-direction (STRING-neighbour label borrowing, TRAIN-only) via ``fuse()`` — the
-`feat/de-retrieval` finding that lifted OOD-val mean +0.027. STRING partners for
-train+test symbols are fetched from string-db.org (mouse, taxid 10090) on first
-run and cached. Deterministic → seed columns mirror the base.
+direction (STRING-neighbour label borrowing, TRAIN-only) via
+``fuse_neighbour_direction`` — the `feat/de-retrieval` finding that lifted OOD-val
+mean +0.027 (Kaggle LB 0.585). STRING partners for train+test symbols are fetched
+from string-db.org (mouse, taxid 10090) on first run and cached. Deterministic →
+seed columns mirror the base.
 
 Run: uv run --group eval python scripts/track_a_de_dir_submission.py
 """
 
 from __future__ import annotations
 
-import json
-import time
-import urllib.parse
-import urllib.request
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from bio_reasoning.eval.submission import to_submission_frame
 from bio_reasoning.features.go_terms import GoPairFeaturizer
-from bio_reasoning.features.neighbor_retrieval import build_neighbor_graph, neighbor_channel
-from bio_reasoning.models.fuse import Channel, fuse
+from bio_reasoning.features.neighbor_retrieval import build_neighbor_graph, fuse_neighbour_direction
+from bio_reasoning.features.string_graph import fetch_string_partners
 from bio_reasoning.models.track_a_two_stage import TwoStageDEDIR
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,51 +37,20 @@ MODEL_NAME = "track-a-two-stage-go+neighbour-dir"
 DIR_WEIGHT = 0.75
 
 
-def fetch_string_partners(symbols: list[str]) -> dict[str, set[str]]:
-    """Mouse STRING interaction partners per symbol (cached); public API, no key."""
-    if STRING_CACHE.exists():
-        return {k: set(v) for k, v in json.loads(STRING_CACHE.read_text()).items()}
-    base = "https://string-db.org/api/json/interaction_partners"
-    out: dict[str, set[str]] = {}
-    for i in range(0, len(symbols), 60):
-        data = urllib.parse.urlencode(
-            {"identifiers": "\n".join(symbols[i : i + 60]), "species": 10090, "limit": 500}
-        ).encode()
-        try:
-            with urllib.request.urlopen(urllib.request.Request(base, data=data), timeout=90) as r:
-                rows = json.loads(r.read().decode())
-        except Exception as e:  # noqa: BLE001
-            print("STRING fetch err", i, repr(e), flush=True)
-            rows = []
-        for row in rows:
-            out.setdefault(row["preferredName_A"], set()).add(row["preferredName_B"])
-        time.sleep(1)
-    STRING_CACHE.parent.mkdir(parents=True, exist_ok=True)
-    STRING_CACHE.write_text(json.dumps({k: sorted(v) for k, v in out.items()}))
-    return out
-
-
 def build_submission(train: pd.DataFrame, test: pd.DataFrame, partners) -> pd.DataFrame:
     """Two-stage DE + neighbour-fused direction → schema-valid submission frame."""
     model = TwoStageDEDIR(featurizer=GoPairFeaturizer(PERT_CACHE, GENE_CACHE)).fit(
         train.pert.tolist(), train.gene.tolist(), train.label.to_numpy()
     )
     up, down = model.predict(test.pert.tolist(), test.gene.tolist())
-    s_de = up + down
-    r = np.divide(up, s_de, out=np.full_like(up, 0.5), where=s_de > 0)
 
-    pnb, gnb = build_neighbor_graph(test[["pert", "gene"]].astype(str), partners, train)
+    q = test[["pert", "gene"]].astype(str)
+    pnb, gnb = build_neighbor_graph(q, partners, train)
     # min_support=3 tuned on OOD-val (feat/de-retrieval); don't lower without re-validating.
-    nb = neighbor_channel(test[["pert", "gene"]].astype(str), train, pnb, gnb, min_support=3)
-
-    fu, fd = fuse(
-        [Channel("model", s_de=s_de, r=r), Channel("neighbour", s_de=None, r=nb.r)],
-        weights=[1 - DIR_WEIGHT, DIR_WEIGHT],
+    fu, fd, covered = fuse_neighbour_direction(
+        q, up, down, train, pnb, gnb, min_support=3, weight=DIR_WEIGHT
     )
-    cov = np.isfinite(nb.r).mean()
-    print(f"neighbour direction coverage on test: {cov:.1%}", flush=True)
-
-    covered = np.isfinite(nb.r)
+    print(f"neighbour direction coverage on test: {covered.mean():.1%}", flush=True)
     traces = [
         f"two-stage GO DE + {'neighbour-fused' if c else 'model-only'} direction: "
         f"score_de={u + d:.3f} dir={(u / (u + d) if (u + d) else 0.5):.3f}"
@@ -107,7 +72,7 @@ def main() -> None:
         | set(test.pert.astype(str))
         | set(test.gene.astype(str))
     )
-    partners = fetch_string_partners(syms)
+    partners = fetch_string_partners(syms, STRING_CACHE)
     out = build_submission(train, test, partners)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(OUT, index=False)

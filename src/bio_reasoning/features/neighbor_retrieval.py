@@ -19,7 +19,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from bio_reasoning.models.fuse import Channel
+from bio_reasoning.models.fuse import Channel, fuse
 
 
 def retrieve_neighbor_labels(
@@ -88,3 +88,41 @@ def build_neighbor_graph(
     pnb = {p: partners.get(p, set()) & tp for p in queries["pert"].astype(str).unique()}
     gnb = {g: partners.get(g, set()) & tg for g in queries["gene"].astype(str).unique()}
     return pnb, gnb
+
+
+def fuse_neighbour_direction(
+    queries: pd.DataFrame,
+    base_up: np.ndarray,
+    base_down: np.ndarray,
+    train_df: pd.DataFrame,
+    pert_neighbors: dict[str, set[str]],
+    gene_neighbors: dict[str, set[str]],
+    min_support: int = 3,
+    weight: float = 0.5,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Fuse the neighbour-retrieval *direction* into any base ``(up, down)``.
+
+    Track-agnostic: the base is whatever produced ``base_up``/``base_down`` — a
+    Track A two-stage model or a Track B floored submission. Keeps the base's DE
+    *ranking* (only the base feeds the ``s_de`` bus, which :func:`~bio_reasoning.models.fuse.fuse`
+    rank-normalizes monotonically, so ``AUROC_de`` is unchanged) and rank-fuses the
+    base direction ``P(up|DE)`` with the neighbour channel's direction. ``weight`` is
+    the neighbour direction's share in ``[0, 1]`` (base gets ``1 − weight``) — a flat
+    lever on OOD-val (PR #31: w≈0.75 gives +0.004 vs 0.5, within seed noise). Returns
+    ``(up, down, covered)`` where ``covered`` is the per-row boolean mask of rows a
+    neighbour covered (``covered.mean()`` = coverage). This is the #28 lift (Track A
+    LB 0.585), reusable for Track B.
+    """
+    base_up = np.asarray(base_up, dtype=float)
+    base_down = np.asarray(base_down, dtype=float)
+    s_de = base_up + base_down
+    r = np.divide(base_up, s_de, out=np.full_like(base_up, 0.5), where=s_de > 0)
+
+    nb = neighbor_channel(queries, train_df, pert_neighbors, gene_neighbors, min_support)
+    assert nb.r is not None  # neighbor_channel always sets the direction bus
+    up, down = fuse(
+        [Channel("base", s_de=s_de, r=r), Channel("neighbour", s_de=None, r=nb.r)],
+        weights=[1.0 - weight, weight],
+    )
+    covered = np.isfinite(nb.r)
+    return up, down, covered
