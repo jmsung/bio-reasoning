@@ -327,6 +327,36 @@ unverified 0.693 — rank-1 by direction alone is off the table.** Dev-only on t
 **nothing submitted** (LB 0.597 stands). Next per the fork: submit neighbour-DIR's weighted
 best (w≈4, ~0.66) **once**, read the real LB gap, then decide the Perturb-seq data lane.
 
+## Update (feat/de-contrastive-core — landed)
+
+A **kill-test of contrastive-LLM-DE** — Yuan et al. 2026 "Plausibility Is Not
+Prediction" (CORE), the *one* LLM-DE framing with published evidence (it fixes
+the single-pair over-DE bias with contrastive KG evidence). Every prior DE kill
+here was a *feature/network* channel; this closes the **LLM/prompt-framing** DE
+lane, the last one standing. The consult-KB-first gate did its job: Goal 1
+pre-called the kill from the paper (CORE-Voting = our already-dead neighbour-
+retrieval-DE; CORE's headline gains are bias-correction, and our AUROC metric is
+bias-invariant), then Goal 4 measured it.
+
+**CORE-Voting DE-AUROC 0.498 ± 0.006** (5 seeds, dual-OOD `holdout_split`, 99%
+coverage) — **bit-for-bit the neighbour-retrieval-DE floor, KILL** (&lt; 0.55 gate).
+On our zero-overlap, sparse-KG regime the contrastive-aggregation mechanism is
+dead chance, exactly as the pre-build KB argument predicted. **CORE-Reasoning**
+(LLM reasoning over the contrastive set) was **not run — endpoint-blocked** (Bing
+logprobs, same wall as scoring-not-labeling); its prior is low (gains are
+bias-correction, AUROC-invariant), so the roadmap is not gated on it. The CORE
+machinery is kept so that one cell can run in a single script if a logprob
+endpoint ever lands.
+
+**This is the 7th DE approach at chance and the strategic close of the LLM-DE
+lane team-wide:** prompt/framing cannot move DE-vs-none on this task. It
+reinforces, with fresh evidence plus an external-paper cross-check, the standing
+conclusion that **only new *measured* signal moves DE** → the **Perturb-seq data
+lane** (Replogle / PerturbQA / Tahoe) is the path to rank-1. Negative result, dev
+measurement on the OOD split — **nothing submitted** (LB 0.597 stands). Full
+argument + measurement:
+[`knowledge/wiki/findings/contrastive-de-core-assessment.md`](../knowledge/wiki/findings/contrastive-de-core-assessment.md).
+
 ## Approach
 
 1. **Honest fitness signal first** — a dual-OOD validation split (perturbations + genes
