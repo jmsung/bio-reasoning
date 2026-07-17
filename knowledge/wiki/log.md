@@ -98,6 +98,11 @@ Search-and-ingest for macrophage gene-perturbation-prediction (Track A/B/C). 16 
 - New pages: findings/direction-transfers-de-doesnt.md
 - Updated pages: index.md, findings/neighbor-retrieval-direction-lever.md, findings/curated-edges-fail-de-axis.md
 
+## 2026-07-17 — Learned finding: LLM self-consistency fails the DE axis
+- Kill-test (feat/de-logprob-self-consistency): Claude sonnet-4.5 sample-vote self-consistency,
+  150 dual-OOD rows × 3 samples → AUROC_de 0.495 (chance), AUROC_dir 0.571. DE hypothesis dead.
+- New page: findings/llm-self-consistency-fails-de-axis.md (predicted by the consult-KB gate).
+
 ## 2026-07-16 — Ingested 83 full-text distillations (feat/knowledge-base-expansion)
 - Batch full-text ingest via paperclip + a discover→distill workflow (95 written, 3 removed as
   domains/ duplicates: GEARS, Ahlmann-Eltze linear-baselines, D-SPIN; 9 collided/merged → 83 net-new).
