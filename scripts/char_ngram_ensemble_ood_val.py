@@ -10,6 +10,11 @@ flat/negative and the CFA gate may reject it — the +0.06 lift (if any) is a
 real-LB effect, not visible here. A flat OOD-val therefore doesn't kill the idea;
 a clear regression does.
 
+Measured (holdout seed 0): baseline GO+neighbour-DIR 0.5663 → +char 0.5485 (DE+DIR)
+/ 0.5532 (DIR-only) — a clear **regression**, and the CFA gate REJECTs char
+(DE-AUROC 0.487). Verdict: dead lever; char's chance-level direction dilutes the
+strong neighbour-DIR. See mb/notes/rank1-plan.md (Killed/deferred).
+
 Run: uv run --group eval python scripts/char_ngram_ensemble_ood_val.py
 """
 
@@ -95,6 +100,8 @@ def main() -> None:
         delta = evaluate(labels, u, d)["mean"] - base_mean
         print(f"  Δ vs baseline ({tag}): {delta:+.4f}")
 
+    # current_s_de is s_de_go: the neighbour channel is r-only, so the fused baseline's
+    # s_de bus is exactly GO's — char must add DE signal over GO, not over the fusion.
     passed, stats = cfa_gate(s_de_ch, s_de_go, de_true)
     print(
         f"\nCFA gate on char DE channel: {'PASS' if passed else 'REJECT'} "
