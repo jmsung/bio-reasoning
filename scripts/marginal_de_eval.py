@@ -40,7 +40,8 @@ DEGREE_CACHE = str(_DATA / "external/string_degree.json")
 def _string_degree(syms: list[str]) -> dict[str, float]:
     """Per-symbol STRING interaction degree (partner count), cached; public API."""
     if os.path.exists(DEGREE_CACHE):
-        return json.load(open(DEGREE_CACHE))
+        with open(DEGREE_CACHE) as f:
+            return json.load(f)
     base = "https://string-db.org/api/json/interaction_partners"
     deg: dict[str, float] = {}
     for i in range(0, len(syms), 60):
@@ -57,7 +58,8 @@ def _string_degree(syms: list[str]) -> dict[str, float]:
             deg[row["preferredName_A"]] = deg.get(row["preferredName_A"], 0) + 1
         time.sleep(1)
     os.makedirs(os.path.dirname(DEGREE_CACHE), exist_ok=True)
-    json.dump(deg, open(DEGREE_CACHE, "w"))
+    with open(DEGREE_CACHE, "w") as f:
+        json.dump(deg, f)
     return deg
 
 

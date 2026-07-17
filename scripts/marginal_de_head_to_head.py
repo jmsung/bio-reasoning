@@ -65,7 +65,8 @@ def _run(df, degree, seed):
 
 def main() -> None:
     df = pd.read_csv(TRAIN)
-    degree = json.load(open(DEGREE_CACHE))
+    with open(DEGREE_CACHE) as _f:
+        degree = json.load(_f)
     print("seed | base(de/dir/mean) | fused(de/dir/mean) | Δmean", flush=True)
     dmeans = []
     for s in range(5):
