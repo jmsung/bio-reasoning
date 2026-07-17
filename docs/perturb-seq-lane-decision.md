@@ -1,6 +1,6 @@
 # Perturb-seq data lane — go/no-go decision
 
-**Status: DECIDED — NO-GO (lane closed).** The gating number is in — `research/perturb-seq-transfer-probe` Goal 5 measured no robust OOD-val lift. See [Decision](#decision).
+**Status: DECIDED — NO-GO (lane closed, real-LB confirmed).** The OOD-val gate measured no robust lift (`research/perturb-seq-transfer-probe` Goal 5), and the reserved real-LB read now agrees: +external = 0.586 vs baseline 0.585 (Δ+0.001, `research/perturb-seq-real-lb-overlap`). See [Decision](#decision) and [Real-LB confirmation](#real-lb-confirmation-2026-07-17-researchperturb-seq-real-lb-overlap).
 
 **Question.** The DIRECTION lane is closed on the real leaderboard (Track A LB **0.586** at weighted best « field 0.693), and DE-vs-none is dead across 6 internal channels. Should the team open the **Perturb-seq data lane** — using external perturbation datasets (Replogle, PerturbQA, Dixit) as a new signal source — as the path to a materially better Track A score?
 
@@ -135,3 +135,21 @@ Replogle pipeline is not opened. The honest ~0.65 direction ceiling stands; the
 higher-EV rank-1 bet is the **model-based DE crack** (token-logprob self-consistency;
 `feat/de-logprob-self-consistency`), not more data. Verdict recorded in
 `mb/notes/perturb-seq-data-lane.md` and `mb/notes/rank1-plan.md`.
+
+### Real-LB confirmation (2026-07-17, `research/perturb-seq-real-lb-overlap`)
+
+The NO-GO above rested on the OOD-val gate; the doc's GO branch had reserved one real-LB
+read that the gate pre-empted. That read is now spent — the same channel set the OOD-gate
+scored, submitted to the **real Track A board** (generic `fuse`, 1813 test rows, PerturbQA
+covering 65.9%):
+
+| Submission | Public LB |
+|---|---|
+| baseline `fuse([GO, neighbour])` | **0.585** |
+| `+ external fuse([GO, neighbour, PerturbQA DE+DIR])` | **0.586** |
+
+**Δ = +0.001.** The real board **confirms** the OOD-val verdict — external adds nothing even
+with 66% coverage. This closes the last escape hatch: the "we killed the lane on a too-hard
+*synthetic* split" hypothesis is **refuted on the real board itself**. The dual-OOD split was
+honest; rank-1's ~0.75 does **not** come from PerturbQA-retrieval DE. Lane stays **CLOSED**,
+now confirmed end-to-end. Next: the model-based DE crack (`feat/de-logprob-self-consistency`).
