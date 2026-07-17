@@ -299,6 +299,30 @@ def main() -> None:
             f"\n[loop] search={search}  trials={len(res.records)}  "
             f"trials-to-best={best_i + 1} (mean={best.metrics['mean']:.3f}, {best.variant.id})"
         )
+        if args.val_n is not None:
+            # DEV signal read: on a subsample the gate is UNtrustworthy (noise dominates),
+            # so ignore accept/reject and report the raw baseline-vs-best delta as a fast
+            # go/no-go — does any variant beat baseline at all? Never promote off this.
+            base_mean = res.records[0].metrics["baseline_mean"]
+            delta = best.metrics["mean"] - base_mean
+            beats = not math.isnan(best.metrics["mean"]) and delta > 0
+            print(
+                f"[loop] ── DEV SIGNAL READ (val_n={args.val_n}, UNTRUSTWORTHY gate — never promote) ──"
+            )
+            print(
+                f"[loop]   baseline mean={base_mean:.3f}  best-variant mean={best.metrics['mean']:.3f} "
+                f"({best.variant.id})  Δ={delta:+.3f}"
+            )
+            if beats:
+                print(
+                    "[loop]   → SIGNAL: a variant beat baseline on the subsample — "
+                    "escalate to a full-val run / throughput-opt."
+                )
+            else:
+                print(
+                    "[loop]   → NO SIGNAL: nothing beat baseline (near-chance) — "
+                    "consider filing a negative-result finding."
+                )
     print(f"[loop] stopped: {res.stopped_reason}  spent=${res.spent:.3f}  errors={errors_fn()}")
     if res.accepted:
         winners = ", ".join(v.id for v in res.accepted)
