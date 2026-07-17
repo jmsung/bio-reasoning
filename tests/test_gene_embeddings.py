@@ -23,8 +23,10 @@ class _FakeEmbeddings:
 
     def __init__(self) -> None:
         self.seen: list[str] = []
+        self.calls = 0
 
     def create(self, model, input):  # noqa: A002 — mirror the OpenAI kwarg name
+        self.calls += 1
         self.seen.extend(input)
         data = [type("E", (), {"embedding": [float(len(t)), float(len(t.split()))]}) for t in input]
         return type("R", (), {"data": data})
@@ -71,6 +73,15 @@ def test_only_missing_symbols_are_fetched(tmp_path):
     emb = load_gene_embeddings({"A": "aaa", "B": "bbbb"}, cache, client=client2)
     assert client2.embeddings.seen == ["bbbb"]
     assert set(emb) == {"A", "B"}
+
+
+def test_embeds_in_batches_under_request_cap(tmp_path):
+    # 5 symbols, batch_size=2 → 3 requests (the endpoint caps tokens per request)
+    gene_text = {f"G{i}": f"text {i}" for i in range(5)}
+    client = _FakeClient()
+    emb = load_gene_embeddings(gene_text, tmp_path / "emb.json", client=client, batch_size=2)
+    assert client.embeddings.calls == 3
+    assert set(emb) == set(gene_text)
 
 
 # --- Goal 2: GenePert-style DIR ridge -------------------------------------

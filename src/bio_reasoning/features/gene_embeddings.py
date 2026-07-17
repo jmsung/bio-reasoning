@@ -43,13 +43,16 @@ def load_gene_embeddings(
     *,
     client=None,
     model: str | None = None,
+    batch_size: int = 256,
 ) -> dict[str, np.ndarray]:
     """Return ``{symbol: embedding vector}``, caching vectors to disk.
 
-    A cache hit is fully offline. On a miss the missing texts are embedded via
+    A cache hit is fully offline. Missing texts are embedded via
     ``client.embeddings.create`` (an OpenAI client, built lazily from the
-    environment when ``client`` is ``None``) and persisted. Only symbols absent
-    from the cache are fetched, so the batch grows incrementally across runs.
+    environment when ``client`` is ``None``) in batches of ``batch_size`` — the
+    endpoint caps a single request at 300k tokens, so the full symbol universe
+    cannot go in one call. The cache is persisted after **each** batch, so a
+    crash or rate-limit mid-run never re-spends on already-embedded symbols.
     """
     model = model or _DEFAULT_MODEL
     cache_path = Path(cache_path)
@@ -63,11 +66,13 @@ def load_gene_embeddings(
             from bio_reasoning.utils.openai_client import build_openai_client
 
             client = build_openai_client()
-        resp = client.embeddings.create(model=model, input=[gene_text[s] for s in missing])
-        for sym, item in zip(missing, resp.data, strict=True):
-            cache[sym] = list(item.embedding)
         cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(json.dumps(cache))
+        for i in range(0, len(missing), batch_size):
+            chunk = missing[i : i + batch_size]
+            resp = client.embeddings.create(model=model, input=[gene_text[s] for s in chunk])
+            for sym, item in zip(chunk, resp.data, strict=True):
+                cache[sym] = list(item.embedding)
+            cache_path.write_text(json.dumps(cache))  # persist per batch — crash-safe
 
     return {s: np.asarray(cache[s], dtype=float) for s in gene_text}
 
