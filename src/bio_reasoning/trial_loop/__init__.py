@@ -8,6 +8,7 @@ from bio_reasoning.trial_loop.archive import (
     render_leaderboard,
     write_trials,
 )
+from bio_reasoning.trial_loop.de_variants import de_variant_grid, make_de_proposer
 from bio_reasoning.trial_loop.gate import (
     GateResult,
     measure_noise_band,
@@ -25,6 +26,7 @@ from bio_reasoning.trial_loop.loop import (
     sample_examples,
 )
 from bio_reasoning.trial_loop.reflect import Proposer, best_trial, make_grid_proposer, reflect
+from bio_reasoning.trial_loop.ruled_out import RULED_OUT, is_ruled_out
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
 __all__ = [
@@ -41,6 +43,10 @@ __all__ = [
     "GateResult",
     "measure_noise_band",
     "score_across_seeds",
+    "de_variant_grid",
+    "make_de_proposer",
+    "RULED_OUT",
+    "is_ruled_out",
     "make_agent_row_predictor",
     "reflect",
     "best_trial",
