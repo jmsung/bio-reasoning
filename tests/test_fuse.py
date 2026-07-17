@@ -72,6 +72,19 @@ def test_fuse_weights_bias_toward_channel():
     assert s_fused[0] > s_fused[1]  # a dominates → row 0 ranks above row 1
 
 
+def test_fuse_direction_weight_leaves_de_unchanged():
+    # When only the model channel carries s_de, changing the direction-bus weight must
+    # NOT change DE (up+down) — the load-bearing invariant behind DIR_WEIGHT tuning.
+    s = np.array([0.2, 0.9, 0.5, 0.7])
+    r_model = np.array([0.3, 0.7, 0.5, 0.6])
+    r_nb = np.array([0.8, 0.1, 0.5, 0.9])
+    chans = [Channel("model", s_de=s, r=r_model), Channel("nb", s_de=None, r=r_nb)]
+    up_a, dn_a = fuse(chans, weights=[0.5, 0.5])
+    up_b, dn_b = fuse(chans, weights=[0.25, 0.75])
+    assert np.allclose(up_a + dn_a, up_b + dn_b)  # DE invariant to direction weight
+    assert not np.allclose(up_a, up_b)  # but the direction split does move
+
+
 def test_cfa_gate_accepts_predictive_and_diverse():
     rng = np.random.default_rng(1)
     n = 300

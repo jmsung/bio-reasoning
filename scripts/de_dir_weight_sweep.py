@@ -36,7 +36,7 @@ _DATA = (
 TRAIN = str(_DATA / "raw/track_a/train.csv")
 PERT_CACHE = str(_DATA / "interim/pert_go_category.json")
 GENE_CACHE = str(_DATA / "interim/gene_go_bp.json")
-CACHE = "data/external/string_partners_universe.json"
+CACHE = str(_DATA / "external/string_partners_universe.json")
 WEIGHTS = [0.0, 0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1.0]
 
 
