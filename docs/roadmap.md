@@ -33,6 +33,11 @@ Ordered by priority — understand → plan → build.
      overlap and gives no robust OOD lift; lane closed**
    - enumerate Tahoe's 50-line panel; flag myeloid/monocytic lines (THP-1,
      U937, …) closest to macrophages
+   - **Perturb-seq lane go/no-go** → [`perturb-seq-lane-decision.md`](perturb-seq-lane-decision.md):
+     **DECIDED — NO-GO, lane closed.** `research/perturb-seq-transfer-probe` measured no
+     robust OOD lift (+0.0075 mean = one-seed noise; overlap DE 0.72 collapses to ~0.53 on
+     OOD; CFA 1/3). External marginal DE is no better than the internal STRING-degree proxy;
+     the ~0.65 direction ceiling stands. Higher-EV rank-1 bet = model-based DE crack.
 3. [ ] **Port Track-A EDA scripts into the repo** — move the GO-annotation /
    enrichment / interaction scripts into `scripts/`, repoint to `data/raw/`,
    add the `mygene` dep, resolve the GO-cache (>500 KB) location. (follow-up
