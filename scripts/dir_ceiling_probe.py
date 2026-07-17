@@ -13,6 +13,7 @@ submission pipeline. Run: ``uv run python scripts/dir_ceiling_probe.py``.
 
 from __future__ import annotations
 
+import itertools
 import json
 from pathlib import Path
 
@@ -87,7 +88,8 @@ def _dir_auroc(labels: np.ndarray, channels: list[Channel]) -> float:
     return evaluate(labels, up, down)["auroc_dir"]
 
 
-def _seed_row(df: pd.DataFrame, embeddings: dict, partners: dict, seed: int) -> dict:
+def _seed_subsets(df: pd.DataFrame, embeddings: dict, partners: dict, seed: int) -> dict:
+    """Fused DIR-AUROC for every non-empty subset of the 3 channels, one seed."""
     tr, va = holdout_split(df, seed=seed)  # defaults: pert_frac=gene_frac=0.4
     train_df = df.iloc[tr].reset_index(drop=True)
     val_df = df.iloc[va].reset_index(drop=True)
@@ -98,9 +100,15 @@ def _seed_row(df: pd.DataFrame, embeddings: dict, partners: dict, seed: int) -> 
         "neighbour-DIR": _neighbour_dir_r(train_df, val_df, partners),
         "embedding-DIR": _embedding_dir_r(train_df, val_df, embeddings),
     }
-    standalone = {k: _dir_auroc(labels, [Channel(name=k, r=v)]) for k, v in rs.items()}
-    fused = _dir_auroc(labels, [Channel(name=k, r=v) for k, v in rs.items()])
-    return {"seed": seed, "standalone": standalone, "fused": fused}
+    out: dict[tuple, float] = {}
+    for k in range(1, len(CHANNELS) + 1):
+        for combo in itertools.combinations(CHANNELS, k):
+            out[combo] = _dir_auroc(labels, [Channel(name=c, r=rs[c]) for c in combo])
+    return out
+
+
+def _short(combo: tuple) -> str:
+    return "+".join(c.split("-")[0] for c in combo)
 
 
 def main() -> None:
@@ -115,36 +123,51 @@ def main() -> None:
     partners = {k: set(v) for k, v in json.load(open(STRING_CACHE)).items()}
     print(f"  STRING partners: {len(partners)} symbols", flush=True)
 
-    rows = [_seed_row(df, embeddings, partners, s) for s in range(5)]
+    seeds = [_seed_subsets(df, embeddings, partners, s) for s in range(5)]
+    combos = list(seeds[0].keys())
+    mean = {c: float(np.nanmean([sd[c] for sd in seeds])) for c in combos}
+    std = {c: float(np.nanstd([sd[c] for sd in seeds])) for c in combos}
+    triple = CHANNELS
 
-    hdr = f"{'seed':>4} | " + " | ".join(f"{c:>13}" for c in CHANNELS) + " | fused"
-    print("\n" + hdr, flush=True)
-    for r in rows:
-        cells = " | ".join(f"{r['standalone'][c]:>13.3f}" for c in CHANNELS)
-        print(f"{r['seed']:>4} | {cells} | {r['fused']:.3f}", flush=True)
-
-    def _ms(vals: list[float]) -> str:
-        a = np.array(vals, dtype=float)
-        return f"{np.nanmean(a):.3f} ± {np.nanstd(a):.3f}"
-
-    print("\n== mean ± std (5 seeds) ==", flush=True)
-    for c in CHANNELS:
-        print(
-            f"  {c:>14} standalone DIR-AUROC: {_ms([r['standalone'][c] for r in rows])}", flush=True
-        )
-    fused_ms = _ms([r["fused"] for r in rows])
-    print(f"  {'FUSED':>14} DIR-AUROC: {fused_ms}", flush=True)
-
-    fused_mean = float(np.nanmean([r["fused"] for r in rows]))
-    lift = fused_mean - DIR_BASELINE
+    # per-seed: standalones + full fusion
     print(
-        f"\nFused-DIR ceiling {fused_mean:.3f} vs incumbent neighbour-DIR {DIR_BASELINE} "
-        f"→ {lift:+.3f}.",
+        "\n" + f"{'seed':>4} | " + " | ".join(f"{c:>13}" for c in CHANNELS) + " | fused", flush=True
+    )
+    for i, sd in enumerate(seeds):
+        cells = " | ".join(f"{sd[(c,)]:>13.3f}" for c in CHANNELS)
+        print(f"{i:>4} | {cells} | {sd[triple]:.3f}", flush=True)
+
+    # subset lattice, ranked by mean
+    print("\n== subset lattice — fused DIR-AUROC (mean ± std, 5 seeds), ranked ==", flush=True)
+    for c in sorted(combos, key=lambda c: -mean[c]):
+        print(f"  {_short(c):<26} {mean[c]:.3f} ± {std[c]:.3f}  (n={len(c)})", flush=True)
+
+    best_single = max((c for c in combos if len(c) == 1), key=lambda c: mean[c])
+    best_overall = max(combos, key=lambda c: mean[c])
+
+    # marginal contribution: Δ of adding channels onto the best single (equal-weight)
+    print("\n== marginal contribution vs best single (equal-weight rank-fusion) ==", flush=True)
+    for c in sorted((c for c in combos if best_single[0] in c and c != best_single), key=len):
+        added = _short(tuple(x for x in c if x != best_single[0]))
+        print(
+            f"  {_short(best_single)} + {added:<24} {mean[c] - mean[best_single]:+.3f}", flush=True
+        )
+
+    helps = mean[best_overall] > mean[best_single] + 0.005
+    print(
+        f"\nVERDICT: best single = {_short(best_single)} {mean[best_single]:.3f}; "
+        f"best subset = {_short(best_overall)} {mean[best_overall]:.3f}; all-three {mean[triple]:.3f}.",
         flush=True,
     )
     print(
-        "NOTE: lower bound — measured on the current channels; re-run once "
-        "feat/fuse-direction-channels lands any improved fusion.",
+        f"Under equal-weight rank-fusion, adding channels "
+        f"{'HELPS' if helps else 'does NOT beat the best single'} → "
+        f"naive DIR ceiling ≈ {mean[best_overall]:.3f} vs field ~0.693.",
+        flush=True,
+    )
+    print(
+        "NOTE: equal-weight only (lower bound). Weighted / learned fusion "
+        "(up-weight neighbour-DIR) is feat/fuse-direction-channels' job.",
         flush=True,
     )
 
