@@ -39,6 +39,18 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
    DE-likelihood — only order matters for AUROC). And measurement must move onto a **dual-OOD
    validation split** that reproduces the real train/test disjointness, so CV stops lying.
 
+## Update (feat/marginal-property-de — landed)
+
+Tested the **last untried DE angle**: *marginal* per-symbol features (STRING connectivity
+degree) instead of the 5 failed *pair-interaction* channels. Standalone DE-AUROC **0.536**
+(fails the 0.55 gate) — but it's the **first DE channel above chance** (the pairwise ones were
+flat 0.498–0.502), and fusing it into the two-stage lifts OOD-val mean **+0.008** (all seeds):
+**the first DE-axis gain of the whole investigation.** Refines "DE is dead" → *pairwise* DE is
+dead; *marginal* DE is faint-but-nonzero. Did not submit (+0.008 modest; LB 0.585 stands).
+Methodological note: the fixed 0.55 standalone gate is too strict when the incumbent is chance —
+a 0.536 channel still helped fused. Leads: richer marginal features (essentiality/expression) and
+a stacked direction+marginal submission.
+
 ## Update (feat/de-dir-submission — landed)
 
 Fused the neighbour-retrieval **direction** signal into the two-stage Track A submission.
