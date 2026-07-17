@@ -89,7 +89,9 @@ def classify_pert(go_terms: list[str]) -> str:
     return "other"
 
 
-def load_perturbqa(datasets_dir: str | Path, cell_lines=CELL_LINES) -> dict[tuple[str, str], dict]:
+def load_perturbqa(
+    datasets_dir: str | Path, cell_lines: tuple[str, ...] = CELL_LINES
+) -> dict[tuple[str, str], dict]:
     """Aggregate PerturbQA de/dir CSVs into ``(PERT, GENE) -> scores`` across cell lines.
 
     For each pair present in one or more lines:

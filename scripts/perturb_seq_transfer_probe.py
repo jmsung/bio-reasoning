@@ -1,10 +1,10 @@
 """Stage-0 gate: does external measured Perturb-seq DE/direction transfer to Track A?
 
-The external-data lane is the only one with headroom toward the field, but the
-3-agent deep-dive (`mb/notes/perturb-seq-data-lane.md`) predicts it won't crack DE
-(context-specific) and at best adds a small *direction* lift on the housekeeping
-slice. This settles it empirically on the cheapest possible substrate: PerturbQA's
-curated labels (4 human CRISPRi lines) ortholog-mapped onto Track A (mouse).
+The external-data lane is the only one with headroom toward the field, but an
+internal deep-dive predicts it won't crack DE (context-specific) and at best adds a
+small *direction* lift on the housekeeping slice. This settles it empirically on the
+cheapest possible substrate: PerturbQA's curated labels (4 human CRISPRi lines)
+ortholog-mapped onto Track A (mouse).
 
 Sections build up across the branch goals:
 - Goal 2: coverage_report()   — overlap + test-pert coverage.
