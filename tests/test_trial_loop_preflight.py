@@ -1,7 +1,7 @@
 """Offline tests for the loop preflight harness (no network; fake infer_fn).
 
-Codifies mb/findings/loop-runtime-deadlock-throughput-verification.md #4-5: a loop
-is 'verified' only on real content + a real archived trial, never on liveness. Each
+Codifies the loop deadlock / throughput-verification lesson: a loop is 'verified'
+only on real content + a real archived trial, never on liveness. Each
 degenerate mode (empty responses, nan mean, n_val=0, no archive) must fail loud.
 """
 

@@ -213,7 +213,9 @@ def main() -> None:
         default=None,
         help="DEV-ONLY smoke: score only the first N val rows per split (deterministic) "
         "so a real trial finishes in minutes. Makes the gate UNtrustworthy — for fast "
-        "iteration / bug detection, never to promote a survivor. Omit for the full-val gate.",
+        "iteration / bug detection, never to promote a survivor. Omit for the full-val gate. "
+        "Keep N reasonably large (>=~50): a tiny prefix can be single-class and yield a nan "
+        "AUROC/mean (a deterministic false-fail, not flakiness).",
     )
     ap.add_argument("--noise-band", type=float, default=None, help="Override; default measured.")
     ap.add_argument("--dry-rounds", type=int, default=2, help="Stop after K non-improving rounds.")

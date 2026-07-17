@@ -94,7 +94,13 @@ by the trial-loop below.
   baseline (leak-safe: the Traxler tool is dropped whenever its fold is the eval).
   It never submits — a gate-surviving variant is surfaced for a human-gated
   Kaggle submission.
-  Backed by `trial_loop.{inference,proposers,de_variants,bandit,llm_proposer,agent_variants,tools,gate,ruled_out,driver,submission}`.
+  Backed by `trial_loop.{inference,proposers,de_variants,bandit,llm_proposer,agent_variants,tools,gate,ruled_out,driver,submission,preflight}`.
+- `make verify` — fast DEV pipeline (minutes, not the ~1.4–2.8 h full-val gate):
+  `scripts/verify_loop.py` preflights one real smoke trial on a `--val-n` subsample
+  (asserts non-empty responses, `n_val>0`, non-nan mean, a written archive — liveness ≠
+  working), then `scripts/self_improve_loop.py --val-n N` prints a `DEV SIGNAL READ`
+  (baseline vs best-variant Δ) as a go/no-go. The `--val-n` knob is DEV-ONLY and makes the
+  gate untrustworthy — never promote off it. Tune with `make verify VAL_N=120 MAX_TRIALS=8`.
 - `scripts/build_traxler_labels.py` — regenerates the Traxler native real-label
   validation fold (`data/external/traxler_labels.csv`, gitignored — a reproducible
   artifact like `train.csv`) that the gate's optional external check scores against.

@@ -4,8 +4,8 @@ The full-val gate costs hours per trial, so a bug (deadlock, auth-401, empty res
 empty-eval) can burn a whole night before it surfaces. This runs a single real trial on a
 DEV-ONLY val subsample (``--val-n``, minutes not hours) and ASSERTS the loop is genuinely
 working — non-empty response content AND a trial that archives with a real (non-nan) mean
-over a non-empty val — codifying the lesson that liveness ≠ working
-(mb/findings/loop-runtime-deadlock-throughput-verification.md).
+over a non-empty val — codifying the loop deadlock / throughput-verification
+lesson that liveness ≠ working.
 
 Exit 0 = cleared to run unattended; exit 1 = a degenerate mode fired (message says which).
 
@@ -50,7 +50,11 @@ def main() -> None:
     args = ap.parse_args()
 
     if not os.getenv("OPENROUTER_API_KEY") and not os.getenv("BIOREASONING_OPENAI_API_KEY"):
-        print("[verify] FAIL: no API key (OPENROUTER_API_KEY) — cannot reach gpt-oss.", flush=True)
+        print(
+            "[verify] FAIL: no API key (OPENROUTER_API_KEY or BIOREASONING_OPENAI_API_KEY) "
+            "— cannot reach gpt-oss.",
+            flush=True,
+        )
         sys.exit(1)
 
     df = pd.read_csv(args.train_csv)

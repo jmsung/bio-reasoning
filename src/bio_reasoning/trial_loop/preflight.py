@@ -1,7 +1,7 @@
 """Preflight verification for the self-improvement loop — assert a real, healthy trial.
 
-Codifies the hard-won lesson (mb/findings/loop-runtime-deadlock-throughput-verification.md
-#4-5): *liveness ≠ working*. Twice the loop was called "verified" off connection /
+Codifies the hard-won loop deadlock / throughput-verification lesson:
+*liveness ≠ working*. Twice the loop was called "verified" off connection /
 socket-count health while calls were silently failing — an auth-401 that returned empty
 responses, and an empty-eval that archived a degenerate nan-mean "win". So a preflight
 trusts the loop only when it produces response **content** AND a trial **archives** with a

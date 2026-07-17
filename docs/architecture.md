@@ -84,7 +84,7 @@ in **minutes** — a dev/verify tool, **not** the trustworthy gate:
    a `--val-n` subsample, asserting the loop is genuinely working — **non-empty response
    content, `n_val>0`, a real (non-nan) mean, and a written archive**. Codifies the lesson
    that *liveness ≠ working* (an auth-401 and an empty-eval both once passed as "verified" off
-   connection health; see `mb/findings/loop-runtime-deadlock-throughput-verification.md`).
+   connection health; see the loop deadlock / throughput-verification finding).
    Exits non-zero — and stops the pipeline — on any degenerate mode.
 2. **Signal read** (`scripts/self_improve_loop.py --val-n N`): a short subsample search that
    prints a `DEV SIGNAL READ` line — baseline vs best-variant mean and their Δ. On a
