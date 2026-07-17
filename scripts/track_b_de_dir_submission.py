@@ -4,8 +4,10 @@ Track-B parity with the #28 Track A win (LB 0.585): keep the Track B floored
 submission's DE ranking and metadata (reasoning trace, tokens, …) but rank-fuse
 the STRING-neighbour-retrieval direction into ``up/(up+down)`` via
 ``fuse_neighbour_direction`` — the same lever, applied to the floored base instead
-of the two-stage model. STRING partners for train+test symbols are fetched from
-string-db.org (mouse) on first run and cached. No agent inference.
+of the two-stage model. Uses the default fusion ``weight`` (0.5, unswept — PR #31
+found the neighbour-vs-base weight a flat lever). STRING partners for train+test
+symbols are fetched from string-db.org (mouse) on first run and cached. No agent
+inference.
 
 Usage:
     uv run --group eval python scripts/track_b_de_dir_submission.py \\

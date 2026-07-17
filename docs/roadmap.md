@@ -78,6 +78,12 @@ Ordered by priority — understand → plan → build.
     (feat/de-dir-weight-tuning: swept the direction blend weight — broad OOD-val plateau at
     w~0.7-0.8 (mean 0.588) vs 0.584 equal-weight; submission default now `DIR_WEIGHT=0.75`,
     +0.004 OOD-val, not resubmitted so LB 0.585 stands. Sweep: `scripts/de_dir_weight_sweep.py`.)
+15. [x] **Track B neighbour-direction fusion (parity with Track A)** — apply the same
+    neighbour-direction lever to the Track B floored submission via the now track-agnostic
+    `fuse_neighbour_direction`. **OOD-val 0.5916** (dir 0.570→0.624, 98% cov) vs the floored
+    base 0.5647 (+0.028) and the prior Track B best dir-blend 0.5712 / LB 0.578 (+0.020) —
+    **new Track B best offline.** `scripts/track_b_de_dir_submission.py` (builder) +
+    `track_b_de_dir_ood_val.py` (eval). Kaggle LB pending (user/Bing-gated upload).
 
 ## Completed
 

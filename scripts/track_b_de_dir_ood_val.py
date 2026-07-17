@@ -1,10 +1,12 @@
 """Eval: neighbour-direction fusion on the Track B floored submission, OOD-val.
 
-Loads the saved floor-to-prior OOD-val submission (mean 0.5636), fits the STRING
+Loads the saved floor-to-prior OOD-val submission (mean ~0.565), fits the STRING
 neighbour graph on the holdout TRAIN partition (leak-free), and fuses the
 neighbour direction into the floored base via ``fuse_neighbour_direction`` — the
-#28 Track A lever, applied to Track B. Reports mean + DE/DIR per axis vs the
-floored base (0.5636) and the current Track B best (dir-blend 0.5712 / LB 0.578).
+#28 Track A lever, applied to Track B. Track B keeps the default fusion ``weight``
+(0.5, unswept — PR #31 found the neighbour-vs-base weight a flat lever, +0.004
+within seed noise). Reports mean + DE/DIR per axis vs the live floored base and the
+current Track B best (dir-blend 0.5712 / LB 0.578).
 
 Run: uv run --group eval python scripts/track_b_de_dir_ood_val.py \\
        --floored-sub <floored-agent-ood-val>.csv
@@ -26,7 +28,6 @@ ROOT = Path(__file__).resolve().parents[1]
 TRAIN = ROOT / "data/raw/track_a/train.csv"
 STRING_CACHE = ROOT / "data/external/string_partners_universe.json"
 SEED = 0
-FLOOR_BASELINE = 0.5636  # floored OOD-val
 DIRBLEND_BEST = 0.5712  # current Track B best (dir-blend w=0.7, LB 0.578)
 
 
@@ -66,7 +67,7 @@ def main() -> None:
         f"(de={fused['auroc_de']:.3f} dir={fused['auroc_dir']:.3f}) | coverage {covered.mean():.0%}"
     )
     print(
-        f"\nΔ vs floored base {FLOOR_BASELINE}: {fused['mean'] - FLOOR_BASELINE:+.4f} | "
+        f"\nΔ vs floored base {base['mean']:.4f}: {fused['mean'] - base['mean']:+.4f} | "
         f"Δ vs dir-blend best {DIRBLEND_BEST}: {fused['mean'] - DIRBLEND_BEST:+.4f}"
     )
     verdict = "BEATS" if fused["mean"] > DIRBLEND_BEST else "does NOT beat"
