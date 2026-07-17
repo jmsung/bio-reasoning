@@ -22,7 +22,12 @@ class Variant:
             exemplars whose perturbation shares the query's GO functional category
             (relevance-selected few-shot). Ignored when ``n_few_shot == 0``.
         seeds: Sampling seeds; per-seed predictions are averaged into a graded
-            score (the Track A multi-sample recipe).
+            score (the multi-sample / self-consistency recipe — its length is the
+            sample count for both the Track A prompt and the Track B agent).
+        tools: Track B agentic tool config — the subset of real-data tools the
+            agent may call (see ``trial_loop.tools``). ``None`` → prompt-only
+            (Track A); a tuple (possibly empty) marks an agentic variant, and its
+            identity keys the per-config agent cache.
     """
 
     id: str
@@ -30,6 +35,7 @@ class Variant:
     n_few_shot: int = 0
     retrieval: str = "random"
     seeds: tuple[int, ...] = (42, 43, 44)
+    tools: tuple[str, ...] | None = None
 
 
 @dataclass
@@ -57,4 +63,6 @@ class TrialRecord:
         d = json.loads(line)
         v = d.pop("variant")
         v["seeds"] = tuple(v["seeds"])
+        if v.get("tools") is not None:
+            v["tools"] = tuple(v["tools"])
         return cls(variant=Variant(**v), **d)

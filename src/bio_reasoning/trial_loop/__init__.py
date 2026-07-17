@@ -1,6 +1,11 @@
 """Trial-loop: propose Track A prompt/config variants, score them on the
 dual-OOD ``holdout_split`` fitness gate, reflect, and archive the best."""
 
+from bio_reasoning.trial_loop.agent_variants import (
+    AGENT_TOOL_SUBSETS,
+    agent_variant_grid,
+    make_agent_proposer,
+)
 from bio_reasoning.trial_loop.archive import (
     archive,
     leaderboard,
@@ -20,6 +25,7 @@ from bio_reasoning.trial_loop.inference import make_openrouter_infer_fn
 from bio_reasoning.trial_loop.llm_proposer import make_llm_proposer
 from bio_reasoning.trial_loop.loop import (
     make_agent_row_predictor,
+    make_configurable_agent_row_predictor,
     make_prompt_row_predictor,
     predict_variant,
     retrieve_examples,
@@ -56,6 +62,10 @@ __all__ = [
     "make_de_proposer",
     "make_bandit_proposer",
     "make_llm_proposer",
+    "AGENT_TOOL_SUBSETS",
+    "agent_variant_grid",
+    "make_agent_proposer",
+    "make_configurable_agent_row_predictor",
     "RULED_OUT",
     "is_ruled_out",
     "build_track_a_submission",

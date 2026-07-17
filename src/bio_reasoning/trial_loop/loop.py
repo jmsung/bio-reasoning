@@ -163,6 +163,33 @@ def make_agent_row_predictor(agent_fn: AgentFn, concurrency: int = 1) -> RowPred
     return _predict
 
 
+# agent_fn_for(variant) -> the AgentFn for that variant's tool config.
+AgentFnFor = Callable[[Variant], AgentFn]
+
+
+def make_configurable_agent_row_predictor(
+    agent_fn_for: AgentFnFor, concurrency: int = 1
+) -> RowPredictor:
+    """Track B predictor whose agent (tool set) is chosen per ``Variant.tools``.
+
+    ``agent_fn_for(variant)`` builds the agent for that variant's tool config; the
+    result is cached by ``variant.tools`` so each (expensive) agent is built once
+    and reused across rows and self-consistency seeds. Delegates per-config to
+    :func:`make_agent_row_predictor`, so the same split/score/gate harness drives
+    the agentic tool-config search. Offline-testable with a fake ``agent_fn_for``.
+    """
+    cache: dict[object, RowPredictor] = {}
+
+    def _predict(rows, variant, seed, get_examples):
+        rp = cache.get(variant.tools)
+        if rp is None:
+            rp = make_agent_row_predictor(agent_fn_for(variant), concurrency)
+            cache[variant.tools] = rp
+        return rp(rows, variant, seed, get_examples)
+
+    return _predict
+
+
 def predict_variant(
     df: pd.DataFrame,
     variant: Variant,
