@@ -153,6 +153,7 @@ _(none yet)_
 - [Curated-edge DBs are too sparse/weak to crack the DE axis — go model-based](findings/curated-edges-fail-de-axis.md) — 2026-07-16
 - [CORE contrastive-LLM-DE won't transfer — CORE-Voting = 0.498 on our dual-OOD (measured kill)](findings/contrastive-de-core-assessment.md) — 2026-07-17
 - [Marginal DE caps at STRING degree (~0.536) — essentiality is redundant, static DE route exhausted](findings/marginal-de-caps-at-degree.md) — 2026-07-16
+- [LLM self-consistency does not crack the DE axis (AUROC_de 0.495) — kill-test](findings/llm-self-consistency-fails-de-axis.md) — 2026-07-17
 
 ### Methods
 
