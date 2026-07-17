@@ -12,8 +12,8 @@ cites:
 
 [[../home]] | [[../index]]
 
-**Status: draft — Goal-1 KB position for `feat/de-contrastive-core`, 2026-07-17. Read the KB
-*before* building (the consult-first gate).**
+**Status: measured — Goal-1 KB position + Goal-4 empirical result for `feat/de-contrastive-core`,
+2026-07-17. Read the KB *before* building (the consult-first gate).**
 
 Bottom line: Yuan et al. 2026 "Plausibility Is Not Prediction" (CORE) is genuinely **the one
 LLM-DE framing with evidence** — it diagnoses the single-pair over-DE bias and fixes it with

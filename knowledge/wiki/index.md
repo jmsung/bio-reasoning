@@ -151,6 +151,7 @@ _(none yet)_
 - [Direction transfers, DE doesn't — the axis-asymmetry principle (lit-corroborated)](findings/direction-transfers-de-doesnt.md) — 2026-07-17
 - [The direction ceiling is ~0.65 — no fusion (equal-weight, weighted, or learned) beats the single best DIR channel](findings/dir-ceiling-equal-weight-fusion.md) — 2026-07-17
 - [Curated-edge DBs are too sparse/weak to crack the DE axis — go model-based](findings/curated-edges-fail-de-axis.md) — 2026-07-16
+- [CORE contrastive-LLM-DE won't transfer — CORE-Voting = 0.498 on our dual-OOD (measured kill)](findings/contrastive-de-core-assessment.md) — 2026-07-17
 
 ### Methods
 
