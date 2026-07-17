@@ -36,6 +36,7 @@ TRAIN = str(_DATA / "raw/track_a/train.csv")
 PERT_CACHE = str(_DATA / "interim/pert_go_category.json")
 GENE_CACHE = str(_DATA / "interim/gene_go_bp.json")
 STRING_CACHE = str(_DATA / "external/string_partners_universe.json")
+GO_UNIVERSE = str(_DATA / "external/go_terms_universe.json")  # unified GO text (perts + genes)
 EMB_CACHE = str(_DATA / "external/gene_embeddings.json")
 
 
@@ -62,8 +63,8 @@ def _channels(df, partners, seed):
         )
 
         syms = sorted(set(df.pert.astype(str)) | set(df.gene.astype(str)))
-        text = build_gene_text(syms, GENE_CACHE)
-        emb = load_gene_embeddings(text, EMB_CACHE)  # offline: cache hit
+        text = build_gene_text(syms, GO_UNIVERSE)  # unified GO text for perts + genes
+        emb = load_gene_embeddings(text, EMB_CACHE)  # cache hit offline; else OpenAI API
         ridge = fit_direction_ridge(train, emb)
         cands.append(("embedding", gene_embedding_channel(val[["pert", "gene"]], ridge, emb).r))
 
