@@ -85,9 +85,15 @@ by the trial-loop below.
 - `scripts/self_improve_loop.py` — the 24/7 self-improvement runner: propose
   (live DE-votes variants, KB-ruled-out channels filtered) → triple-verify
   (a candidate must beat baseline on every OOD split by more than the seed
-  noise band) → promote, until dry or budget-capped. It never submits — a
-  gate-surviving variant is surfaced for a human-gated Kaggle submission.
+  noise band; when a Traxler real-label fold is supplied, an OOD-survivor must
+  *also* beat baseline on that held-out in-domain fold) → promote, until dry or
+  budget-capped. It never submits — a gate-surviving variant is surfaced for a
+  human-gated Kaggle submission.
   Backed by `trial_loop.{inference,de_variants,gate,ruled_out,driver,submission}`.
+- `scripts/build_traxler_labels.py` — regenerates the Traxler native real-label
+  validation fold (`data/external/traxler_labels.csv`, gitignored — a reproducible
+  artifact like `train.csv`) that the gate's optional external check scores against.
+  Backed by `data.traxler_labels` (log2FC→schema thresholding + a leak-free exemplar pool).
 
 Artifacts (`trials.jsonl`, leaderboard, per-row cache) are written to
 `outputs/trial-loop/`; self-improve trials to `outputs/self-improve-loop/`

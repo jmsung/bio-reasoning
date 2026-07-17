@@ -43,7 +43,15 @@ that evaporates on a reseed, seen ~5×). The fix is tiered verification:
 |---|---|---|
 | 1 — drives search | OOD-val on one fixed cached eval subset | seconds/iter |
 | 2 — **triple-verify gate** | candidate must beat baseline on **all 3 seeds/splits by > the measured noise band** | local, per candidate |
+| 2b — **external real-label fold** (optional) | an OOD-survivor must *also* beat baseline on a held-out real-label fold — **Traxler KO150** native macrophage, the challenge's exact cell type — so the gain generalizes rather than overfitting challenge-train | local, only for OOD-survivors |
 | 3 — real LB | the single Kaggle submission, human-gated, spent only on a tier-2 survivor | rare |
+
+**External fold (`feat/traxler-real-label-fold`):** `gate.py::score_external_fold` +
+`triple_verify(external_fold=…)` add tier 2b. Traxler pseudobulk log2FC → challenge
+schema (`data.traxler_labels`, |log2FC|≥1.0 → up/down/none; 742 DE). Additive
+(`external_fold=None` → unchanged); scored only for OOD-survivors (expensive). Also a
+leak-free Traxler exemplar pool for retrieval variants. KO→CRISPRi transfers direction,
+not magnitude ([[direction-transfers-de-doesnt]]) — so it is a *validation* substrate.
 
 **Disanalogy vs P9:** P9's exact tier (SymPy) is local and provably correct and
 gates *every* candidate. Our real oracle (Kaggle LB) is rate-limited, remote, and
