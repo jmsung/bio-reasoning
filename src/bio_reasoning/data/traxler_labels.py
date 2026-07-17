@@ -12,6 +12,9 @@ Only DE presence + direction transfer from a KO screen to the challenge's CRISPR
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
+import numpy as np
 import pandas as pd
 
 # 2-fold (|log2FC| ≥ 1.0) is the standard DE cutoff; near-zero magnitudes have noisy
@@ -52,3 +55,35 @@ def label_distribution(df: pd.DataFrame) -> dict[str, int]:
         "n_perts": int(df["pert"].nunique()),
         "n_pairs": int(len(df)),
     }
+
+
+def make_traxler_exemplar_pool(
+    labels_df: pd.DataFrame,
+    n: int = 4,
+    seed: int = 0,
+    de_only: bool = True,
+) -> Callable[[dict], "list[dict] | None"]:
+    """Build a leak-free few-shot provider drawing real Traxler exemplars.
+
+    Returns an ``ExamplesProvider`` (``query_row -> list[{pert, gene, label}] | None``)
+    usable by a retrieval variant. Every exemplar is a native-macrophage (in-domain)
+    real label; ``de_only`` keeps only informative up/down rows (the pool is ~99%
+    ``none``). **Leak-free**: an exemplar matching the query's own ``(pert, gene)`` is
+    always excluded, so a Traxler query never sees its own answer. Deterministic by seed.
+    """
+    src = labels_df[labels_df["label"] != "none"] if de_only else labels_df
+    pool = [
+        {"pert": str(r["pert"]), "gene": str(r["gene"]), "label": str(r["label"])}
+        for r in src[["pert", "gene", "label"]].to_dict("records")
+    ]
+
+    def _provider(query_row: dict) -> "list[dict] | None":
+        q = (str(query_row.get("pert")), str(query_row.get("gene")))
+        candidates = [e for e in pool if (e["pert"], e["gene"]) != q]  # leak-free exclusion
+        if not candidates:
+            return None
+        rng = np.random.default_rng(seed)
+        idx = rng.choice(len(candidates), size=min(n, len(candidates)), replace=False)
+        return [candidates[i] for i in idx]
+
+    return _provider
