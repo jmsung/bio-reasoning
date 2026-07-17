@@ -23,17 +23,27 @@ def marginal_features(
     genes: Sequence[str],
     degree: dict[str, float],
     log1p: bool = False,
+    essentiality: dict[str, float] | None = None,
 ) -> np.ndarray:
-    """Return an ``(n, 2)`` array of ``[pert_degree, gene_degree]`` per (pert, gene).
+    """Per-(pert, gene) marginal features: ``[pert_degree, gene_degree]``.
 
     ``degree`` maps a symbol → its network connectivity (e.g. STRING partner count).
     Symbols absent from ``degree`` score 0 (uncovered). ``log1p`` compresses the
     heavy-tailed degree distribution while preserving order (recommended for a
     linear head).
+
+    When ``essentiality`` is given (symbol → a per-symbol score; the pipeline uses the
+    DepMap ternary of +1 essential / -1 nonessential), two more columns are appended:
+    ``[pert_ess, gene_ess]``. Missing symbols score 0.0 (unknown). ``log1p`` applies
+    **only** to the non-negative degree columns, never the signed score.
     """
     p = np.array([float(degree.get(str(s), 0.0)) for s in perts])
     g = np.array([float(degree.get(str(s), 0.0)) for s in genes])
     if log1p:
         p = np.log1p(p)
         g = np.log1p(g)
-    return np.column_stack([p, g])
+    cols = [p, g]
+    if essentiality is not None:
+        cols.append(np.array([float(essentiality.get(str(s), 0.0)) for s in perts]))
+        cols.append(np.array([float(essentiality.get(str(s), 0.0)) for s in genes]))
+    return np.column_stack(cols)
