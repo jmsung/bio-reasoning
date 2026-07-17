@@ -73,6 +73,16 @@ blind spot in our offline↔LB trust. Full refutation:
 (Measured refutation, 2026-07-17). Submission archived at
 `mb/findings/solutions/track-a-char-ngram-probe-LB0.552.csv`.
 
+**Follow-up (`test/char-ngram-go-dir-ensemble`) — closes the loop:** fusing a
+char-ngram channel into the GO two-stage + neighbour-DIR best *regresses* on
+OOD-val (0.5663 → 0.5485 DE+DIR / 0.5532 DIR-only) and the CFA gate rejects it
+(char DE-AUROC 0.487 < 0.55). The +0.06 understatement is about char's
+*standalone* score, not its fusion value — rank-fusing a chance-level direction
+channel dilutes the strong neighbour-DIR (0.631→0.604) regardless. **Char-ngram
+is a dead lever in the fusion; the ~0.585 direction-fusion ceiling stands.** Not
+submitted (no candidate; no quota spent) — the only remaining DE shot is
+model-based logprob (Bing-gated).
+
 ## Update (feat/marginal-property-de — landed)
 
 Tested the **last untried DE angle**: *marginal* per-symbol features (STRING connectivity
