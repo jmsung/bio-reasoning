@@ -38,8 +38,6 @@ from bio_reasoning.features.neighbor_retrieval import neighbor_channel  # noqa: 
 from bio_reasoning.models.fuse import Channel, fuse  # noqa: E402
 from bio_reasoning.models.track_a_two_stage import TwoStageDEDIR  # noqa: E402
 
-DIR_BASELINE = 0.647  # incumbent neighbour-DIR
-
 
 def _data(rel: str) -> str:
     """Persistent data path: worktree if present, else the sibling cb/ checkout."""
@@ -47,6 +45,9 @@ def _data(rel: str) -> str:
     return str(p if p.exists() else _ROOT.parent / "cb" / rel)
 
 
+# All caches — including the *writable* embedding cache — resolve via _data() to the shared
+# cb/ checkout on a fresh worktree, so re-embedded vectors persist across worktrees (a
+# worktree-local cache is lost when the worktree is pruned). All paths are gitignored.
 TRAIN = _data("data/raw/track_a/train.csv")
 PERT_CACHE = _data("data/interim/pert_go_category.json")
 GENE_CACHE = _data("data/interim/gene_go_bp.json")
@@ -137,7 +138,11 @@ def main() -> None:
         cells = " | ".join(f"{sd[(c,)]:>13.3f}" for c in CHANNELS)
         print(f"{i:>4} | {cells} | {sd[triple]:.3f}", flush=True)
 
-    # subset lattice, ranked by mean
+    # subset lattice, ranked by mean.
+    # NOTE: every subset (incl. singles) is scored on the SAME full DE-row set — fuse() pads
+    # rows a channel doesn't cover to r=0.5. So a single-channel number here can sit slightly
+    # below the covered-rows-only standalone that the per-channel eval scripts report; the
+    # point of this probe is same-row-set comparability across subsets, not standalone parity.
     print("\n== subset lattice — fused DIR-AUROC (mean ± std, 5 seeds), ranked ==", flush=True)
     for c in sorted(combos, key=lambda c: -mean[c]):
         print(f"  {_short(c):<26} {mean[c]:.3f} ± {std[c]:.3f}  (n={len(c)})", flush=True)
