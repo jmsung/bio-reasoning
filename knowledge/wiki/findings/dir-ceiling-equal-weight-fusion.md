@@ -101,3 +101,9 @@ mean-AUROC ceiling is ~0.60 < the field's unverified 0.693. Next = push neighbou
 best (w≈4, ~0.66), **submit once, read the real LB gap**, then decide the Perturb-seq data lane
 (the `perturb-seq-data-lane-decision` backlog item) —
 rank-1 by direction alone is not on the table.
+
+**Update (2026-07, `research/perturb-seq-transfer-probe`):** the Perturb-seq data lane is now
+**empirically closed** — external measured CRISPRi labels (PerturbQA → Track A) gave a
+selection-inflated overlap gate (DE 0.722 / DIR 0.951) that collapsed to chance on the honest
+dual-OOD split (+0.0075 mean, one-seed noise; OOD DE ~0.53). See
+[[direction-transfers-de-doesnt]].
