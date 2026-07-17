@@ -27,6 +27,7 @@ from bio_reasoning.trial_loop.loop import (
 )
 from bio_reasoning.trial_loop.reflect import Proposer, best_trial, make_grid_proposer, reflect
 from bio_reasoning.trial_loop.ruled_out import RULED_OUT, is_ruled_out
+from bio_reasoning.trial_loop.submission import build_track_a_submission
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
 __all__ = [
@@ -47,6 +48,7 @@ __all__ = [
     "make_de_proposer",
     "RULED_OUT",
     "is_ruled_out",
+    "build_track_a_submission",
     "make_agent_row_predictor",
     "reflect",
     "best_trial",
