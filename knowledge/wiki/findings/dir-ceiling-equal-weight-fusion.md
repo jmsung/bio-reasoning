@@ -105,5 +105,8 @@ rank-1 by direction alone is not on the table.
 **Update (2026-07, `research/perturb-seq-transfer-probe`):** the Perturb-seq data lane is now
 **empirically closed** — external measured CRISPRi labels (PerturbQA → Track A) gave a
 selection-inflated overlap gate (DE 0.722 / DIR 0.951) that collapsed to chance on the honest
-dual-OOD split (+0.0075 mean, one-seed noise; OOD DE ~0.53). See
+dual-OOD split (+0.0075 mean, one-seed noise; OOD DE ~0.53). **Now closed end-to-end
+(2026-07-17, `research/perturb-seq-real-lb-overlap`):** the one reserved real-LB read landed
+baseline 0.585 → +external PerturbQA 0.586 (Δ+0.001, 66% cov) — the board agrees with the
+OOD-val gate, so the split is honest and the lane is dead offline *and* on the leaderboard. See
 [[direction-transfers-de-doesnt]].
