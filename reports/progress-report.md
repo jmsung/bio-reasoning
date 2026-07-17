@@ -402,7 +402,8 @@ whole thing lands in the same ballpark as the internal marginal proxy (+0.008).
 
 **Verdict: no-go, no submission, no quota spent — the ~0.585 direction-fusion
 ceiling stands.** This exhausts the last lane with theoretical DE headroom: the
-only remaining DE shot is model-based logprob (Bing-gated). Its lasting value is
+only remaining DE shot is model-based logprob (Bing-gated) — since tested and dead
+too (see the DE close-out below). Its lasting value is
 methodological — a textbook case of the recurring lesson that
 **overlap/small-CV numbers inflate; only the honest dual-OOD split is truth** (a
 +0.72 overlap gate → chance on OOD).

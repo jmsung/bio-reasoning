@@ -97,8 +97,7 @@ Ordered by priority — understand → plan → build.
     **Kaggle LB 0.597** (2026-07-17) vs 0.578 — **+0.019, new Track B best**; OOD-val 0.5916
     predicted it (LB came in +0.005 higher, split held again).
 16. [x] **Self-improving-loop program** — automated trial loop that proposes,
-    runs, and scores submission variants. Priority / dependency detail lives in
-    the mb SSOT [`mb/notes/self-improving-loop-roadmap.md`]. Merged to `main`:
+    runs, and scores submission variants against the dual-OOD gate. Merged to `main`:
     - [x] (#53) loop environment + bandit variant selection
     - [x] (#54) Traxler real-label fold
     - [x] (#55) rl/llm variant proposer
