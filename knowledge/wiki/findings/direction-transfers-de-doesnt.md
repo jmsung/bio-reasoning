@@ -1,7 +1,7 @@
 ---
 title: Direction transfers, DE doesn't — the axis-asymmetry principle
 type: findings
-status: draft
+status: measured
 cites:
   - findings/neighbor-retrieval-direction-lever.md
   - findings/curated-edges-fail-de-axis.md
@@ -76,6 +76,14 @@ direction is redundant with neighbour-DIR (+0.002). The overlap is the robustly-
 standalone overlap AUROC** — the 4th instance of this trap (field char-ngram
 0.693→0.552; Track B CV 0.675→LB 0.488; internal marginal-DE overlap).
 
+**Confirmed end-to-end on the real board (2026-07-17, `research/perturb-seq-real-lb-overlap`).**
+The last escape hatch was "we killed the lane on a too-hard *synthetic* split." We spent the one
+reserved real-LB read: submitted baseline `fuse([GO, neighbour])` **0.585** and `+ external
+PerturbQA DE+DIR` **0.586** to the actual Track A board — **Δ+0.001** at 66% coverage. The real
+leaderboard agrees with the OOD-val gate: external Perturb-seq moves nothing, and the **dual-OOD
+split is honest**, not an over-hard artifact. The Perturb-seq data lane is now closed
+*end-to-end* — offline and on the board.
+
 ## Why the asymmetry holds
 
 DE for a *specific* unseen pair is dominated by **cell-state / context**, not by a
@@ -95,7 +103,8 @@ housekeeping-up / immune-down). So any signal source — feature, edge, retrieva
 2. **External Perturb-seq data is not a silver bullet — now measured, not just
    predicted.** The PerturbQA→Track A test (above) gives *no* robust DE or direction
    lift on the dual-OOD split; the promising overlap transfer was selection-inflated.
-   The lane is empirically closed.
+   The lane is closed **end-to-end** — the real-LB read (0.585→0.586, Δ+0.001) confirms
+   it on the actual board, not just offline.
 3. **The honest model ceiling is ~0.60–0.65** (DIR maxed ~0.65–0.70 + DE pinned
    ~0.55), well below the field's *unverified* tops (**0.693 Track A / 0.752 Track
    B**). Rank 1 by an honest direction model is unlikely; it needs either the

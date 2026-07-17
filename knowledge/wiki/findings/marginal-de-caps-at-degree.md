@@ -1,6 +1,6 @@
 ---
 title: Marginal DE caps at STRING degree (~0.536) — essentiality is redundant, static DE route exhausted
-status: draft
+status: measured
 cites:
   - findings/direction-transfers-de-doesnt.md
   - findings/curated-edges-fail-de-axis.md
