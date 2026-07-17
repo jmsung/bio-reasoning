@@ -36,3 +36,18 @@ scores candidate `Variant`s against the leak-free **dual-OOD validation split**
 
 The same fitness surface for both tracks makes "does the agent beat the prompt?" a
 direct control. Our official agent is named `jsagent` (both tracks).
+
+### Self-improvement loop
+
+`scripts/self_improve_loop.py` runs the harness unattended: propose → triple-verify →
+promote, until the proposer is exhausted, K non-improving rounds pass, or a spend cap
+is hit. The proposer (`trial_loop.de_variants`) walks the one live lane — the gpt-oss
+DE-votes / self-consistency signal — with KB-ruled-out static channels (`trial_loop.ruled_out`)
+denylisted so budget is never burned on a dead basin. The **triple-verify gate**
+(`trial_loop.gate`) is the anti-false-positive filter: a candidate is promoted only if it
+beats the running baseline on *every* independent OOD split by *more than* the seed-to-seed
+noise band — conservative by design, preferring missed gains over phantom lifts. The pure
+driver (`trial_loop.driver`) is file-free and unit-tested; the runner wires OpenRouter
+inference (`trial_loop.inference`), the archive ledger, and the launchd / `claude -p` cadence.
+The loop never submits — a gate survivor is bridged to a schema-valid frame
+(`trial_loop.submission`) for a human-gated Kaggle submission.
