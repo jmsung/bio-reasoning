@@ -25,7 +25,7 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
 | **Track B — floor-to-prior (v2)** | v1 predictions, every `(0,0)` tie floored to the graded prior (no re-inference) | **0.568** (Kaggle LB) | **first Track B above the floor** — removing the 72% ties recovers the 0.529 prior; the 506 agent-signal rows add **+0.039** on top. Reasoning helps once it can't delete the prior. |
 | **Track A — two-stage GO (v2)** | learned `P(DE)·P(up\|DE)` heads over GO:BP term features for the perturbation *and* the target gene | **0.561** (Kaggle LB; OOD-val ~0.56) | **new Track A best** (+0.032 over the 0.529 prior); GO functional features carry it — our char-ngram / gene-name string features scored at chance (but see caveat: the public field reaches ~0.693 with gene-name n-grams, so name structure *is* exploitable — we haven't captured it) |
 | **Track B — DIR-blend (v3)** | rank-blends the two-stage model's direction into the floored submission (w=0.7) | **0.578** (Kaggle LB; OOD-val 0.571) | new Track B best (+0.010 over the 0.568 floor-to-prior champion); the direction signal generalized to the full test set |
-| **Track A — neighbour-DIR fusion (v4)** | fuse the neighbour-retrieval direction (STRING-neighbour label borrowing, leak-free) into the two-stage GO submission via `fuse()`; DE kept, direction blended | **0.585** (Kaggle LB) | **new Track A + overall best** (+0.024 over two-stage 0.561, past the 0.578 Track B); DE stayed ~chance across 4 channel families — the retrieval signal lives in *direction* |
+| **Track A — neighbour-DIR fusion (v4)** | fuse the neighbour-retrieval direction (STRING-neighbour label borrowing, leak-free) into the two-stage GO submission via `fuse()`; DE kept, direction blended | **0.586** (Kaggle LB) | **standing Track A + overall best** — v4 base 0.585 (+0.024 over two-stage 0.561, past the 0.578 Track B); the `+external` PerturbQA real-LB read is **0.586** (+0.001 = noise, but the standing best); DE stayed ~chance across 4 channel families — the retrieval signal lives in *direction* |
 | **Track B — neighbour-DIR fusion (v5)** | fuse the same neighbour-retrieval direction into the floored Track B submission via `fuse_neighbour_direction` — the #28 lever, different base | **0.597** (Kaggle LB; OOD-val 0.5916) | **new Track B best** (+0.019 over the 0.578 DIR-blend); direction 0.570→0.624 at 98% coverage, DE unchanged — the 0.578 blend had *not* already captured the neighbour direction; LB came in +0.005 above OOD-val |
 | Public leaderboard (top) | — | A ≈ 0.693 / B ≈ 0.752 | on the same AUROC scale — **we remain well below the field** |
 
@@ -49,8 +49,9 @@ essentiality (common-essential +1 / nonessential −1) adds nothing on top of ST
 common-essential genes are high-degree STRING hubs, so essentiality is **collinear with degree** —
 a second connectivity-correlated marginal can't help. Verdict: **marginal DE is capped at ~0.536**;
 with six pairwise channels at chance and two connectivity marginals capping identically, the
-**static/data DE route is exhausted**. The only untried DE crack stays model-based (token-logprob
-self-consistency; separate branch). No submit (no lift; LB 0.585 stands). Filed:
+**static/data DE route is exhausted**. (The one lever still open at the time — model-based
+token-logprob self-consistency — has since been tested and is also dead; see the DE close-out
+below.) No submit (no lift; LB 0.585 stands). Filed:
 `findings/marginal-de-caps-at-degree.md`.
 
 ## Update (feat/tabpfn-functional-features — landed)
@@ -91,8 +92,8 @@ conclusions, both strategy-setting:
    identity a touch more than our hold-out-both-axes split predicts, but nowhere
    near enough to explain 0.693. The honest **~0.60–0.65 mean-AUROC ceiling
    stands** — >0.8 is not reachable on a true version of this task, so
-   direction-first holds and the only DE hope left is model-based (logprob,
-   Bing-gated).
+   direction-first holds and DE-vs-none is a dead axis every way we have since
+   tried it (retrieval, structural, and model-based — see the DE close-out below).
 2. **The field's "char-ngram → 0.693" does NOT reproduce.** A correct
    implementation reaches only 0.552 on the real board — *below* our GO two-stage
    (0.561) and far below our neighbour-fusion best (0.585). Either the leaders'
@@ -115,8 +116,8 @@ OOD-val (0.5663 → 0.5485 DE+DIR / 0.5532 DIR-only) and the CFA gate rejects it
 *standalone* score, not its fusion value — rank-fusing a chance-level direction
 channel dilutes the strong neighbour-DIR (0.631→0.604) regardless. **Char-ngram
 is a dead lever in the fusion; the ~0.585 direction-fusion ceiling stands.** Not
-submitted (no candidate; no quota spent) — the only remaining DE shot is
-model-based logprob (Bing-gated).
+submitted (no candidate; no quota spent) — and the last-remaining DE shot,
+model-based logprob, has since been tested dead too (see the DE close-out below).
 
 ## Update (feat/marginal-property-de — landed)
 
@@ -258,10 +259,11 @@ on a dual-OOD split the exemplars aren't analogous to unseen queries, so they ad
 signal. Zero-shot is the prompt ceiling. (2) The **vanilla agent doesn't beat zero-shot** —
 it clears the floor and beats few-shot, but at ~$2.5/run vs ~$0.08 it doesn't yet earn its
 cost. (3) These re-confirm on the harness that **AUROC_de ~0.55 (near chance) is the
-bottleneck**; direction (~0.58) is fine. The next lever is a real DE-detector for unseen
-`(pert, gene)` pairs — a vetted recon plan points to a **CollecTRI signed TF-regulon feature**
-(regulon membership = DE, edge sign under CRISPRi = direction). These were dev variants, not
-submitted — all ≤ the live LB 0.578.
+bottleneck**; direction (~0.58) is fine. The lever this update pointed to — a real DE-detector
+for unseen `(pert, gene)` pairs via a **CollecTRI signed TF-regulon feature** (regulon membership
+= DE, edge sign under CRISPRi = direction) — has **since been closed dead**: like every other
+structural/retrieval DE channel it sat at chance on the dual-OOD split (see the DE close-out
+below). These were dev variants, not submitted — all ≤ the live LB 0.578.
 
 ## Update (feat/gene-embedding-dir — landed)
 
@@ -423,9 +425,74 @@ fuse gap.
 
 **The epistemic payoff exceeds the number:** it refutes the last escape hatch — "we
 killed the lane on a too-hard synthetic split." The dual-OOD split is validated honest
-by a real-frame measurement; rank-1's ~0.75 is **not** PerturbQA-retrieval DE. The only
-untried DE lever left is model-based logprob self-consistency
-(`feat/de-logprob-self-consistency`, Bing-gated).
+by a real-frame measurement; rank-1's ~0.75 is **not** PerturbQA-retrieval DE. That left
+exactly one untried DE lever at this point — model-based logprob self-consistency
+(`feat/de-logprob-self-consistency`, Bing-gated) — which the next updates close.
+
+## Update (research/traxler-native-macrophage-de — landed)
+
+**Native mouse-macrophage DE close-out — the strongest DE kill of the whole
+investigation.** Every external DE probe so far used the *wrong* species or cell type
+(PerturbQA is human; STRING/GO are organism-agnostic). Traxler et al. is the one CRISPR KO
+screen in **native mouse macrophages** — the exact biology of the Track A test — so it was
+the last structural DE source with any theoretical right to transfer. We built a KO150
+DE+DIR channel from it and spent one real-LB read.
+
+**Result: `+Traxler` 0.581 vs baseline 0.586 = Δ −0.005** — it *regressed* on the real
+board. Root cause: **structural coverage ≈ 0.** 82 of 96 test perturbations are
+essential-housekeeping genes that are never knocked out in any macrophage screen (they'd
+kill the cell), so the native screen simply has nothing to say about the pairs the test
+actually asks about. Right species, right cell type, real board — and still dead. This is
+the strongest DE kill we have.
+
+**No other native screen exists to try.** LINCS was the remaining candidate and is ruled
+out on the same coverage logic: **L1000 is human-only, and the mouse SigCom LINCS data is
+non-macrophage.** There is no measured DE resource that covers our test perturbations in
+the right context.
+
+## Update (feat/de-logprob-self-consistency — landed)
+
+**Model-based DE close-out — the last untried DE lever is dead too.** Every earlier update
+deferred to "the only DE shot left is model-based logprob self-consistency (Bing-gated)."
+It is now tested: **gpt-oss-120B CoT DE ≈ chance** — on an honest 100-row synthpert sample
+the model called DE-vs-none correctly on **18/51** DE-positive rows, no better than a coin
+flip, exactly like every retrieval and structural channel before it.
+
+**DE-vs-none is now confirmed dead every way we can attack it — retrieval, structural, and
+model-based.** There is no remaining DE lever, gated or otherwise. All future score gains
+must come from the **direction** axis (capped ~0.65) or from a genuinely new signal source
+we do not currently have. This retires the recurring "one lever still open" caveat that ran
+through the prior updates.
+
+## Update (self-improving loop program — #53–#57)
+
+With every hand-built DE and direction lever exhausted, the strategy shifted from
+hand-tuning individual channels to a **self-improving optimization loop** — let the system
+search, per the project's "system thinking over micro-management" philosophy. The shared
+environment and run styles landed across five PRs:
+
+- **⓪ env + bandit (#53)** — shared trial environment + bandit over variant proposals.
+- **① Traxler real-label fold (#54)** — folds the native-macrophage labels into the loop's
+  fitness surface.
+- **② rl/llm proposer (#55)** — an RL / LLM-driven variant proposer.
+- **③ agentic tool-use (#56)** — agentic tool-use variant.
+- The runner now exposes `--proposer` / `--agentic`.
+
+**Retired before build:** **④ synthpert-distill** and **⑤ bakeoff** — Track C is not
+registered, so fine-tuning is illegal in Tracks A/B; a distill/bakeoff lane has no legal
+submission path.
+
+**Deadlock fixed (#57):** the loop hung on a `urllib` keep-alive socket pileup (idle
+kept-alive sockets accumulated until the endpoint stalled); forcing `Connection: close`
+cleared it and the loop now runs end-to-end.
+
+**Current blocker — throughput, not correctness.** The loop runs correctly but each trial
+takes **~1.4–2.8 h**, so a night yields only **3–6 trials** — too slow to search
+meaningfully. Two in-progress branches attack this cheaply first:
+`feat/loop-prompt-wording-axis` (widen the proposal space) and `feat/loop-fast-verify`
+(a cheap check before committing a full-scale run). **Heavy throughput optimization is
+deliberately deferred** until a cheap read shows the loop is finding signal worth scaling —
+no point parallelizing a search that has not yet proven it can improve on the standing best.
 
 ## Approach
 
@@ -444,18 +511,24 @@ untried DE lever left is model-based logprob self-consistency
 4. **Submission discipline** — spend the daily Kaggle budget only on candidates that beat the
    best-on-validation; track the public-LB − validation gap; select finals before the deadline.
 
-## Plan (to 2026-07-22)
+## Plan
 
-- **Done:** the dual-OOD validation split (the loop's fitness signal) is built — it closes
-  the CV↔LB gap that inflated Track B by ~0.19. Honest floor on it: prior **0.533**.
-- **First Track B fix (cheapest, highest value):** never emit `0/0` — fall back to the direction
-  prior on every would-be abstention. This alone should recover ≥ 0.529 (the bar is "stop
-  deleting the prior"). Then blend `α·agent + (1−α)·prior` (never-worse-than-prior by
-  construction, α tuned on the OOD split).
-- **Then:** stand up the trial loop against the OOD split; optimize Track A prompts, and evolve
-  Track B toward **scoring, not labeling** (continuous DE-likelihood, killing the tie-mass
-  failure at the root).
-- **Close:** submission discipline → final selection.
+The hand-built lever hunt is complete: **DE-vs-none is dead every way** (retrieval,
+structural, model-based) and the **direction axis is capped at ~0.65**, giving an honest
+mean-AUROC ceiling of ~0.60 for the current signal set. Standing bests — **Track A 0.586,
+Track B 0.597** — are the plateau of hand-tuning. The plan is therefore no longer "find the
+next channel" but "let the system search":
+
+- **Now — run the self-improving loop (#53–#57).** The shared env, bandit, RL/LLM proposer,
+  and agentic tool-use variants are landed and the loop runs end-to-end (deadlock fixed in
+  #57). It searches the Track A prompt and Track B agent/tool space against the dual-OOD
+  fitness surface.
+- **Immediate blocker — throughput.** ~1.4–2.8 h/trial → only 3–6 trials/night. In progress:
+  `feat/loop-prompt-wording-axis` and `feat/loop-fast-verify` (cheap-check-before-scale).
+  Heavy throughput/parallelism work is **deferred until a cheap read shows the loop is finding
+  signal** — don't optimize a search that hasn't proven it can beat the standing best.
+- **Submission discipline unchanged.** Spend a real-LB read only on a candidate that beats
+  best-on-OOD-val; track the LB−val gap; select finals before the deadline.
 
 ## Risks & mitigations
 

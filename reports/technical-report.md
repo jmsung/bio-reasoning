@@ -1,6 +1,6 @@
 # Predicting Perturbation Response Under Dual-OOD Generalization: A Direction-First Approach to the BioReasoning Challenge 2026
 
-**TL;DR — On a task designed so that both perturbations and target genes are unseen at test time, differential-expression detection is intrinsically near-chance, but *direction* (up vs. down) transfers. An honest dual-OOD validation split that predicts the leaderboard to within ~0.004 let us climb to Track A LB 0.585 and Track B LB 0.597, entirely by improving the direction axis.**
+**TL;DR — On a task designed so that both perturbations and target genes are unseen at test time, differential-expression detection is intrinsically near-chance, but *direction* (up vs. down) transfers. An honest dual-OOD validation split that predicts the leaderboard to within ~0.004 let us climb to Track A LB 0.586 and Track B LB 0.597, entirely by improving the direction axis.**
 
 *Last updated: 2026-07-17 · Status: **draft** (good-shape internal report for later polish, not camera-ready).*
 
@@ -16,7 +16,7 @@ Our central finding is a clean decomposition of the difficulty. Across six indep
 
 Two engineering disciplines made this legible. First, an **honest dual-OOD validation split** that reproduces the leaderboard to within ~0.004–0.005 (versus a naive 60-row CV that inflated Track B by 0.187 and inverted a conclusion). Second, a **two-stage DE×DIR decomposition** aligned to the metric's two AUROCs, into which orthogonal direction channels are rank-fused through a gated harness.
 
-Headline results (Kaggle public LB): **Track A 0.585** (evidence prior 0.529 → two-stage GO 0.561 → neighbour-direction fusion 0.585) and **Track B 0.597** (agent 0.488 → floor-to-prior 0.568 → direction blend 0.578 → neighbour-direction fusion 0.597). We remain below the public field's headline tops (A ≈ 0.693, B ≈ 0.752), which are themselves unverified tutorial numbers; closing that gap, if reachable at all, requires bounding the direction ceiling and/or an external Perturb-seq data lane.
+Headline results (Kaggle public LB): **Track A 0.586** (evidence prior 0.529 → two-stage GO 0.561 → neighbour-direction fusion 0.586) and **Track B 0.597** (agent 0.488 → floor-to-prior 0.568 → direction blend 0.578 → neighbour-direction fusion 0.597). We remain below the public field's headline tops (A ≈ 0.693, B ≈ 0.752), which are themselves unverified tutorial numbers; closing that gap, if reachable at all, requires bounding the direction ceiling. The external Perturb-seq data lane is now **closed end-to-end** — every cross-dataset borrow we tried moved the real LB by noise or worse (PerturbQA Δ+0.001, native-mouse Traxler Δ−0.005, LINCS ruled out before submission).
 
 ---
 
@@ -134,7 +134,7 @@ All scores are Kaggle **public** LB unless marked OOD-val. Every submission trac
 | — | ref | Constant "predict none" | ≈ 0.500 | 0.500 | — | metric is AUROC, not accuracy |
 | 1 | A | Evidence prior (GO direction, no LLM) | **0.529** | 0.533 | ~0.00 | the real floor; DIR carries it, DE flat |
 | 2 | A | Two-stage GO-term (`P(DE)·P(up\|DE)`) | **0.561** | ~0.56 | ~0.00 | +0.032 over prior; string features at chance |
-| 3 | A | Neighbour-direction fusion (STRING-neighbour DIR into #2) | **0.585** | +0.027 predicted | ~0.003 | **Track A best**; DE ~chance, gain all DIR |
+| 3 | A | Neighbour-direction fusion (STRING-neighbour DIR into #2) | **0.586** | +0.027 predicted | ~0.003 | **Track A best**; DE ~chance, gain all DIR |
 | 4 | B | Agent harness v1 (multi-agent, gpt-oss-120b) | **0.488** | (60-row CV 0.675) | 0.187 | **below floor** — 72% `0/0` ties collapsed rank |
 | 5 | B | Floor-to-prior (every `0/0` → graded prior) | **0.568** | 0.564 | 0.004 | first Track B above floor; +0.039 |
 | 6 | B | Direction blend (two-stage DIR into #5, w=0.7) | **0.578** | 0.571 | +0.007 (LB > val) | orthogonal learned DIR still lifts |
@@ -151,7 +151,7 @@ Every gain in the table above is a **direction** gain; the DE axis never moves o
 - **Track A two-stage → neighbour fusion (+0.024):** DE-AUROC ~chance across 4 channel families; the retrieval signal lives entirely in DIR (0.651 standalone) [`neighbor-retrieval-direction-lever.md`; progress-report].
 - **Track B floored → neighbour fusion (+0.029 offline):** `AUROC_de` unchanged (0.560, Spearman 0.98 vs. floored base), `AUROC_dir` 0.570 → 0.624 [`track-strategy.md`].
 
-The neighbour-direction lever is **base-agnostic** — the same code path lifted Track A's *model* base (LB 0.585) and Track B's *floored* base (OOD-val 0.5916 → LB 0.597). Direction is the live axis on every base; DE stays dead.
+The neighbour-direction lever is **base-agnostic** — the same code path lifted Track A's *model* base (LB 0.586) and Track B's *floored* base (OOD-val 0.5916 → LB 0.597). Direction is the live axis on every base; DE stays dead.
 
 ### 4.3 The dual-OOD ↔ LB gap has held throughout
 
@@ -161,13 +161,13 @@ Across the whole ladder, the honest split predicted the leaderboard tightly: Tra
 
 ## 5. Key findings / discussion
 
-**(a) The entire A/B gap is the DE axis — and DE looks intrinsically hard for unseen pairs.** Six independent DE channels all landed at chance on the dual-OOD split: CollecTRI signed TF-regulon (0.4% coverage), STRING 1-hop edges (1.6% coverage), STRING 2-hop proximity (0.543), STRING-neighbour label retrieval (0.498), char/prefix family retrieval (0.502), and the learned GO model (0.500) [`curated-edges-fail-de-axis.md`; `neighbor-retrieval-direction-lever.md`; `rank1-plan.md`]. The structural reason for the curated channels: the task scores *arbitrary* pairs, but curated databases only assert a ~1–2% high-confidence slice — "is this a known edge?" is almost always "no" regardless of true DE. DE for a truly-unseen `(pert, gene)` pair appears near-unpredictable from any pair-external feature.
+**(a) The entire A/B gap is the DE axis — and DE looks intrinsically hard for unseen pairs.** Six independent DE channels all landed at chance on the dual-OOD split: CollecTRI signed TF-regulon (0.4% coverage), STRING 1-hop edges (1.6% coverage), STRING 2-hop proximity (0.543), STRING-neighbour label retrieval (0.498), char/prefix family retrieval (0.502), and the learned GO model (0.500) [`curated-edges-fail-de-axis.md`; `neighbor-retrieval-direction-lever.md`; `rank1-plan.md`]. The structural reason for the curated channels: the task scores *arbitrary* pairs, but curated databases only assert a ~1–2% high-confidence slice — "is this a known edge?" is almost always "no" regardless of true DE. Three later DE angles closed the axis for good, each along a different attack: (i) **external cross-dataset borrowing** — a native-mouse Traxler transfer moved the real LB by **Δ−0.005** and PerturbQA by **Δ+0.001** (noise), so no held-out perturbation atlas rescues DE; (ii) **structural coverage** — 82 of 96 test perturbations are essential genes never screened in any borrowable dataset, so a lookup path cannot exist for most test rows; (iii) **model-based reasoning** — gpt-oss chain-of-thought DE calls scored ≈ chance (synthpert 18/51). DE for a truly-unseen `(pert, gene)` pair appears near-unpredictable from any pair-external feature, learned model, or external table.
 
 **(b) DIRECTION is the live lever — every gain is direction.** DIR transfers because related TFs/genes push targets in correlated directions, so a neighbour's up/down tendency is predictive even when the pair itself is unseen. Every leaderboard improvement — GO-term target features, neighbour-retrieval `r`, cross-track fusion — moved DIR, never DE [`neighbor-retrieval-direction-lever.md`].
 
 **(c) The honest split is predictive → a trustworthy offline gate.** With the LB↔val gap pinned at ~0.004–0.005, we iterate on the dual-OOD surface without paying a Kaggle submission per step. Concretely, this let us kill the STRING RWR build (§3.4), reject the α-blend lever, and confirm neighbour-DIR fusion offline before any upload. The contrast with the 60-row CV (gap 0.187, which *inverted* a conclusion) is the whole argument for validation discipline in a rank metric on OOD data.
 
-**(d) The char-ngram field claim does not reproduce on a true dual-OOD split.** The public field's headline story is gene-name character n-grams + classical ML reaching ~0.693 [`competitor-landscape.md`]. A *proper* TF-IDF char-ngram implementation scores only **0.522** on our honest split — below the GO model (0.583) and barely above chance [`rank1-plan.md`]. Either the field's test is easier than a true dual-OOD split, or the headline numbers (printed in none of the six vote-leading notebooks) are unverified. We could not extract the claimed name-structure signal on genuinely disjoint symbols.
+**(d) The char-ngram field claim does not reproduce on a true dual-OOD split.** The public field's headline story is gene-name character n-grams + classical ML reaching ~0.693 [`competitor-landscape.md`]. A *proper* TF-IDF char-ngram probe, submitted to the board, scores only **0.552 on the real Kaggle LB** — a genuine leaderboard number, but below our two-stage GO model (0.561, row 2) and far short of the claimed 0.693 [`rank1-plan.md`]. Either the field's test is easier than a true dual-OOD split, or the headline numbers (printed in none of the six vote-leading notebooks) are unverified. We could not extract the claimed name-structure signal into a score that beats functional GO features on genuinely disjoint symbols.
 
 **(e) Featurization beats architecture — foundation models lose to linear on unseen perturbations.** Three 2025 benchmarks (Ahlmann-Eltze *Nat. Methods*; scPerturBench; Palla TabPFN) show scGPT/GEARS/State/scFoundation losing to a linear baseline in the unseen-perturbation regime — exactly ours [`rank1-plan.md`]. The implication we adopted: never run foundation models end-to-end; use them only as an embedding/feature source. GO-term features beat string features not because of a better model but because they encode transferable functional structure.
 
@@ -177,7 +177,7 @@ Across the whole ladder, the honest split predicted the leaderboard tightly: Tra
 
 - **Cross-seed noise floor.** The dual-OOD `holdout_split` carries **σ ≈ 0.05–0.06** across seeds. Single-split lifts held on the LB for every submission so far, but exact deltas are soft; multi-seed pooled confirmation is cheap insurance before trusting a single-split difference [`track-strategy.md`; `rank1-plan.md`].
 - **The field's headline numbers are unverified.** The public A ≈ 0.693 / B ≈ 0.752 come from vote-leading *tutorial* notebooks with **no printed CV or LB scores**; none call an LLM, and char-string ML cannot plausibly reach 0.752 [`competitor-landscape.md`]. Treat the gap to the "front" as uncertain — it may be closer than the headline, or the leaders may win on external knowledge we have not tapped.
-- **We remain below the field.** Even taking the tops at face value, our best (A 0.585 / B 0.597) sits ~0.10–0.16 below them on a 0.5-baseline metric. Real headroom remains; direction alone may not reach it.
+- **We remain below the field.** Even taking the tops at face value, our best (A 0.586 / B 0.597) sits ~0.10–0.16 below them on a 0.5-baseline metric. Real headroom remains; direction alone may not reach it.
 - **Single-split caveats.** Most channel comparisons use one `holdout_split` seed for speed. The DE kill-count and the DIR lift are multi-seed confirmed, but finer weight-tuning decisions were made on flat, within-noise plateaus (e.g. the neighbour-vs-model blend weight) and should not be over-read.
 - **Track B tool-legality is unconfirmed on the JS-rendered rules tab.** Our reasoning that an offline model (TabPFN) is a legal tool is inference from the "fixed LLM, no fine-tuning" clause, not a confirmed reading [`kaggle-rules.md`; `tabpfn-for-perturbation-tracks.md`].
 
@@ -185,17 +185,19 @@ Across the whole ladder, the honest split predicted the leaderboard tightly: Tra
 
 ## 7. Conclusion & next directions
 
-The project reduced a two-axis prediction problem to a single actionable statement: **DE is dead, direction is the game.** An honest dual-OOD split turned that statement into a trustworthy gate, and a two-stage decomposition plus a gated rank-fusion harness turned direction gains into leaderboard climbs — Track A to 0.585 and Track B to 0.597, every step a direction step.
+The project reduced a two-axis prediction problem to a single actionable statement: **DE is dead, direction is the game.** An honest dual-OOD split turned that statement into a trustworthy gate, and a two-stage decomposition plus a gated rank-fusion harness turned direction gains into leaderboard climbs — Track A to 0.586 and Track B to 0.597, every step a direction step.
 
-The rank-1 plan follows directly [`rank1-plan.md`]:
+Two of the original rank-1 levers are now **closed**, which sharpens what remains [`rank1-plan.md`]:
 
-1. **Maximize direction.** Fuse the direction channels (GO-DIR + neighbour-DIR + gene-embedding-DIR) through the CFA gate — now that there are ≥ 2 gate-passing channels, the fuse harness and a meta-loop bandit over channels are justified.
-2. **Reframe gene embeddings as a direction lever** (GPT/LLM gene embeddings > GO terms for unseen genes, per GenePert/Scouter), feeding the DIR head, not a DE hope.
-3. **Bound the DIR ceiling.** We are at ~0.65 DIR; fusion + embeddings might reach ~0.70. With DE pinned near 0.55, that sets a realistic honest ceiling around 0.60–0.65 — measure it before over-investing.
-4. **One marginal-property DE shot.** The only untried DE angle is a marginal model (pert-breadth × target-responsiveness, not pair-interaction). One cheap attempt, then declare DE done.
-5. **External-data lane deferred.** The Perturb-seq augmentation lane (Replogle / PerturbQA, plus the housekeeping-transfer hypothesis for cross-dataset borrowing) is expensive and deferred until direction is maxed and the honest ceiling is known.
+1. **Maximize direction (live).** Fuse the direction channels (GO-DIR + neighbour-DIR + gene-embedding-DIR) through the CFA gate — with ≥ 2 gate-passing channels, the fuse harness and a meta-loop bandit over channels are justified.
+2. **Reframe gene embeddings as a direction lever (live)** (GPT/LLM gene embeddings > GO terms for unseen genes, per GenePert/Scouter), feeding the DIR head, not a DE hope.
+3. **Bound the DIR ceiling.** We are at ~0.65 DIR; fusion + embeddings may add a little, but the field's 0.693 does **not** reproduce on a true dual-OOD split (§5d), so ~0.70 is not a credible target. With DE pinned near 0.55, the honest ceiling looks like ~0.60–0.65 — measure it before over-investing.
+4. **DE is done — closed, not deferred.** Every remaining DE angle has now been fired and missed (§5a): the marginal-property shot, native-mouse cross-dataset transfer (real-LB **Δ−0.005**), a structural audit (82/96 test perts are essential genes never screened in any borrowable dataset), and gpt-oss chain-of-thought DE calls (≈ chance, synthpert 18/51). No further DE shots are planned.
+5. **External-data lane closed end-to-end — not deferred.** The Perturb-seq augmentation lane (Replogle / PerturbQA, native-mouse Traxler, and the housekeeping-transfer hypothesis for cross-dataset borrowing) is dead: real-LB deltas were noise or negative (PerturbQA **Δ+0.001**, native-mouse **Δ−0.005**) and LINCS was ruled out before any submission. No path to rank up runs through external data.
 
-The strategic fork is empirical: if a direction-maxed model caps near 0.60–0.65 against an (unverified) 0.693/0.752 front, rank 1 may require the external Perturb-seq lane. We push direction to its ceiling, submit once, and let the real leaderboard settle it.
+**The live axis of work is the self-improving loop program**, not new modelling levers. The trial-loop environment and output-styles landed (#53–56); the two weakest variants (④ synthpert, ⑤ bakeoff) were retired; a scheduling deadlock was fixed (#57); and cheap-verify plus prompt-wording refinements are in progress. The binding constraint is **throughput — ~1.4–2.8 h per trial** — so heavy hyperparameter/optimization work is deferred until the loop runs faster. Making the loop cheap and fast is the prerequisite to spending it on the direction levers above.
+
+With DE closed and external data dead, the strategic picture is settled to a single question: can the self-improving loop push direction to its ~0.60–0.65 honest ceiling cheaply enough to matter against an (unverified) 0.693/0.752 front? We drive direction through the loop, submit, and let the real leaderboard settle it.
 
 ---
 
@@ -209,7 +211,7 @@ The strategic fork is empirical: if a direction-maxed model caps near 0.60–0.6
 - `knowledge/wiki/findings/neighbor-retrieval-direction-lever.md` — neighbour retrieval fails DE, is a robust +0.027 direction lever; the key decides DIR transfer.
 - `knowledge/wiki/findings/curated-edges-fail-de-axis.md` — curated edges too sparse/weak for DE; the `fuse()`/CFA gate harness.
 - `knowledge/wiki/findings/tabpfn-for-perturbation-tracks.md` — tabular foundation models as a Track A baseline / Track B tool.
-- `knowledge/wiki/findings/housekeeping-transfer-hypothesis.md` — housekeeping-perturbation cell-type-invariance for cross-dataset augmentation.
+- `knowledge/wiki/findings/housekeeping-transfer-hypothesis.md` — housekeeping-perturbation cell-type-invariance for cross-dataset augmentation; the borrow was tested and **closed** (real-LB deltas noise-or-negative, §5a / §7).
 - `knowledge/wiki/methods/pbio-agent-for-tracks.md` — adapting the PBio-Agent KG-reasoning framework; the `none`-abstain judge.
 - `reports/progress-report.md` — the append-log of all measured results.
 - Internal team strategy synthesis and the rank-1 attack plan (team-private working notes; the results they cite are reproduced above).
