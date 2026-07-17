@@ -8,6 +8,14 @@ from bio_reasoning.trial_loop.archive import (
     render_leaderboard,
     write_trials,
 )
+from bio_reasoning.trial_loop.de_variants import de_variant_grid, make_de_proposer
+from bio_reasoning.trial_loop.gate import (
+    GateResult,
+    measure_noise_band,
+    score_across_seeds,
+    triple_verify,
+)
+from bio_reasoning.trial_loop.inference import make_openrouter_infer_fn
 from bio_reasoning.trial_loop.loop import (
     make_agent_row_predictor,
     make_prompt_row_predictor,
@@ -18,6 +26,8 @@ from bio_reasoning.trial_loop.loop import (
     sample_examples,
 )
 from bio_reasoning.trial_loop.reflect import Proposer, best_trial, make_grid_proposer, reflect
+from bio_reasoning.trial_loop.ruled_out import RULED_OUT, is_ruled_out
+from bio_reasoning.trial_loop.submission import build_track_a_submission
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
 __all__ = [
@@ -29,6 +39,16 @@ __all__ = [
     "sample_examples",
     "retrieve_examples",
     "make_prompt_row_predictor",
+    "make_openrouter_infer_fn",
+    "triple_verify",
+    "GateResult",
+    "measure_noise_band",
+    "score_across_seeds",
+    "de_variant_grid",
+    "make_de_proposer",
+    "RULED_OUT",
+    "is_ruled_out",
+    "build_track_a_submission",
     "make_agent_row_predictor",
     "reflect",
     "best_trial",

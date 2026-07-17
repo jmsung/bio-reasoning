@@ -82,9 +82,16 @@ by the trial-loop below.
   validation split, then propose → run → reflect → archive over a grid.
 - `src/bio_reasoning/trial_loop/` — the importable harness (loop, reflect,
   archive, types).
+- `scripts/self_improve_loop.py` — the 24/7 self-improvement runner: propose
+  (live DE-votes variants, KB-ruled-out channels filtered) → triple-verify
+  (a candidate must beat baseline on every OOD split by more than the seed
+  noise band) → promote, until dry or budget-capped. It never submits — a
+  gate-surviving variant is surfaced for a human-gated Kaggle submission.
+  Backed by `trial_loop.{inference,de_variants,gate,ruled_out,driver,submission}`.
 
 Artifacts (`trials.jsonl`, leaderboard, per-row cache) are written to
-`outputs/trial-loop/` (gitignored). Track B needs the `track-b` dep group
+`outputs/trial-loop/`; self-improve trials to `outputs/self-improve-loop/`
+(both gitignored). Track B needs the `track-b` dep group
 (`uv sync --group track-b`) and `OPENROUTER_API_KEY`.
 
 ### 2. Track B tools
