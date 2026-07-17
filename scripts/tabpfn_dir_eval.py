@@ -35,13 +35,13 @@ _ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(_ROOT / ".env")
 load_dotenv(_ROOT / ".env.local", override=True)
 
-from bio_reasoning.eval.split import holdout_split  # noqa: E402
-from bio_reasoning.eval.track_a_score import evaluate  # noqa: E402
-from bio_reasoning.features.dir_channels import (  # noqa: E402
+from bio_reasoning.eval.direction_channels import (  # noqa: E402
     CHANNELS,
     dir_feature_matrix,
     oof_dir_feature_matrix,
 )
+from bio_reasoning.eval.split import holdout_split  # noqa: E402
+from bio_reasoning.eval.track_a_score import evaluate  # noqa: E402
 from bio_reasoning.features.gene_embeddings import (  # noqa: E402
     build_gene_text,
     load_gene_embeddings,
