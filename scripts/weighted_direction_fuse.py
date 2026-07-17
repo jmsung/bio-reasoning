@@ -1,11 +1,11 @@
-"""Goal 1: weighted DIR-fusion sweep — does up-weighting neighbour-DIR clear 0.651?
+"""Weighted + learned direction fusion — is 0.651 the hard DIR ceiling?
 
-Rank-fuses the 3 direction channels with a swept neighbour-DIR weight (GO-DIR and
-embedding-DIR held at 1) on the dual-OOD split. Strong prior: fused DIR-AUROC climbs
-monotonically from the equal-weight ~0.642 toward — but not past — neighbour-DIR alone
-(0.651), because linear up-weighting asymptotes to the single best channel (cf. #31's
-flat weight plateau). This confirms the *linear* ceiling; the learned stacker (Goal 2)
-is the only path with headroom above 0.651.
+Goal 1: sweep the neighbour-DIR weight in a rank-fusion of the 3 direction channels
+(GO-DIR & embedding-DIR held at 1). Goal 2: an out-of-fold learned stacker
+(:class:`DirectionStacker`) over the channels' per-row ``r``. Both on the dual-OOD
+split, vs neighbour-DIR alone (~0.651). Result: weighted fusion peaks at ~0.660
+(w≈4, within seed noise) and the stacker lands ~0.641 — **neither robustly clears the
+single best channel, so ~0.65 is the hard direction ceiling.**
 
 Run: uv run python scripts/weighted_direction_fuse.py
 """
@@ -18,6 +18,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import StratifiedKFold
 
 _ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(_ROOT / ".env")
@@ -29,6 +31,7 @@ from bio_reasoning.features.gene_embeddings import (  # noqa: E402
     build_gene_text,
     load_gene_embeddings,
 )
+from bio_reasoning.models.direction_stacker import DirectionStacker  # noqa: E402
 from bio_reasoning.models.fuse import Channel, fuse  # noqa: E402
 
 
@@ -52,6 +55,27 @@ def _dir_auroc(labels: np.ndarray, channels: list[Channel], weights=None) -> flo
     return evaluate(labels, up, down)["auroc_dir"]
 
 
+def _stacker_oof_auroc(rs: dict, labels: np.ndarray, seed: int, n_splits: int = 5) -> float:
+    """Out-of-fold DIR-AUROC of the learned stacker over val DE rows — leak-free.
+
+    The channels' r are already OOD (fit on the train fold); the stacker only learns
+    to combine them, cross-fit within the val DE rows so its reported ranking never
+    sees its own training labels.
+    """
+    de = labels != "none"
+    is_up = (labels[de] == "up").astype(int)
+    r_matrix = np.column_stack([rs[c] for c in CHANNELS])[de]
+    if len(set(is_up.tolist())) < 2:
+        return float("nan")
+    oof = np.full(len(is_up), np.nan)
+    for tr_idx, te_idx in StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed).split(
+        r_matrix, is_up
+    ):
+        model = DirectionStacker().fit(r_matrix[tr_idx], is_up[tr_idx])
+        oof[te_idx] = model.predict_up(r_matrix[te_idx])
+    return float(roc_auc_score(is_up, oof))
+
+
 def main() -> None:
     df = pd.read_csv(TRAIN)
     syms = sorted(set(df["pert"].astype(str)) | set(df["gene"].astype(str)))
@@ -73,7 +97,8 @@ def main() -> None:
         labels = val_df["label"].to_numpy()
         chans = [Channel(name=c, r=rs[c]) for c in CHANNELS]  # order: GO, neighbour, embedding
         row: dict = {
-            "neighbour_alone": _dir_auroc(labels, [Channel(name="n", r=rs["neighbour-DIR"])])
+            "neighbour_alone": _dir_auroc(labels, [Channel(name="n", r=rs["neighbour-DIR"])]),
+            "stacker": _stacker_oof_auroc(rs, labels, seed),
         }
         for w in NBR_WEIGHTS:
             row[w] = _dir_auroc(labels, chans, weights=[1.0, float(w), 1.0])
@@ -100,13 +125,30 @@ def main() -> None:
         flush=True,
     )
     print(
-        f"VERDICT: a shallow interior optimum at w_nbr≈{best_w} nudges to {bm:.3f}, "
+        f"VERDICT (weighted): a shallow interior optimum at w_nbr≈{best_w} nudges to {bm:.3f}, "
         f"{'beyond' if robust else 'WITHIN'} seed noise vs neighbour-alone. Weighted rank-fusion "
         "is bounded by its extremes (equal-weight dilutes ↓, w→∞ → neighbour-alone); the weak "
-        "channels help only as tie-breakers on neighbour's uncovered rows. Not a robust win — "
-        "the learned stacker (Goal 2) tests whether non-linearity earns more.",
+        "channels help only as tie-breakers on neighbour's uncovered rows.",
         flush=True,
     )
+
+    # Goal 2: leak-free learned stacker (out-of-fold within val DE rows)
+    sm, ss = _ms("stacker")
+    stack_robust = (sm - nm) > ns
+    print(f"\n  learned stacker (OOF) | {sm:.3f} ± {ss:.3f}", flush=True)
+    print(
+        f"VERDICT (stacker): non-linear combiner {sm:.3f} vs neighbour-alone {nm:.3f} "
+        f"({sm - nm:+.3f}; seed σ≈{ns:.3f}) — {'a robust win' if stack_robust else 'WITHIN seed noise'}. "
+        f"vs weighted-best {bm:.3f}: {sm - bm:+.3f}.",
+        flush=True,
+    )
+    if not (robust or stack_robust):
+        print(
+            "CONCLUSION: neither weighting nor a learned combiner robustly clears neighbour-alone "
+            f"(~{nm:.3f}) beyond seed noise → **~0.65 is the hard DIR ceiling**. Direction lane is "
+            "closed; next = submit once, read the LB gap, then decide the Perturb-seq data lane.",
+            flush=True,
+        )
 
 
 if __name__ == "__main__":
