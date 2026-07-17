@@ -405,6 +405,28 @@ methodological — a textbook case of the recurring lesson that
 **overlap/small-CV numbers inflate; only the honest dual-OOD split is truth** (a
 +0.72 overlap gate → chance on OOD).
 
+## Update (research/perturb-seq-real-lb-overlap — landed)
+
+**The Perturb-seq data lane is now confirmed dead on the real board — the OOD-val
+no-go held.** The transfer-probe closed the lane offline but left one question: was
+our synthetic dual-OOD split *too hard*, hiding a lane the real Kaggle test would
+reward? We spent the single real-LB read the go/no-go doc reserved. Two Track A
+submissions differing only in the external channel — baseline `fuse([GO, neighbour])`
+and `+external fuse([GO, neighbour, PerturbQA DE+DIR])` — over the real test
+(PerturbQA covering 65.9% of rows).
+
+**Result: baseline 0.585, +external 0.586, Δ+0.001.** The real board agrees with the
+OOD-val gate (+0.0075 = noise): external adds nothing even at two-thirds coverage.
+Submitting baseline and variant *together* isolated the channel as a clean delta,
+rather than comparing against a historical best confounded by the generic-vs-weighted
+fuse gap.
+
+**The epistemic payoff exceeds the number:** it refutes the last escape hatch — "we
+killed the lane on a too-hard synthetic split." The dual-OOD split is validated honest
+by a real-frame measurement; rank-1's ~0.75 is **not** PerturbQA-retrieval DE. The only
+untried DE lever left is model-based logprob self-consistency
+(`feat/de-logprob-self-consistency`, Bing-gated).
+
 ## Approach
 
 1. **Honest fitness signal first** — a dual-OOD validation split (perturbations + genes
