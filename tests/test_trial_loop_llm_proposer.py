@@ -64,3 +64,27 @@ def test_bad_sample_count_falls_back():
     fn = lambda r: '{"n_few_shot": 2, "retrieval": "random", "n_samples": 99}'  # noqa: E731
     p = make_llm_proposer(fn, fallback=_fallback())
     assert p("", []).id == "fallback-bandit"
+
+
+def test_absent_prompt_defaults_and_keeps_legacy_id():
+    fn = lambda r: '{"n_few_shot": 4, "retrieval": "random", "n_samples": 3}'  # noqa: E731
+    v = make_llm_proposer(fn, fallback=_fallback())("", [])
+    assert v.prompt == "default"
+    assert v.id == "llm-nfs4-random-s3"  # no wording tag when default
+
+
+def test_valid_prompt_selection_becomes_a_variant():
+    fn = lambda r: (  # noqa: E731
+        '{"n_few_shot": 2, "retrieval": "random", "n_samples": 3, "prompt": "direction_prior"}'
+    )
+    v = make_llm_proposer(fn, fallback=_fallback())("", [])
+    assert v.prompt == "direction_prior"
+    assert "direction_prior" in v.id
+
+
+def test_unknown_prompt_falls_back():
+    fn = lambda r: (  # noqa: E731
+        '{"n_few_shot": 2, "retrieval": "random", "n_samples": 3, "prompt": "telepathy"}'
+    )
+    p = make_llm_proposer(fn, fallback=_fallback())
+    assert p("", []).id == "fallback-bandit"
