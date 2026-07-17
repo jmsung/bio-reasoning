@@ -1,6 +1,6 @@
 # Perturb-seq data lane — go/no-go decision
 
-**Status:** analysis complete; **decision gated on `research/perturb-seq-transfer-probe` Goal 5** (the OOD-val fusion lift). See [Decision](#decision).
+**Status: DECIDED — NO-GO (lane closed).** The gating number is in — `research/perturb-seq-transfer-probe` Goal 5 measured no robust OOD-val lift. See [Decision](#decision).
 
 **Question.** The DIRECTION lane is closed on the real leaderboard (Track A LB **0.586** at weighted best « field 0.693), and DE-vs-none is dead across 6 internal channels. Should the team open the **Perturb-seq data lane** — using external perturbation datasets (Replogle, PerturbQA, Dixit) as a new signal source — as the path to a materially better Track A score?
 
@@ -67,9 +67,9 @@ The probe's uppercase-ortholog map covers **64/96 (67%) of TEST perts** and 242 
 
 ## Decision
 
-The final flip is the team's call and is **auto-resolved by one number** — probe
-Goal 5's fused OOD-val mean-AUROC on `holdout_split`. The rule below is written so it
-decides itself the moment that number lands.
+The flip was **auto-resolved by one number** — probe Goal 5's fused OOD-val mean-AUROC
+on `holdout_split`. The rule below was written to decide itself the moment that number
+landed; it has ([Resolution](#resolution--the-rule-fired-no-go) — **NO-GO**).
 
 ### Go/no-go criteria (decision rule)
 
@@ -114,5 +114,24 @@ admits, *and* an LB read confirming it — or a mechanism that turns marginal pe
 **model-based DE crack** (token-logprob self-consistency; `feat/de-logprob-self-consistency`),
 not this data lane.
 
-_Decision status: **conditional NO-GO on the expensive lane; cheap-shot pending probe Goal 5.**
-When `research/perturb-seq-transfer-probe` reports `L` + the CFA verdict, apply the rule above._
+### Resolution — the rule fired NO-GO
+
+`research/perturb-seq-transfer-probe` Goal 5 reported (seeds 0/1/2, `holdout_split`):
+
+| config | mean | Δ vs baseline 0.5819 |
+|---|---|---|
+| baseline `[GO, neighbour]` | 0.5819 | — |
+| `+ external (DE+DIR)` | 0.5894 | **+0.0075** |
+
+Applying the rule: the +0.0075 mean **fails the "≥ +0.005 across seeds" bar** — it is
+**one-seed noise** (seed1 +0.022; seeds 0/2 +0.002 / −0.002), the overlap DE 0.72
+**collapses to ~0.53 on OOD** (selection-inflated, as flagged), and the **CFA gate passes
+only 1/3 seeds** (direction redundant with neighbour-DIR). Not `L ≥ +0.005 across seeds`,
+not `CFA ADMIT` → **NO-GO.**
+
+**Decision: NO-GO — the Perturb-seq data lane is closed.** The external channel is no
+better than our internal STRING-degree marginal-DE proxy on OOD, and the expensive
+Replogle pipeline is not opened. The honest ~0.65 direction ceiling stands; the
+higher-EV rank-1 bet is the **model-based DE crack** (token-logprob self-consistency;
+`feat/de-logprob-self-consistency`), not more data. Verdict recorded in
+`mb/notes/perturb-seq-data-lane.md` and `mb/notes/rank1-plan.md`.
