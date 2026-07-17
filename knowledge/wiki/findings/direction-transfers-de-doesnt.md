@@ -104,4 +104,5 @@ housekeeping-up / immune-down). So any signal source — feature, edge, retrieva
 ## See also
 
 [[neighbor-retrieval-direction-lever]] · [[curated-edges-fail-de-axis]] ·
-[[housekeeping-transfer-hypothesis]] · [[track-a-eda]] · [[track-b-abstention-failure]]
+[[housekeeping-transfer-hypothesis]] · [[track-a-eda]] · [[track-b-abstention-failure]] ·
+[[dir-ceiling-equal-weight-fusion]]
