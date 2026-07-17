@@ -8,6 +8,7 @@ from bio_reasoning.trial_loop.archive import (
     render_leaderboard,
     write_trials,
 )
+from bio_reasoning.trial_loop.bandit import make_bandit_proposer
 from bio_reasoning.trial_loop.de_variants import de_variant_grid, make_de_proposer
 from bio_reasoning.trial_loop.gate import (
     GateResult,
@@ -46,6 +47,7 @@ __all__ = [
     "score_across_seeds",
     "de_variant_grid",
     "make_de_proposer",
+    "make_bandit_proposer",
     "RULED_OUT",
     "is_ruled_out",
     "build_track_a_submission",
