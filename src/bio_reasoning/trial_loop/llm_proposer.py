@@ -14,6 +14,7 @@ import json
 import re
 from collections.abc import Callable
 
+from bio_reasoning.trial_loop.prompt_variants import is_valid_prompt
 from bio_reasoning.trial_loop.reflect import Proposer
 from bio_reasoning.trial_loop.ruled_out import is_ruled_out
 from bio_reasoning.trial_loop.types import Variant
@@ -44,15 +45,23 @@ def _parse_variant(raw: str) -> Variant | None:
         return None
     if not isinstance(n_few_shot, int) or n_few_shot < 0:
         return None
+    prompt = cfg.get("prompt", "default")
+    if not is_valid_prompt(prompt):  # unknown wording → reject, let the fallback drive
+        return None
     # slugify the free-text approach so a spaced concept ("string degree") still trips
     # the hyphenated denylist and no odd chars land in the archived variant id.
     approach = re.sub(r"[^a-z0-9]+", "-", str(cfg.get("approach", "")).lower()).strip("-")
     tag = f"{approach}-" if approach else ""
-    vid = f"llm-{tag}nfs{n_few_shot}-{retrieval}-s{n_samples}"
+    ptag = f"{prompt}-" if prompt != "default" else ""
+    vid = f"llm-{tag}{ptag}nfs{n_few_shot}-{retrieval}-s{n_samples}"
     if is_ruled_out(vid):  # LLM wandered into a dead static channel → reject
         return None
     return Variant(
-        id=vid, n_few_shot=n_few_shot, retrieval=retrieval, seeds=_SAMPLE_SEEDS[n_samples]
+        id=vid,
+        prompt=prompt,
+        n_few_shot=n_few_shot,
+        retrieval=retrieval,
+        seeds=_SAMPLE_SEEDS[n_samples],
     )
 
 

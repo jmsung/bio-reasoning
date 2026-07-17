@@ -23,6 +23,7 @@ import pandas as pd
 
 from bio_reasoning.eval.split import holdout_split
 from bio_reasoning.eval.track_a_score import evaluate
+from bio_reasoning.trial_loop.prompt_variants import PROMPT_VARIANTS, render_examples_block
 from bio_reasoning.trial_loop.reflect import Proposer, reflect
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 from mlgenx import format_prompt, parse_answer
@@ -127,9 +128,25 @@ def _make_examples_provider(
 
 
 def _format(pert: str, gene: str, variant: Variant, examples: list[dict[str, str]] | None) -> str:
-    if variant.prompt_template is not None:
-        return variant.prompt_template.format(pert=pert, gene=gene, cell_desc=CELL_DESC)
-    return format_prompt(pert, gene, examples=examples)
+    """Resolve the prompt for one row: explicit template > named prompt > mlgenx default.
+
+    A named wording (``variant.prompt``) composes with few-shot by rendering exemplars
+    into its ``{examples_block}`` slot, so the retrieval knob is never silently inert.
+    """
+    tmpl = variant.prompt_template
+    if tmpl is None:
+        # KeyError on an unknown name — proposers pre-validate, so a miss is a bug, not
+        # a silent fall-through to the default wording under a misleading id. "default"
+        # maps to None → the mlgenx path below.
+        tmpl = PROMPT_VARIANTS[variant.prompt]
+    if tmpl is None:
+        return format_prompt(pert, gene, examples=examples)
+    return tmpl.format(
+        pert=pert,
+        gene=gene,
+        cell_desc=CELL_DESC,
+        examples_block=render_examples_block(examples),
+    )
 
 
 def make_prompt_row_predictor(infer_fn: InferFn) -> RowPredictor:

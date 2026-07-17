@@ -43,6 +43,7 @@ from bio_reasoning.trial_loop.loop import (
     make_configurable_agent_row_predictor,
     make_prompt_row_predictor,
 )
+from bio_reasoning.trial_loop.prompt_variants import PROMPT_VARIANTS
 from bio_reasoning.trial_loop.proposers import PROPOSERS, select_proposer
 from bio_reasoning.trial_loop.tools import (
     make_cache_backend,
@@ -51,11 +52,13 @@ from bio_reasoning.trial_loop.tools import (
 )
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
+_PROMPT_NAMES = "|".join(f'"{k}"' for k in PROMPT_VARIANTS)
 _OPTIMIZER_PROMPT = (
     "You are tuning a prompt-only gpt-oss classifier for differential-expression. "
     "Given the trial history (variant id + OOD mean-AUROC), propose the NEXT config to try. "
     'Reply with ONLY a JSON object: {{"n_few_shot": <0|2|4|8>, "retrieval": '
-    '"random"|"go_category", "n_samples": <3|5>}}.\n\nTrial history:\n{reflection}'
+    '"random"|"go_category", "n_samples": <3|5>, "prompt": ' + _PROMPT_NAMES + "}}."
+    "\n\nTrial history:\n{reflection}"
 )
 
 ROOT = Path(__file__).resolve().parents[1]

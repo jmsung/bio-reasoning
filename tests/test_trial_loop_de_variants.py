@@ -15,6 +15,25 @@ def test_de_grid_is_nonempty_and_all_live():
     assert all(v.id.startswith("de-votes-") for v in grid)
 
 
+def test_default_prompts_arg_leaves_grid_unchanged():
+    # The prompt axis defaults to ("default",) so the historical grid is byte-identical.
+    default_grid = de_variant_grid()
+    assert all(v.prompt == "default" for v in default_grid)
+    assert all("-nfs" in v.id and "default" not in v.id for v in default_grid)
+
+
+def test_prompts_axis_crosses_every_config():
+    base = de_variant_grid()
+    crossed = de_variant_grid(prompts=("default", "direction_prior"))
+    assert len(crossed) == 2 * len(base)
+    prompts = {v.prompt for v in crossed}
+    assert prompts == {"default", "direction_prior"}
+    # non-default wording is encoded in the id; ids stay unique
+    dp = [v for v in crossed if v.prompt == "direction_prior"]
+    assert all("direction_prior" in v.id for v in dp)
+    assert len({v.id for v in crossed}) == len(crossed)
+
+
 def test_is_ruled_out_matches_dead_static_channels():
     assert is_ruled_out("string-degree-de")
     assert is_ruled_out("marginal-degree-x")

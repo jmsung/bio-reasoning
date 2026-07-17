@@ -26,20 +26,34 @@ def de_variant_grid(
     few_shots: Sequence[int] = (0, 2, 4),
     retrievals: Sequence[str] = ("random", "go_category"),
     sample_counts: Sequence[int] = (3, 5),
+    prompts: Sequence[str] = ("default",),
 ) -> list[Variant]:
     """Enumerate the live votes/self-consistency variants (all id-prefixed ``de-votes-``).
 
     Retrieval is only meaningful with few-shot exemplars, so ``few_shots == 0`` collapses
     to a single retrieval-free variant. Each variant's ``seeds`` sets the self-consistency
-    sample count.
+    sample count. ``prompts`` crosses in named prompt-wording variants
+    (:mod:`trial_loop.prompt_variants`); it defaults to ``("default",)`` so the grid is
+    unchanged until a wording is opted in. The wording is encoded in the id only when it
+    is not ``"default"``, keeping historical ids byte-stable.
     """
     grid: list[Variant] = []
-    for nfs in few_shots:
-        rets = ("random",) if nfs == 0 else tuple(retrievals)
-        for ret in rets:
-            for nc in sample_counts:
-                vid = f"de-votes-nfs{nfs}" + (f"-{ret}" if nfs > 0 else "") + f"-s{nc}"
-                grid.append(Variant(id=vid, n_few_shot=nfs, retrieval=ret, seeds=_SAMPLE_SEEDS[nc]))
+    for prompt in prompts:
+        ptag = "" if prompt == "default" else f"-{prompt}"
+        for nfs in few_shots:
+            rets = ("random",) if nfs == 0 else tuple(retrievals)
+            for ret in rets:
+                for nc in sample_counts:
+                    vid = f"de-votes{ptag}-nfs{nfs}" + (f"-{ret}" if nfs > 0 else "") + f"-s{nc}"
+                    grid.append(
+                        Variant(
+                            id=vid,
+                            prompt=prompt,
+                            n_few_shot=nfs,
+                            retrieval=ret,
+                            seeds=_SAMPLE_SEEDS[nc],
+                        )
+                    )
     return grid
 
 
