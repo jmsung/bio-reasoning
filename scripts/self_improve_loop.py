@@ -23,6 +23,7 @@ Backend + key resolution: see ``bio_reasoning.trial_loop.inference`` (OpenRouter
 from __future__ import annotations
 
 import argparse
+import faulthandler
 import importlib.util
 import math
 import os
@@ -58,6 +59,13 @@ _OPTIMIZER_PROMPT = (
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
 load_dotenv(ROOT / ".env.local", override=True)
+
+# Watchdog: if any operation blocks longer than this, dump ALL thread stacks to
+# stderr (repeating) so a hang self-diagnoses. macOS py-spy needs sudo, so this is
+# the in-process capture. Tunable via BIOREASONING_HANG_DUMP_S (0 disables).
+_HANG_DUMP_S = int(os.getenv("BIOREASONING_HANG_DUMP_S", "600"))
+if _HANG_DUMP_S > 0:
+    faulthandler.dump_traceback_later(_HANG_DUMP_S, repeat=True)
 DEFAULT_TRAIN_CSV = Path(
     os.getenv("BIOREASONING_TRAIN_CSV", str(ROOT / "data" / "raw" / "track_a" / "train.csv"))
 )
