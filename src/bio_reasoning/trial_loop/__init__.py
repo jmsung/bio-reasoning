@@ -8,6 +8,7 @@ from bio_reasoning.trial_loop.archive import (
     render_leaderboard,
     write_trials,
 )
+from bio_reasoning.trial_loop.bandit import make_bandit_proposer
 from bio_reasoning.trial_loop.de_variants import de_variant_grid, make_de_proposer
 from bio_reasoning.trial_loop.gate import (
     GateResult,
@@ -16,6 +17,7 @@ from bio_reasoning.trial_loop.gate import (
     triple_verify,
 )
 from bio_reasoning.trial_loop.inference import make_openrouter_infer_fn
+from bio_reasoning.trial_loop.llm_proposer import make_llm_proposer
 from bio_reasoning.trial_loop.loop import (
     make_agent_row_predictor,
     make_prompt_row_predictor,
@@ -46,6 +48,8 @@ __all__ = [
     "score_across_seeds",
     "de_variant_grid",
     "make_de_proposer",
+    "make_bandit_proposer",
+    "make_llm_proposer",
     "RULED_OUT",
     "is_ruled_out",
     "build_track_a_submission",

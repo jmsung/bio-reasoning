@@ -41,7 +41,11 @@ direct control. Our official agent is named `jsagent` (both tracks).
 
 `scripts/self_improve_loop.py` runs the harness unattended: propose → triple-verify →
 promote, until the proposer is exhausted, K non-improving rounds pass, or a spend cap
-is hit. The proposer (`trial_loop.de_variants`) walks the one live lane — the gpt-oss
+is hit. The proposer is pluggable via `--proposer {grid,bandit,llm}`
+(`trial_loop.proposers.select_proposer`): the default **grid** walk (`trial_loop.de_variants`)
+pulls each variant once, **bandit** (`trial_loop.bandit`) resamples promising variants by UCB1
+reward, and **llm** (`trial_loop.llm_proposer`) lets gpt-oss read the reward history and propose
+the next config (bandit fallback on any invalid output). All search the one live lane — the gpt-oss
 DE-votes / self-consistency signal — with KB-ruled-out static channels (`trial_loop.ruled_out`)
 denylisted so budget is never burned on a dead basin. The **triple-verify gate**
 (`trial_loop.gate`) is the anti-false-positive filter: a candidate is promoted only if it
