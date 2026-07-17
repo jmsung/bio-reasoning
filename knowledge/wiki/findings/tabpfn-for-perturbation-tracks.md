@@ -12,7 +12,8 @@ cites:
 
 [[../home]] | [[../index]]
 
-**Status: draft — brainstorm, not yet built or measured.**
+**Status: draft — combiner framing measured (negative, below); primary-predictor
+framing not yet built.**
 
 Can a general-purpose **tabular foundation model** (TabPFN / TabICL — Prior-Fitted
 Networks that do zero-shot in-context inference, no training) serve as the
