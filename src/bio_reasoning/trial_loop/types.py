@@ -13,8 +13,12 @@ class Variant:
     Attributes:
         id: Stable identifier used in trial logs and the archive.
         prompt_template: Optional custom template with ``{pert}``/``{gene}``/
-            ``{cell_desc}`` placeholders. ``None`` → the mlgenx default prompt
-            (zero-shot, or few-shot when ``n_few_shot`` > 0).
+            ``{cell_desc}`` placeholders. ``None`` → resolve ``prompt`` instead.
+            Takes precedence over ``prompt`` when set (explicit-string override).
+        prompt: Named prompt-wording variant from ``trial_loop.prompt_variants``.
+            ``"default"`` → the mlgenx default prompt (zero-shot, or few-shot when
+            ``n_few_shot`` > 0); other names inject a knowledge-worded template that
+            still composes with few-shot. Ignored when ``prompt_template`` is set.
         n_few_shot: Number of few-shot exemplars, drawn from the TRAIN partition
             only (leak-free). Ignored when ``prompt_template`` is custom.
         retrieval: How exemplars are chosen. ``"random"`` (default) samples the
@@ -35,6 +39,7 @@ class Variant:
 
     id: str
     prompt_template: str | None = None
+    prompt: str = "default"
     n_few_shot: int = 0
     retrieval: str = "random"
     seeds: tuple[int, ...] = (42, 43, 44)
