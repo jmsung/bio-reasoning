@@ -1,14 +1,37 @@
 # Team knowledge layers
 
-Three sibling directories under `knowledge/`, each with a clear job. Both
-`raw/` and `source/` are **flat** — no type subfolders, type lives in
-frontmatter (`source_type:`).
+Directories under `knowledge/`, each with a clear job. `raw/` and the local
+`source/` are **flat** — no type subfolders, type lives in frontmatter
+(`source_type:`).
 
 | Layer | What it holds | In git? |
 |---|---|---|
 | [`knowledge/raw/`](../raw/) | Native source artifacts (PDFs, HTML, .docx), flat | **gitignored** — local cache only |
-| [`knowledge/source/`](../source/) | One distilled markdown page per artifact, flat, with provenance frontmatter | yes |
+| [`knowledge/source/`](../source/) | **Local ingest front door.** One distilled markdown page per artifact, flat, with provenance frontmatter. Written by `/wiki-ingest`. | yes |
+| `knowledge/domains/<domain>/source/` | **Read-only synced mirror** of the central `knowledge-base` repo (per-domain). Every page carries a `<!-- synced from knowledge-base — do not edit here -->` marker. Fed by `/knowledge-sync` + the human-gated `promote`, **never** by `/wiki-ingest`. | yes (mirror) |
 | [`knowledge/wiki/`](.) | Hand-curated synthesis: home / index / log / findings / methods / decisions / concepts | yes |
+
+### Two source layers, one lifecycle
+
+`source/` (flat, local) and `domains/<domain>/source/` (synced, read-only) are the
+**same content class at two stages of one pipeline**, not competing layouts:
+
+```
+/wiki-ingest → knowledge/source/<stem>.md   (flat, editable, project-local)
+   → promote (human-gated) → central knowledge-base SSOT
+   → /knowledge-sync → knowledge/domains/<domain>/source/  (read-only mirror here)
+   → retire the flat copy, repoint index links
+```
+
+So: **ingest flat, promote up, sync down.** Never write into `domains/` directly —
+it's a mirror; the next sync clobbers local edits. To change a synced page, edit it
+upstream in `knowledge-base` and re-pull.
+
+> **Mid-migration caveat (2026-07):** the domains/ migration and the knowledge-base
+> subscription are **in progress and incomplete**. Today the corpus straddles both
+> layouts — ~90 un-migrated flat pages plus ~200 synced domain pages — and skill/collection
+> naming isn't fully standardized yet. Treat the pipeline above as the intended end-state,
+> not a finished fact. Don't assume every flat page has a domain twin, or vice versa.
 
 ## Reliability order — wiki > web > model knowledge
 
@@ -27,7 +50,7 @@ it makes it stale.
 
 Rule of thumb:
 
-- A teammate asks "what does paper X say?" → `source/papers/<x>.md`
+- A teammate asks "what does paper X say?" → `source/<x>.md` (or `domains/<domain>/source/<x>.md` if synced)
 - A teammate asks "what did we decide about Y?" → `wiki/decisions/<y>.md`
 - A teammate asks "what have we learned across N sources?" → `wiki/findings/<topic>.md`
 

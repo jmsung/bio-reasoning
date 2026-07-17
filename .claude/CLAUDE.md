@@ -114,6 +114,34 @@ teammates land at step 1.
 
 For full layout + flow: [`knowledge/wiki/README.md`](../knowledge/wiki/README.md).
 
+### Consult the KB first — the exploration/strategy gate
+
+Reliability order is not aspirational. **Before proposing any exploration,
+experiment, or strategy** (a new approach, a roadmap item, "what should we try
+for Track X"), the agent MUST first retrieve from the KB and ground its proposal
+in what we already know:
+
+```bash
+qmd query "<your question>" -c bio-reasoning -n 10 --files
+```
+
+The `bio-reasoning` collection indexes all of `cb/` — so this surfaces not just
+papers (`knowledge/source/`, `knowledge/domains/**`) but the **synthesized wisdom**
+in `knowledge/wiki/findings/` and `knowledge/wiki/methods/` (e.g. what already failed,
+which levers moved the score, competitor landscape) *and* the strategy docs
+(`docs/roadmap.md`, `docs/foundation-models.md`). Read the top hits, then:
+
+- **Cite** the specific `findings/` / `methods/` / `source/` pages that inform the plan.
+- **Don't re-propose** something a `findings/` page already tried and ruled out —
+  say so and build on it instead.
+- **Learn back:** when exploration produces a durable insight, file it via
+  `/wiki-learn` (→ `findings/`) and re-embed (`qmd embed -c bio-reasoning`) so the
+  next agent starts from it. The KB only compounds if you write back.
+
+If `qmd` is unavailable, fall back to `/wiki-query` (grep over `knowledge/`). Skipping
+this gate — reasoning from model priors when the KB has a relevant page — is a defect,
+not a shortcut.
+
 ## Documentation is the source of truth
 - `README.md` and `docs/` are authoritative. Always keep them current.
 - Any code change affecting workflow, API, file layout, data schema, or

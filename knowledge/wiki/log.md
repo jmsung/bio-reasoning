@@ -89,3 +89,12 @@ Search-and-ingest for macrophage gene-perturbation-prediction (Track A/B/C). 16 
 - Insights filed: 1
 - New pages: findings/direction-transfers-de-doesnt.md
 - Updated pages: index.md, findings/neighbor-retrieval-direction-lever.md, findings/curated-edges-fail-de-axis.md
+
+## 2026-07-16 — Ingested 83 full-text distillations (feat/knowledge-base-expansion)
+- Batch full-text ingest via paperclip + a discover→distill workflow (95 written, 3 removed as
+  domains/ duplicates: GEARS, Ahlmann-Eltze linear-baselines, D-SPIN; 9 collided/merged → 83 net-new).
+- Buckets (agents dropped, bio-reweighted): Track C single-cell foundation models + critiques;
+  perturbation/expression prediction methods + benchmarks; gene-regulation biology (GRN inference,
+  CRISPR functional screens, TF networks) + a slim bio-specific agent set (Biomni, Virtual Cell).
+- All flat `knowledge/source/`, `source_type: papers`, deduped vs the 217-page corpus by title/DOI.
+- Durable pages to be promoted to the knowledge-base SSOT + synced into domains/ later (out of band).
