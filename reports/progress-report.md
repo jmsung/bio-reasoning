@@ -39,6 +39,40 @@ by `up / (up + down)` over DE-positive rows. Accuracy does **not** apply.
    DE-likelihood — only order matters for AUROC). And measurement must move onto a **dual-OOD
    validation split** that reproduces the real train/test disjointness, so CV stops lying.
 
+## Update (test/real-test-difficulty-probe — landed)
+
+A **measurement-only probe** answering the question that gates the whole rank-1
+plan: *is the field's 0.693 real, or is our dual-OOD split simply too hard?* We
+submitted the one model class we'd never put on the real board — a **proper
+char-ngram TF-IDF two-stage** Track A model (the field's reported recipe) — and
+read the LB↔offline gap.
+
+**Kaggle Track A LB 0.552** (2026-07-17) vs its own **OOD-val 0.492** (holdout
+seed 0) / **0.531** (5-fold) — an LB↔offline gap of just **+0.02 to +0.06**. Two
+conclusions, both strategy-setting:
+
+1. **Our dual-OOD split is roughly honest** (mildly conservative), *not* the
+   0.17 inflation that "sandbagging" would require. The real test rewards string
+   identity a touch more than our hold-out-both-axes split predicts, but nowhere
+   near enough to explain 0.693. The honest **~0.60–0.65 mean-AUROC ceiling
+   stands** — >0.8 is not reachable on a true version of this task, so
+   direction-first holds and the only DE hope left is model-based (logprob,
+   Bing-gated).
+2. **The field's "char-ngram → 0.693" does NOT reproduce.** A correct
+   implementation reaches only 0.552 on the real board — *below* our GO two-stage
+   (0.561) and far below our neighbour-fusion best (0.585). Either the leaders'
+   string features are substantially more engineered than a standard char-TFIDF,
+   or the printed 0.693 is inflated/misattributed (the surveyed notebooks print
+   no scores).
+
+Negative result — a probe, **not a new best** (LB 0.585 stands; nothing
+submitted for score). Its value is the calibration: the dual-OOD split is now
+LB-validated on the *identity/DE* axis too, not just direction, closing the last
+blind spot in our offline↔LB trust. Full refutation:
+[`knowledge/wiki/findings/competitor-landscape.md`](../knowledge/wiki/findings/competitor-landscape.md)
+(Measured refutation, 2026-07-17). Submission archived at
+`mb/findings/solutions/track-a-char-ngram-probe-LB0.552.csv`.
+
 ## Update (feat/marginal-property-de — landed)
 
 Tested the **last untried DE angle**: *marginal* per-symbol features (STRING connectivity

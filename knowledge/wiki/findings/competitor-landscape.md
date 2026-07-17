@@ -40,6 +40,25 @@ Two things changed vs our stale docs: (1) **Track B top (0.752) now clearly beat
 Track A top (0.693)** — tools *are* pulling ahead; (2) we sit ~0.16–0.26 below the
 front on a 0.5-baseline metric — large headroom.
 
+### Measured refutation (2026-07-17, `test/real-test-difficulty-probe`)
+
+We tested the "char-ngram → 0.693" story directly: a **proper char-ngram TF-IDF
+two-stage** model scored **Kaggle Track A LB 0.552** — vs its own OOD-val 0.492
+(holdout) / 0.531 (5-fold). Two conclusions:
+- **The 0.693 char-ngram claim does NOT reproduce** for us — a correct
+  implementation reaches only 0.552 on the real board, *below* our GO two-stage
+  (0.561) and far below our neighbour-fusion best (0.585). Either the leaders'
+  string features are substantially more engineered than a standard char-TFIDF, or
+  the printed 0.693 is inflated/misattributed (the 6 notebooks print no scores).
+- **Our dual-OOD split is roughly honest** — the LB↔OOD-val gap for char-ngram is
+  only +0.02 to +0.06 (LB mildly higher). The real test is a touch easier than our
+  hold-out-both-axes split, but **not the 0.17 that would explain 0.693**. We have
+  *not* been badly sandbagging; the honest ~0.60–0.65 ceiling stands. Note the gap
+  is larger for identity/family features (+0.06) than for our direction models
+  (~0.004) — the real test rewards string identity slightly more than our split
+  predicts, but not enough to change strategy. See
+  [[direction-transfers-de-doesnt]].
+
 ## What the public notebooks actually do
 
 Six public notebooks pulled via `uv run kaggle kernels pull` (the `kaggle` CLI is
