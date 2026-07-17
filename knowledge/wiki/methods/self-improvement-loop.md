@@ -32,6 +32,15 @@ curated `RULED_OUT` frozenset (each key cited to the finding that killed it) and
 `de_variants.py::make_de_proposer` filters it before every walk — the loop can
 never re-propose a channel the KB already ruled out.
 
+The **search policy** over that barred space is now pluggable
+(`proposers.py::select_proposer`, runner flag `--proposer {grid,bandit,llm}`): the
+default **grid** walk pulls each variant once; **bandit** (`bandit.py`) resamples by
+UCB1 reward so a one-seed phantom regresses before it's trusted; **llm**
+(`llm_proposer.py`) lets gpt-oss read the reward history and propose the next config,
+falling back to the bandit on any invalid/ruled-out output. All three share the same
+`Proposer` seam and inherit the `ruled_out` denylist — bandit/llm never self-converge,
+so pair them with `--max-trials` / `--budget-usd`.
+
 ## The 3-tier verification structure (P9-templated)
 
 The core lesson we import from P9: **your fast evaluator lies** — a cheap
