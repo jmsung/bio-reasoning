@@ -28,6 +28,7 @@ load_dotenv(_ROOT / ".env.local", override=True)
 from bio_reasoning.eval.split import holdout_split  # noqa: E402
 from bio_reasoning.eval.track_a_score import evaluate  # noqa: E402
 from bio_reasoning.features.dir_channels import (  # noqa: E402
+    CHANNELS,
     embedding_dir_r,
     go_dir_r,
     neighbour_dir_r,
@@ -54,8 +55,6 @@ GENE_CACHE = _data("data/interim/gene_go_bp.json")
 GO_TEXT_CACHE = _data("data/external/go_terms_universe.json")
 EMB_CACHE = _data("data/external/gene_embeddings.json")
 STRING_CACHE = _data("data/external/string_partners_universe.json")
-
-CHANNELS = ("GO-DIR", "neighbour-DIR", "embedding-DIR")
 
 
 def _dir_auroc(labels: np.ndarray, channels: list[Channel]) -> float:
