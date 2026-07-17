@@ -41,13 +41,23 @@ direct control. Our official agent is named `jsagent` (both tracks).
 
 `scripts/self_improve_loop.py` runs the harness unattended: propose → triple-verify →
 promote, until the proposer is exhausted, K non-improving rounds pass, or a spend cap
-is hit. The proposer is pluggable via `--proposer {grid,bandit,llm}`
-(`trial_loop.proposers.select_proposer`): the default **grid** walk (`trial_loop.de_variants`)
-pulls each variant once, **bandit** (`trial_loop.bandit`) resamples promising variants by UCB1
-reward, and **llm** (`trial_loop.llm_proposer`) lets gpt-oss read the reward history and propose
-the next config (bandit fallback on any invalid output). All search the one live lane — the gpt-oss
-DE-votes / self-consistency signal — with KB-ruled-out static channels (`trial_loop.ruled_out`)
-denylisted so budget is never burned on a dead basin. The **triple-verify gate**
+is hit. It has **two lanes** that share the gate + driver:
+
+- **DE-votes** (default): a prompt-only `infer_fn` searched by a pluggable
+  `--proposer {grid,bandit,llm}` (`trial_loop.proposers.select_proposer`): the default
+  **grid** walk (`trial_loop.de_variants`) pulls each variant once, **bandit**
+  (`trial_loop.bandit`) resamples promising variants by UCB1 reward, and **llm**
+  (`trial_loop.llm_proposer`) lets gpt-oss read the reward history and propose the next
+  config (bandit fallback on any invalid output). The lane is the gpt-oss DE-votes /
+  self-consistency signal.
+- **Agentic** (`--agentic`): searches Track B **tool configs** (`trial_loop.agent_variants`)
+  — which real-data tools (`trial_loop.tools`: GO:BP, STRING partners, Traxler direction)
+  a per-variant DSPy ReAct agent may call, crossed with the self-consistency sample count.
+  Baseline is the tool-free agent, so the gate accepts a config only if real tools beat it.
+  `trial_loop.archive.compare_agentic_vs_prompt` renders the honest agentic-vs-prompt A/B.
+
+Both lanes denylist KB-ruled-out static channels (`trial_loop.ruled_out`) so budget is never
+burned on a dead basin. The **triple-verify gate**
 (`trial_loop.gate`) is the anti-false-positive filter: a candidate is promoted only if it
 beats the running baseline on *every* independent OOD split by *more than* the seed-to-seed
 noise band — conservative by design, preferring missed gains over phantom lifts. An optional
@@ -55,6 +65,8 @@ noise band — conservative by design, preferring missed gains over phantom lift
 from `data.traxler_labels`) tightens this further: an OOD-survivor must *also* beat baseline on
 that held-out in-domain fold, proving the gain generalizes to real labels rather than overfitting
 the challenge-train distribution (scored only for OOD-survivors, since each fold eval is expensive).
+Under `--agentic` this is leak-safe: whenever the Traxler fold is the eval, the agent drops the
+Traxler-direction tool for the whole run so it can never read the labels it is validated against.
 The pure
 driver (`trial_loop.driver`) is file-free and unit-tested; the runner wires OpenRouter
 inference (`trial_loop.inference`), the archive ledger, and the launchd / `claude -p` cadence.
