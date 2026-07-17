@@ -37,6 +37,9 @@ track-b = [
 eval = [
     "scikit-learn>=1.7.0",
 ]
+tabpfn = [
+    "tabpfn>=2.0",
+]
 azure = [
     "azure-identity>=1.23.0",
 ]

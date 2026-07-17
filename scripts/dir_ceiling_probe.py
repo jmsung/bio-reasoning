@@ -27,16 +27,16 @@ load_dotenv(_ROOT / ".env.local", override=True)
 
 from bio_reasoning.eval.split import holdout_split  # noqa: E402
 from bio_reasoning.eval.track_a_score import evaluate  # noqa: E402
+from bio_reasoning.features.dir_channels import (  # noqa: E402
+    embedding_dir_r,
+    go_dir_r,
+    neighbour_dir_r,
+)
 from bio_reasoning.features.gene_embeddings import (  # noqa: E402
     build_gene_text,
-    fit_direction_ridge,
-    gene_embedding_channel,
     load_gene_embeddings,
 )
-from bio_reasoning.features.go_terms import GoPairFeaturizer  # noqa: E402
-from bio_reasoning.features.neighbor_retrieval import neighbor_channel  # noqa: E402
 from bio_reasoning.models.fuse import Channel, fuse  # noqa: E402
-from bio_reasoning.models.track_a_two_stage import TwoStageDEDIR  # noqa: E402
 
 
 def _data(rel: str) -> str:
@@ -58,32 +58,6 @@ STRING_CACHE = _data("data/external/string_partners_universe.json")
 CHANNELS = ("GO-DIR", "neighbour-DIR", "embedding-DIR")
 
 
-def _go_dir_r(train_df: pd.DataFrame, val_df: pd.DataFrame) -> np.ndarray:
-    model = TwoStageDEDIR(featurizer=GoPairFeaturizer(PERT_CACHE, GENE_CACHE)).fit(
-        train_df["pert"], train_df["gene"], train_df["label"].to_numpy()
-    )
-    up, down = model.predict(val_df["pert"], val_df["gene"])
-    denom = np.where(up + down == 0, 1.0, up + down)
-    return up / denom
-
-
-def _neighbour_dir_r(
-    train_df: pd.DataFrame, val_df: pd.DataFrame, partners: dict[str, set[str]]
-) -> np.ndarray:
-    tp = set(train_df["pert"].astype(str))
-    tg = set(train_df["gene"].astype(str))
-    pnb = {p: partners.get(p, set()) & tp for p in val_df["pert"].astype(str).unique()}
-    gnb = {g: partners.get(g, set()) & tg for g in val_df["gene"].astype(str).unique()}
-    return neighbor_channel(
-        val_df[["pert", "gene"]].astype(str), train_df, pnb, gnb, min_support=3
-    ).r
-
-
-def _embedding_dir_r(train_df: pd.DataFrame, val_df: pd.DataFrame, embeddings: dict) -> np.ndarray:
-    ridge = fit_direction_ridge(train_df, embeddings)
-    return gene_embedding_channel(val_df[["pert", "gene"]], ridge, embeddings).r
-
-
 def _dir_auroc(labels: np.ndarray, channels: list[Channel]) -> float:
     up, down = fuse(channels)
     return evaluate(labels, up, down)["auroc_dir"]
@@ -97,9 +71,9 @@ def _seed_subsets(df: pd.DataFrame, embeddings: dict, partners: dict, seed: int)
     labels = val_df["label"].to_numpy()
 
     rs = {
-        "GO-DIR": _go_dir_r(train_df, val_df),
-        "neighbour-DIR": _neighbour_dir_r(train_df, val_df, partners),
-        "embedding-DIR": _embedding_dir_r(train_df, val_df, embeddings),
+        "GO-DIR": go_dir_r(train_df, val_df, PERT_CACHE, GENE_CACHE),
+        "neighbour-DIR": neighbour_dir_r(train_df, val_df, partners),
+        "embedding-DIR": embedding_dir_r(train_df, val_df, embeddings),
     }
     out: dict[tuple, float] = {}
     for k in range(1, len(CHANNELS) + 1):
