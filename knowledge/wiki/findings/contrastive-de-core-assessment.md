@@ -83,6 +83,15 @@ the voting variant on our dual-OOD split (`scripts/core_de_eval.py`, 5 seeds):
 **The LLM-DE angle is exhausted** (7th DE approach at chance). CORE-Voting = 0.498 empirically;
 CORE-Reasoning is a low-prior, endpoint-gated cell not worth waiting on. This closes the
 prompt/framing lane for DE for the whole team: **only new measured signal moves DE**
-([[direction-transfers-de-doesnt]]) → the **Perturb-seq data lane** (Replogle/PerturbQA/Tahoe) is
-the path to rank-1. The CORE machinery is kept so the reasoning cell can be run in one script if a
-logprob endpoint ever lands — but the expected value is low; do not gate the roadmap on it.
+([[direction-transfers-de-doesnt]]).
+
+**Update (2026-07-17) — the Perturb-seq lane this page pointed to is now closed too.** The
+"path to rank-1" framing above is superseded: `research/perturb-seq-real-lb-overlap` spent the
+one real-LB read (baseline `fuse([GO, neighbour])` **0.585** → `+ external PerturbQA` **0.586**,
+**Δ+0.001**, 66% coverage), confirming *end-to-end* — offline and on the board — that external
+measured data moves DE nothing and the dual-OOD split is honest. With the static/data, curated-edge,
+retrieval, and LLM-framing DE lanes all closed, the **only** remaining DE lever is model-based
+token-logprob self-consistency — and it is **endpoint-blocked** (Bing logprobs). So DE-driven
+rank-1 is currently **blocked**, not *open via more data*. The CORE machinery is kept so the
+reasoning cell can be run in one script if a logprob endpoint ever lands — expected value low; do
+not gate the roadmap on it.
