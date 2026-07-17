@@ -118,6 +118,29 @@ def test_example_key_fn_is_threaded_to_go_category_variant():
     assert captured["base"] is None  # zero-shot baseline gets no exemplars
 
 
+def test_val_n_is_threaded_to_the_gate():
+    # dev-only smoke path: val_n must reach run_variant through the gate so every
+    # trial scores only the subsample. counting_predictor records rows/seen per call.
+    df = _frame()
+    seen: list[int] = []
+
+    def counting_predictor(rows, variant, seed, get_examples):
+        seen.append(len(rows))
+        return [(0.0, 0.0) for _ in rows]
+
+    self_improve_loop(
+        df,
+        make_grid_proposer([Variant(id="a")]),
+        counting_predictor,
+        Variant(id="base"),
+        seeds=(0, 1, 2),
+        noise_band=0.1,
+        dry_rounds=1,
+        val_n=7,
+    )
+    assert seen and all(n == 7 for n in seen), f"val_n not threaded: saw {set(seen)}"
+
+
 def test_converges_when_grid_exhausted():
     df = _frame()
     predictor = _variant_oracle({"base": 0.5, "a": 1.0})

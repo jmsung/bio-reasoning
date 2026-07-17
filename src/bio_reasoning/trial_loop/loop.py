@@ -216,6 +216,7 @@ def predict_variant(
     pert_frac: float = 0.4,
     gene_frac: float = 0.4,
     example_key_fn: ExampleKeyFn | None = None,
+    val_n: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Run ``variant`` over the val partition; return ``(val_idx, up, down)``.
 
@@ -223,8 +224,15 @@ def predict_variant(
     predictions are averaged across ``variant.seeds`` — the multi-sample recipe that
     turns hard up/down calls into graded scores. ``example_key_fn`` supplies the
     relevance key when ``variant.retrieval`` selects exemplars by relevance.
+
+    ``val_n`` is a DEV-ONLY smoke knob: when set, val is truncated to its first
+    ``val_n`` holdout rows (deterministic prefix), scoring a real trial in minutes
+    for fast iteration. It makes the gate UNtrustworthy — never promote off it;
+    the full-val partition (``val_n=None``) is the only trustworthy gate.
     """
     train_idx, val_idx = holdout_split(df, seed=seed, pert_frac=pert_frac, gene_frac=gene_frac)
+    if val_n is not None:
+        val_idx = val_idx[:val_n]
     get_examples = _make_examples_provider(df.iloc[train_idx], variant, seed, example_key_fn)
     val_rows = df.iloc[val_idx].to_dict("records")
 
@@ -248,9 +256,14 @@ def run_variant(
     pert_frac: float = 0.4,
     gene_frac: float = 0.4,
     example_key_fn: ExampleKeyFn | None = None,
+    val_n: int | None = None,
     **record_kwargs: object,
 ) -> TrialRecord:
-    """Evaluate ``variant`` on the dual-OOD val split → a :class:`TrialRecord`."""
+    """Evaluate ``variant`` on the dual-OOD val split → a :class:`TrialRecord`.
+
+    ``val_n`` (DEV-ONLY) truncates val to its first N rows for a fast smoke — see
+    :func:`predict_variant`; leave ``None`` for the trustworthy full-val gate.
+    """
     val_idx, up, down = predict_variant(
         df,
         variant,
@@ -259,6 +272,7 @@ def run_variant(
         pert_frac=pert_frac,
         gene_frac=gene_frac,
         example_key_fn=example_key_fn,
+        val_n=val_n,
     )
     labels = df.iloc[val_idx]["label"].to_numpy()
     metrics = evaluate(labels, up, down)

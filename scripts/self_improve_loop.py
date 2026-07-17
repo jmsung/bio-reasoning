@@ -16,7 +16,9 @@ surfaced for a human-gated submission, Goal 5):
     uv run python scripts/self_improve_loop.py --agentic --budget-usd 5
 
 The gate is only trustworthy on the FULL val partition (each candidate is scored on
-3 independent dual-OOD splits); there is deliberately no ``--val-n`` smoke here.
+3 independent dual-OOD splits). ``--val-n N`` is a DEV-ONLY smoke knob that truncates
+val to its first N rows so a real trial runs in minutes — for fast iteration / bug
+detection only, NEVER to promote a survivor (the subsampled gate is untrustworthy).
 Backend + key resolution: see ``bio_reasoning.trial_loop.inference`` (OpenRouter env).
 """
 
@@ -205,6 +207,14 @@ def main() -> None:
         "or --budget-usd. Ignored under --agentic.",
     )
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2], help="Gate split seeds.")
+    ap.add_argument(
+        "--val-n",
+        type=int,
+        default=None,
+        help="DEV-ONLY smoke: score only the first N val rows per split (deterministic) "
+        "so a real trial finishes in minutes. Makes the gate UNtrustworthy — for fast "
+        "iteration / bug detection, never to promote a survivor. Omit for the full-val gate.",
+    )
     ap.add_argument("--noise-band", type=float, default=None, help="Override; default measured.")
     ap.add_argument("--dry-rounds", type=int, default=2, help="Stop after K non-improving rounds.")
     ap.add_argument("--budget-usd", type=float, default=None, help="Spend cap (USD).")
@@ -270,6 +280,7 @@ def main() -> None:
         max_trials=args.max_trials,
         example_key_fn=example_key_fn,
         external_fold=external_fold,
+        val_n=args.val_n,
         on_record=persist,
     )
 

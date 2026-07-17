@@ -81,6 +81,54 @@ def test_predict_variant_averages_across_seeds() -> None:
     assert np.allclose(down, 0.5)
 
 
+def test_predict_variant_val_n_subsamples_first_n_deterministic() -> None:
+    """--val-n path: val is the first N holdout rows (deterministic), predictions match."""
+    df = _frame()
+    variant = Variant(id="v0", seeds=(1,))
+
+    def fake(prompts, seed):
+        return [_UP if i % 2 == 0 else _DOWN for i in range(len(prompts))]
+
+    rp = make_prompt_row_predictor(fake)
+    full_idx, _, _ = predict_variant(df, variant, rp, seed=0, pert_frac=1.0, gene_frac=1.0)
+    assert len(full_idx) > 5  # full val is large; the subsample is a strict prefix
+
+    sub_idx, up, down = predict_variant(
+        df, variant, rp, seed=0, pert_frac=1.0, gene_frac=1.0, val_n=5
+    )
+    assert list(sub_idx) == list(full_idx[:5])
+    assert len(up) == 5 and len(down) == 5
+
+
+def test_run_variant_val_n_shrinks_n_val() -> None:
+    """run_variant threads val_n → n_val reflects the subsample, not the full split."""
+    df = _frame()
+    variant = Variant(id="v0", seeds=(1,))
+
+    def fake(prompts, seed):
+        return [_UP] * len(prompts)
+
+    rec = run_variant(
+        df, variant, make_prompt_row_predictor(fake), seed=0, pert_frac=1.0, gene_frac=1.0, val_n=8
+    )
+    assert rec.metrics["n_val"] == 8
+
+
+def test_val_n_none_is_full_val() -> None:
+    """val_n=None (default) leaves the full holdout partition untouched — the real gate."""
+    df = _frame()
+    variant = Variant(id="v0", seeds=(1,))
+    _, full_idx = holdout_split(df, seed=0, pert_frac=1.0, gene_frac=1.0)
+
+    def fake(prompts, seed):
+        return [_UP] * len(prompts)
+
+    idx, _, _ = predict_variant(
+        df, variant, make_prompt_row_predictor(fake), seed=0, pert_frac=1.0, gene_frac=1.0
+    )
+    assert list(idx) == list(full_idx)
+
+
 def test_sample_examples_leak_free() -> None:
     """Few-shot exemplars come only from the train partition — never val."""
     df = _frame()
