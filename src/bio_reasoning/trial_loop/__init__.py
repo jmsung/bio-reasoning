@@ -17,6 +17,7 @@ from bio_reasoning.trial_loop.archive import (
 )
 from bio_reasoning.trial_loop.bandit import make_bandit_proposer
 from bio_reasoning.trial_loop.de_variants import de_variant_grid, make_de_proposer
+from bio_reasoning.trial_loop.evolve import EvolveResult, Individual, evolve_loop
 from bio_reasoning.trial_loop.gate import (
     GateResult,
     measure_noise_band,
@@ -63,6 +64,9 @@ __all__ = [
     "score_across_seeds",
     "de_variant_grid",
     "make_de_proposer",
+    "evolve_loop",
+    "EvolveResult",
+    "Individual",
     "make_bandit_proposer",
     "make_llm_proposer",
     "AGENT_TOOL_SUBSETS",

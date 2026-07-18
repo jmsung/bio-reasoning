@@ -8,6 +8,13 @@ surfaced for a human-gated submission, Goal 5):
     (grid | bandit | llm) over the KB-denylist DE variant space.
     uv run python scripts/self_improve_loop.py --proposer bandit --budget-usd 5
 
+  * AlphaEvolve (``--proposer alphaevolve``): a POPULATION-based evolutionary driver —
+    top-K selection over prompt-template variants, each parent mutated into M free-form
+    children by the gpt-oss mutation author (``prompt_mutation.mutate_prompt``), the
+    top-K of parents ∪ children carried to the next generation (elitist). Writes the
+    same journal so the trajectory is legible. Knobs: --generations --top-k --children.
+    uv run python scripts/self_improve_loop.py --proposer alphaevolve --budget-usd 5
+
   * Agentic (``--agentic``): tool-config proposer + a per-variant DSPy ReAct agent
     over the real-data tools (GO/STRING/Traxler-direction). Baseline is the tool-free
     agent, so the gate accepts a config only if real tools beat it. A Traxler fold csv
@@ -19,6 +26,15 @@ The gate is only trustworthy on the FULL val partition (each candidate is scored
 3 independent dual-OOD splits). ``--val-n N`` is a DEV-ONLY smoke knob that truncates
 val to its first N rows so a real trial runs in minutes — for fast iteration / bug
 detection only, NEVER to promote a survivor (the subsampled gate is untrustworthy).
+
+STATISTICAL POWER (read before any AlphaEvolve run): evolutionary SELECTION is only
+meaningful when the noise band is SMALLER than the effect it must resolve. Our measured
+per-seed noise band at val-n=80 was ~0.12, while the real between-variant effects are
+~0.02 — so at low val-n the band swamps the signal and selection just amplifies noise
+(the population "evolves" toward whichever variant got the lucky split, not the better
+prompt). A trustworthy evolutionary run therefore needs the FULL val partition (or
+enough split-seed repeats to shrink the band below the effect). Treat ``--val-n`` as
+DEV-ONLY smoke here too: it proves the loop wiring, never which prompt actually won.
 Backend + key resolution: see ``bio_reasoning.trial_loop.inference`` (OpenRouter env).
 """
 
@@ -38,13 +54,14 @@ from dotenv import load_dotenv
 from bio_reasoning.trial_loop.agent_variants import agent_variant_grid, make_agent_proposer
 from bio_reasoning.trial_loop.archive import archive, load_trials
 from bio_reasoning.trial_loop.driver import self_improve_loop
+from bio_reasoning.trial_loop.evolve import evolve_loop
 from bio_reasoning.trial_loop.inference import make_openrouter_infer_fn
 from bio_reasoning.trial_loop.journal import append_journal_entry
 from bio_reasoning.trial_loop.loop import (
     make_configurable_agent_row_predictor,
     make_prompt_row_predictor,
 )
-from bio_reasoning.trial_loop.prompt_variants import PROMPT_VARIANTS
+from bio_reasoning.trial_loop.prompt_variants import _DIRECTION_PRIOR, _GO_CONTEXT, PROMPT_VARIANTS
 from bio_reasoning.trial_loop.proposers import PROPOSERS, select_proposer
 from bio_reasoning.trial_loop.tools import (
     make_cache_backend,
@@ -142,8 +159,12 @@ def _build_agentic_predictor(args, external_fold_df):
     return predictor, spent_usd, include_traxler
 
 
-def _de_setup(args, df):
-    """DE-votes lane: prompt-only predictor + a ``--proposer`` search policy (default)."""
+def _de_infer(args, df):
+    """Shared DE-lane wiring: gpt-oss infer_fn, prompt row-predictor, GO key_fn, spend.
+
+    Used by both the greedy ``--proposer`` lanes and the ``alphaevolve`` evolutionary
+    driver, so the prompt-only inference + budget/error accounting lives in one place.
+    """
     from bio_reasoning.features.gene_function import annotate_perts
 
     # go_category variants retrieve exemplars sharing the query pert's GO category;
@@ -161,6 +182,20 @@ def _de_setup(args, df):
     )
     predictor = make_prompt_row_predictor(infer)
 
+    def spent_usd() -> float:
+        t = infer.token_totals  # type: ignore[attr-defined]
+        return t["prompt_tokens"] * PRICE_IN + t["completion_tokens"] * PRICE_OUT
+
+    def errors_fn() -> int:
+        return int(infer.token_totals.get("errors", 0.0))  # type: ignore[attr-defined]
+
+    return infer, predictor, example_key_fn, spent_usd, errors_fn
+
+
+def _de_setup(args, df):
+    """DE-votes lane: prompt-only predictor + a ``--proposer`` search policy (default)."""
+    infer, predictor, example_key_fn, spent_usd, errors_fn = _de_infer(args, df)
+
     def _propose_fn(reflection: str) -> str:
         # single gpt-oss completion proposing the next config; counts toward the budget.
         return infer([_OPTIMIZER_PROMPT.format(reflection=reflection)], 0)[0]
@@ -169,15 +204,32 @@ def _de_setup(args, df):
         args.proposer, propose_fn=_propose_fn if args.proposer == "llm" else None
     )
 
-    def spent_usd() -> float:
-        t = infer.token_totals  # type: ignore[attr-defined]
-        return t["prompt_tokens"] * PRICE_IN + t["completion_tokens"] * PRICE_OUT
-
-    def errors_fn() -> int:
-        return int(infer.token_totals.get("errors", 0.0))  # type: ignore[attr-defined]
-
     baseline = Variant(id=args.baseline_id, seeds=(42, 43, 44))
     return proposer, predictor, baseline, spent_usd, example_key_fn, None, errors_fn
+
+
+# AlphaEvolve seed population: the two valid free-form template wordings (their A/B/C
+# option lines use the {pert}/{gene} placeholders, so they clear the leak validator).
+_EVOLVE_SEED_TEMPLATES = (_DIRECTION_PRIOR, _GO_CONTEXT)
+
+
+def _evolve_setup(args, df):
+    """AlphaEvolve lane: seed population + mutation author + prompt predictor.
+
+    ``propose_fn`` is the gpt-oss mutation author — ``mutate_prompt`` hands it the full
+    instruction (parent template + reward history), so this is a bare completion call.
+    """
+    infer, predictor, example_key_fn, spent_usd, errors_fn = _de_infer(args, df)
+    n = max(1, min(args.population, len(_EVOLVE_SEED_TEMPLATES)))
+    seed_variants = [
+        Variant(id=f"evolve-seed-{i}", prompt_template=t, seeds=(42, 43, 44))
+        for i, t in enumerate(_EVOLVE_SEED_TEMPLATES[:n])
+    ]
+
+    def propose_fn(instruction: str) -> str:
+        return infer([instruction], 0)[0]
+
+    return seed_variants, predictor, propose_fn, spent_usd, example_key_fn, errors_fn
 
 
 def _agentic_setup(args):
@@ -198,17 +250,113 @@ def _agentic_setup(args):
     return proposer, predictor, baseline, spent_usd, None, external_fold, lambda: 0
 
 
+def _make_persist(args, spent_usd):
+    """Build the per-record sink: append to trials.jsonl, re-archive, journal, print.
+
+    Shared by the greedy driver and the AlphaEvolve driver — every evaluated record
+    (a greedy trial or an evolutionary child) flows through the same ledger + journal.
+    """
+    trials_path = args.output_dir / "trials.jsonl"
+    journal_path = args.output_dir / "journal.md"
+
+    def persist(rec: TrialRecord) -> None:
+        rec.cost_usd = round(spent_usd(), 4)
+        with trials_path.open("a") as fh:
+            fh.write(rec.to_json() + "\n")
+        history = load_trials(trials_path)
+        archive(args.output_dir, history)
+        if args.journal:
+            # Human-readable per-iteration log: config, knob-diff vs running best,
+            # result ± noise band, best-so-far trajectory. Lets a reader tell whether
+            # the search is climbing or random-walking (trials.jsonl is too terse).
+            append_journal_entry(journal_path, history)
+        m = rec.metrics
+        verdict = "ACCEPT" if m["accepted"] else "reject"
+        print(
+            f"[loop] {rec.variant.id}: mean={m['mean']:.3f} vs base {m['baseline_mean']:.3f} "
+            f"min_margin={m['min_margin']:+.3f} feas={m['feasibility_ratio']:.2f} "
+            f"→ {verdict}  spent=${spent_usd():.3f}",
+            flush=True,
+        )
+
+    return persist
+
+
+def _run_evolve(args, df) -> None:
+    """AlphaEvolve lane: run the population-based evolutionary driver + report."""
+    seed_variants, predictor, propose_fn, spent_usd, example_key_fn, errors_fn = _evolve_setup(
+        args, df
+    )
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    persist = _make_persist(args, spent_usd)
+
+    res = evolve_loop(
+        df,
+        seed_variants,
+        predictor,
+        propose_fn,
+        top_k=args.top_k,
+        children_per_parent=args.children,
+        max_generations=args.generations,
+        seeds=tuple(args.seeds),
+        noise_band=args.noise_band,
+        dry_generations=args.dry_rounds,
+        budget=args.budget_usd,
+        spent_fn=spent_usd if args.budget_usd is not None else None,
+        example_key_fn=example_key_fn,
+        val_n=args.val_n,
+        on_record=persist,
+    )
+
+    traj = " → ".join(f"{m:.3f}" for m in res.best_trajectory)
+    print(
+        f"\n[loop] search=alphaevolve  generations={res.generations}  "
+        f"evaluated={len(res.records)}  stopped={res.stopped_reason}"
+    )
+    print(f"[loop] best-so-far trajectory: [{traj}]")
+    print(
+        f"[loop] best variant: {res.best.variant.id}  mean={res.best.mean:.3f} "
+        f"(de {res.best.metrics.get('auroc_de', float('nan')):.3f} / "
+        f"dir {res.best.metrics.get('auroc_dir', float('nan')):.3f})"
+    )
+    if args.val_n is not None:
+        print(
+            f"[loop] ── DEV SIGNAL READ (val_n={args.val_n}, UNTRUSTWORTHY gate — never "
+            "select off it; the noise band swamps the ~0.02 effect) ──"
+        )
+    print(f"[loop] spent=${res.spent:.3f}  errors={errors_fn()}")
+    print("[loop] NEXT (human-gated): build + submit the best variant's Track A run (Goal 5).")
+    print(f"[loop] ledger → {args.output_dir}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--train-csv", type=Path, default=DEFAULT_TRAIN_CSV)
     ap.add_argument("--baseline-id", default="jsagent", help="Starting baseline variant id.")
     ap.add_argument(
         "--proposer",
-        choices=PROPOSERS,
+        choices=(*PROPOSERS, "alphaevolve"),
         default="grid",
         help="DE lane search policy: grid (walk once) | bandit (UCB resample) | llm "
-        "(gpt-oss optimizer). bandit/llm never self-converge — pair with --max-trials "
-        "or --budget-usd. Ignored under --agentic.",
+        "(gpt-oss optimizer) | alphaevolve (population-based evolutionary driver — "
+        "top-K selection + free-form mutation, see --generations/--top-k/--children). "
+        "bandit/llm/alphaevolve never self-converge — pair with --generations, "
+        "--max-trials, or --budget-usd. Ignored under --agentic.",
+    )
+    ap.add_argument(
+        "--population",
+        type=int,
+        default=2,
+        help="alphaevolve: number of seed template wordings to start gen 0 (max 2).",
+    )
+    ap.add_argument(
+        "--generations", type=int, default=5, help="alphaevolve: max generations to run."
+    )
+    ap.add_argument(
+        "--top-k", type=int, default=2, help="alphaevolve: parents kept per generation."
+    )
+    ap.add_argument(
+        "--children", type=int, default=2, help="alphaevolve: mutated children per parent."
     )
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2], help="Gate split seeds.")
     ap.add_argument(
@@ -254,6 +402,10 @@ def main() -> None:
 
     df = pd.read_csv(args.train_csv)
 
+    if args.proposer == "alphaevolve" and not args.agentic:
+        _run_evolve(args, df)
+        return
+
     if args.agentic:
         proposer, predictor, baseline, spent_usd, example_key_fn, external_fold, errors_fn = (
             _agentic_setup(args)
@@ -264,28 +416,7 @@ def main() -> None:
         )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    trials_path = args.output_dir / "trials.jsonl"
-    journal_path = args.output_dir / "journal.md"
-
-    def persist(rec: TrialRecord) -> None:
-        rec.cost_usd = round(spent_usd(), 4)
-        with trials_path.open("a") as fh:
-            fh.write(rec.to_json() + "\n")
-        history = load_trials(trials_path)
-        archive(args.output_dir, history)
-        if args.journal:
-            # Human-readable per-iteration log: config, knob-diff vs running best,
-            # result ± noise band, best-so-far trajectory. Lets a reader tell whether
-            # the search is climbing or random-walking (trials.jsonl is too terse).
-            append_journal_entry(journal_path, history)
-        m = rec.metrics
-        verdict = "ACCEPT" if m["accepted"] else "reject"
-        print(
-            f"[loop] {rec.variant.id}: mean={m['mean']:.3f} vs base {m['baseline_mean']:.3f} "
-            f"min_margin={m['min_margin']:+.3f} feas={m['feasibility_ratio']:.2f} "
-            f"→ {verdict}  spent=${spent_usd():.3f}",
-            flush=True,
-        )
+    persist = _make_persist(args, spent_usd)
 
     res = self_improve_loop(
         df,
