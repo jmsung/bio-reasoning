@@ -1,7 +1,7 @@
 # BioReasoning Challenge 2026 — Progress Report
 
 *Updated as branches land — the merge workflow proposes report-worthy additions per PR.*
-*Last updated: 2026-07-17.*
+*Last updated: 2026-07-18.*
 
 ## Goal
 
@@ -494,6 +494,69 @@ meaningfully. Two in-progress branches attack this cheaply first:
 (a cheap check before committing a full-scale run). **Heavy throughput optimization is
 deliberately deferred** until a cheap read shows the loop is finding signal worth scaling —
 no point parallelizing a search that has not yet proven it can improve on the standing best.
+
+## Leaderboard sprint (2026-07-18)
+
+A final pre-deadline sprint fired the **two highest-EV leaderboard levers still
+standing** — a better *direction* key, and external biological knowledge delivered as a
+*live LLM-agent retrieval* on the DE axis. **Both came back null**, and we closed the
+sprint with **decision A: bank the honest result** (Track A **0.586**, Track B **0.597**).
+No Kaggle quota was spent — both were killed offline on the trustworthy dual-OOD surface.
+
+**Lever 1 — DepMap co-essentiality as a direction key (`feat/depmap-coessentiality-dir`, PR #71).**
+The direction signal is a property of the neighbour *key* (STRING neighbour-DIR
+0.651), so the only way past it is a *better* key. We built one from **DepMap
+co-essentiality** — genes whose CRISPR-knockout fitness effects correlate across ~1,100
+cell lines share a functional module — and dropped it into the identical label-borrowing
+channel. It is a **weaker** key, not a better one: standalone **DIR-AUROC 0.547 ± 0.048**
+(barely above chance) « STRING's 0.651, and fusing the two **drags the score down**
+(0.637, Δ−0.014). Co-essentiality captures module *membership* but is a noisier proxy for
+the up/down tendency than STRING's physical/annotation edges — the same pattern as the
+other diverse-but-weak arms (embedding-DIR 0.574, GO-DIR 0.595). Clean negative, no submit;
+the **~0.65 direction ceiling holds**.
+[`findings/coessentiality-direction-key-negative.md`].
+
+**Lever 2 — a Track B external-knowledge retrieval agent (`feat/track-b-retrieval-agent` /
+`feat/track-b-full-read`, PRs #72, #74).** This was the one genuinely untried bet: a
+**per-row LLM agent** (gpt-oss-120b) that reasons over *retrieved external biology* —
+each pair's GO:BP terms and STRING partners, pulled live from mygene.info / string-db —
+to call DE-vs-none. Because the agent sees knowledge the earlier leakage-allowed oracle
+(0.555, [`findings/de-unlearnable-oracle-ceiling.md`]) never had, beating the DE ceiling
+was possible *in principle*. It was also **calibrated to avoid the v1 abstention collapse**
+— 0% abstention (vs the 72%-`0/0` that sank the original agent to LB 0.488).
+
+*The dev read teased a breakthrough, then the trustworthy read killed it.* On a single
+**150-row** dual-OOD holdout the agent scored **AUROC_de = 0.631** — *above* the 0.555
+identity/marginal ceiling, and above the 0.555 DE wall. But the honest **1,500-row read
+(3 × 500-row dual-OOD seeds)** regressed to **AUROC_de = 0.578 (95% CI [0.549, 0.607])**.
+The CI **includes 0.555**, so DE is **not** genuinely cracked — per-seed DE swung
+0.533 → 0.616, a ±0.04 band straddling chance, and the 0.631 was simply the high tail of a
+wide small-sample distribution. Fused (agent-DE ⊕ neighbour-DIR) scored **0.604 ± 0.035**
+vs the **0.597** incumbent — **statistical parity**, not a gain; the standalone agent (0.578)
+sits *below* the incumbent. Verified **leak-free**: nothing in the pipeline is fitted on
+labels (hardcoded direction prior, external label-free GO/STRING), and the split is dual-OOD
+with `assert_leak_free` enforced. No submit.
+[`findings/retrieval-agent-de-headline-was-noise.md`].
+
+**The noise-vs-signal lesson, again.** Both levers reprise the project's most-repeated
+methodological finding: **a rank-metric AUROC from a small dual-OOD sample lies.** 0.631 on
+150 rows collapsed to 0.578 on 1,500; 0.72 overlap-gate transfers (the earlier PerturbQA
+probe) collapsed to chance on the honest split; 0.675 on a 60-row CV became 0.488 on the real
+board. The seed/subsample band on this split is ±0.04+, so **any "we beat the ceiling" claim
+must clear ≥ 500 rows × multi-seed before it is believed.** The 150-row tease would have been
+a false breakthrough had we submitted on it.
+
+**Conclusion — external biological knowledge does not crack the DE axis.** Delivered as its
+strongest possible form — a live LLM agent reasoning over retrieved GO/STRING biology, with
+no leakage and no abstention penalty — external knowledge lands at **DE parity with the
+incumbent, not above it**. This is the format-independent confirmation of the headline
+negative: the ~0.555 identity/marginal DE ceiling ([`findings/de-unlearnable-oracle-ceiling.md`],
+[`findings/de-unlearnable-on-dual-ood.md`]) holds whether DE is attacked by curated edges,
+learned models, retrieval lookup, chain-of-thought, or now agentic external-knowledge
+retrieval. **DE-vs-none is unlearnable on this dual-OOD task by every method we can bring.**
+The project is at its **honest ceiling — Track A 0.586, Track B 0.597** — and the sprint's
+value is epistemic: it closes the last open lever and hardens, rather than dents, the
+central result. Synthesis: [`findings/external-knowledge-does-not-crack-de.md`].
 
 ## Approach
 
