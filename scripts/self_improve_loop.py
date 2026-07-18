@@ -39,6 +39,7 @@ from bio_reasoning.trial_loop.agent_variants import agent_variant_grid, make_age
 from bio_reasoning.trial_loop.archive import archive, load_trials
 from bio_reasoning.trial_loop.driver import self_improve_loop
 from bio_reasoning.trial_loop.inference import make_openrouter_infer_fn
+from bio_reasoning.trial_loop.journal import append_journal_entry
 from bio_reasoning.trial_loop.loop import (
     make_configurable_agent_row_predictor,
     make_prompt_row_predictor,
@@ -229,6 +230,13 @@ def main() -> None:
     ap.add_argument("--concurrency", type=int, default=16)
     ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "self-improve-loop")
     ap.add_argument(
+        "--no-journal",
+        dest="journal",
+        action="store_false",
+        help="Disable the human-readable journal.md (on by default; written per iteration "
+        "alongside trials.jsonl so you can see whether the search is improving).",
+    )
+    ap.add_argument(
         "--agentic",
         action="store_true",
         help="Loop style ③: search agentic tool configs (not DE-votes prompts).",
@@ -257,12 +265,19 @@ def main() -> None:
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     trials_path = args.output_dir / "trials.jsonl"
+    journal_path = args.output_dir / "journal.md"
 
     def persist(rec: TrialRecord) -> None:
         rec.cost_usd = round(spent_usd(), 4)
         with trials_path.open("a") as fh:
             fh.write(rec.to_json() + "\n")
-        archive(args.output_dir, load_trials(trials_path))
+        history = load_trials(trials_path)
+        archive(args.output_dir, history)
+        if args.journal:
+            # Human-readable per-iteration log: config, knob-diff vs running best,
+            # result ± noise band, best-so-far trajectory. Lets a reader tell whether
+            # the search is climbing or random-walking (trials.jsonl is too terse).
+            append_journal_entry(journal_path, history)
         m = rec.metrics
         verdict = "ACCEPT" if m["accepted"] else "reject"
         print(
