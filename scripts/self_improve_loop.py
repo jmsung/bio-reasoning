@@ -109,6 +109,10 @@ PRICE_OUT = float(os.getenv("BIOREASONING_PRICE_OUT_PER_TOKEN", "0.170e-6"))
 GO_CACHE = ROOT / "data" / "interim" / "gene_go_bp.json"
 STRING_CACHE = ROOT / "data" / "external" / "string_partners_universe.json"
 DEFAULT_TRAXLER_FOLD = ROOT / "data" / "external" / "traxler_labels.csv"
+# DIR-channel caches for the fusion-config predictor (alphaevolve-reflect config axis).
+PERT_GO_CACHE = ROOT / "data" / "interim" / "pert_go_category.json"
+GO_TEXT_CACHE = ROOT / "data" / "external" / "go_terms_universe.json"
+EMB_CACHE = ROOT / "data" / "external" / "gene_embeddings.json"
 
 
 def _load_track_b_module():
@@ -291,6 +295,44 @@ def _make_persist(args, spent_usd):
     return persist
 
 
+def _dir_config_predictor(df, prompt_predictor):
+    """Config-consuming predictor for the DIR fusion axis (lazy: loads on first config child).
+
+    ``alphaevolve-reflect`` can propose a :class:`PipelineConfig` over the DIR channels; this
+    scores it for real (build named channels + rank-fuse per weights) so a config child no
+    longer inherits its parent's prompt score. Resources (gene embeddings, STRING partners,
+    GO caches) are heavy and only needed if a config child appears, so they load lazily on
+    the first config child and are reused thereafter. If a cache is cold/missing the builder
+    raises and the predictor degrades to ``prompt_predictor`` — never a crash, never spend at
+    setup. A warm embedding cache keeps the load fully offline (a cold cache would embed via
+    OpenAI — warm it before a live run).
+    """
+    import json
+
+    from bio_reasoning.features.gene_embeddings import build_gene_text, load_gene_embeddings
+    from bio_reasoning.trial_loop.config_predictor import (
+        direction_channel_builder,
+        make_config_row_predictor,
+    )
+
+    state: dict = {}
+
+    def _lazy_builder(name, train_df, val_df):
+        if "builder" not in state:
+            syms = sorted(set(df["pert"].astype(str)) | set(df["gene"].astype(str)))
+            embeddings = load_gene_embeddings(build_gene_text(syms, GO_TEXT_CACHE), EMB_CACHE)
+            partners = {k: set(v) for k, v in json.load(open(STRING_CACHE)).items()}
+            state["builder"] = direction_channel_builder(
+                embeddings=embeddings,
+                partners=partners,
+                pert_cache=str(PERT_GO_CACHE),
+                gene_cache=str(GO_CACHE),
+            )
+        return state["builder"](name, train_df, val_df)
+
+    return make_config_row_predictor(df, _lazy_builder, fallback=prompt_predictor)
+
+
 def _run_evolve(args, df) -> None:
     """AlphaEvolve lane: run the population-based evolutionary driver + report."""
     seed_variants, predictor, propose_fn, spent_usd, example_key_fn, errors_fn = _evolve_setup(
@@ -302,6 +344,11 @@ def _run_evolve(args, df) -> None:
     # Reflection-driven mode (GEPA/ACE): reuse the same completion caller as the reflector
     # so each parent's misclassified rows drive a reasoned mutation, not a blind reword.
     reflect_fn = propose_fn if args.proposer == "alphaevolve-reflect" else None
+    # Only alphaevolve-reflect can mutate the pipeline axis, so only it needs the config
+    # predictor that actually scores a proposed fusion (else config children == parent score).
+    config_predictor = (
+        _dir_config_predictor(df, predictor) if args.proposer == "alphaevolve-reflect" else None
+    )
 
     res = evolve_loop(
         df,
@@ -320,6 +367,7 @@ def _run_evolve(args, df) -> None:
         val_n=args.val_n,
         reflect_fn=reflect_fn,
         error_top_n=args.error_top_n,
+        config_row_predictor=config_predictor,
         on_record=persist,
     )
 
