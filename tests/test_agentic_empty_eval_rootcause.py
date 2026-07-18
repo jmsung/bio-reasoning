@@ -29,6 +29,9 @@ from bio_reasoning.trial_loop.types import Variant
 
 
 def _frame(n: int = 240) -> pd.DataFrame:
+    # Balanced 3-class (up/down/none) over 240 rows → every holdout split has both
+    # DE-vs-none and up-vs-down classes present, so both AUROCs are non-nan. Don't
+    # shrink n or skew the label mix without re-checking the non-nan assertions below.
     labels = ["up", "down", "none"]
     return pd.DataFrame(
         {

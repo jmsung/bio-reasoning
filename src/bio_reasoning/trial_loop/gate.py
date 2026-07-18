@@ -89,6 +89,23 @@ def measure_noise_band(scores: Sequence[float]) -> float:
     return float(max(scores) - min(scores))
 
 
+def _representative_metrics(per_split: list[dict[str, float]]) -> dict[str, float] | None:
+    """Collapse per-split metric dicts into one display row for the leaderboard.
+
+    ``n_val`` is taken from the first split (val size is stable across split seeds);
+    ``auroc_de``/``auroc_dir``/``mean`` are averaged over the same splits (nan-skipping)
+    so the rendered row stays internally consistent — ``mean == (auroc_de+auroc_dir)/2``
+    — rather than mixing a multi-split mean with single-split AUROCs.
+    """
+    if not per_split:
+        return None
+    out: dict[str, float] = {"n_val": per_split[0].get("n_val", 0)}
+    for k in ("auroc_de", "auroc_dir", "mean"):
+        vals = [m[k] for m in per_split if k in m and not np.isnan(m[k])]
+        out[k] = float(np.mean(vals)) if vals else float("nan")
+    return out
+
+
 @dataclass
 class GateResult:
     """Verdict of a triple-verify run. ``feasibility_ratio`` = P9's gate-feasibility
@@ -105,9 +122,10 @@ class GateResult:
     external_candidate: float | None = None
     external_baseline: float | None = None
     external_delta: float | None = None
-    # Representative (first split-seed) full metric dict for candidate / baseline —
-    # carries n_val + both AUROCs so the driver record and leaderboard show real
-    # diagnostics instead of the 0/nan defaults.
+    # Representative metric dict for candidate / baseline — n_val from the first split,
+    # AUROCs/mean averaged across splits (see _representative_metrics) — so the driver
+    # record and leaderboard show real, internally-consistent diagnostics instead of the
+    # 0/nan defaults.
     candidate_metrics: dict[str, float] | None = None
     baseline_metrics: dict[str, float] | None = None
 
@@ -169,6 +187,6 @@ def triple_verify(
         external_candidate=ext_cand,
         external_baseline=ext_base,
         external_delta=ext_delta,
-        candidate_metrics=cand_full[0] if cand_full else None,
-        baseline_metrics=base_full[0] if base_full else None,
+        candidate_metrics=_representative_metrics(cand_full),
+        baseline_metrics=_representative_metrics(base_full),
     )
