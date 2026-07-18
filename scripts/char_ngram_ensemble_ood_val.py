@@ -13,7 +13,7 @@ a clear regression does.
 Measured (holdout seed 0): baseline GO+neighbour-DIR 0.5663 → +char 0.5485 (DE+DIR)
 / 0.5532 (DIR-only) — a clear **regression**, and the CFA gate REJECTs char
 (DE-AUROC 0.487). Verdict: dead lever; char's chance-level direction dilutes the
-strong neighbour-DIR. See mb/notes/rank1-plan.md (Killed/deferred).
+strong neighbour-DIR. Recorded as a killed/deferred lever in internal planning notes.
 
 Run: uv run --group eval python scripts/char_ngram_ensemble_ood_val.py
 """

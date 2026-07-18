@@ -281,6 +281,10 @@ separated cleanly.
   [Track B](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b) ·
   [Track C](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-c)
 
+## License
+
+MIT — see [`LICENSE`](LICENSE).
+
 ## Source of truth
 
 `README.md` and `docs/` are the authoritative reference for this repo.
