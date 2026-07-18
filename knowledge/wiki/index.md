@@ -155,6 +155,7 @@ _(none yet)_
 - [Marginal DE caps at STRING degree (~0.536) — essentiality is redundant, static DE route exhausted](findings/marginal-de-caps-at-degree.md) — 2026-07-16
 - [LLM self-consistency does not crack the DE axis (AUROC_de 0.495) — kill-test](findings/llm-self-consistency-fails-de-axis.md) — 2026-07-17
 - [Under a noisy evaluator, a resampling policy (bandit) beats a try-each-once grid](findings/resampling-beats-try-each-once-under-noise.md) — 2026-07-17
+- [DE is unlearnable from identity/marginals — leakage-allowed oracle caps at 0.555 (≈chance) on OOD; naive 0.960 is a leakage mirage](findings/de-unlearnable-oracle-ceiling.md) — 2026-07-17
 
 ### Methods
 
