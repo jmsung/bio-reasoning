@@ -1,285 +1,131 @@
-# bio-reasoning-2026
+# Predicting perturbation response under dual-OOD generalization
 
-BioReasoning Challenge 2026 — MLGenX Workshop @ ICLR 2026.
+*BioReasoning Challenge 2026 — MLGenX Workshop @ ICLR 2026 (Genentech BRAID).*
 
-Testing whether LLMs and agentic systems can serve as useful computational
-engines for predicting cellular behavior. Specifically: predict perturbation
-outcomes in macrophages across three challenge tracks
-([overview](https://genentech.github.io/BioReasoningChallenge/)).
+**The question.** Given a genetic perturbation (a gene knocked down by CRISPRi)
+and a target gene in mouse macrophages, can an LLM/agentic system predict whether
+the target's expression goes **up**, **down**, or **none** — on a split where *both*
+the perturbations *and* the target genes at test time are entirely unseen in training
+(0/96 perturbations and 0/636 target genes overlap)? This **doubly-out-of-distribution**
+design makes memorization worthless: a model cannot look up "what did this gene do
+before" and must generalize from transferable biological reasoning. The scored metric
+is `mean(AUROC_de, AUROC_dir)` — one axis for *does this pair respond at all* (DE), one
+for *which direction* (up vs. down).
+
+This repo is the full investigation: an honest evaluation harness, the modeling ladder,
+and a rigorous characterization of exactly where signal exists and where it provably
+does not.
+
+## Key results
+
+The central finding is a clean decomposition of the difficulty: **the DE axis is
+provably unlearnable on this split; direction is the only learnable axis.** We reached
+an honest, leak-free ceiling and — more importantly — established *why* it is a ceiling.
+
+- **DE-vs-none is unlearnable by design, not merely un-cracked.** To rule out "our
+  features are just weak," we built a **cheating oracle** — a DE head *permitted to see
+  the true per-gene and per-perturbation DE propensities* — and scored it on the honest
+  dual-OOD split. It still lands at **AUROC_de = 0.555 ± 0.036 ≈ chance**. Because an
+  honest model can only do worse than an oracle, this is a hard upper bound: no leak-free
+  channel — curated regulatory edges, learned models, retrieval lookup, chain-of-thought,
+  or agentic external-knowledge retrieval — can rank none-vs-DE for a truly unseen pair.
+  *Recognizing when the signal isn't there is the scientific contribution.*
+  ([findings](knowledge/wiki/findings/de-unlearnable-oracle-ceiling.md))
+
+- **Honest leak-free ceiling: Track A 0.586, Track B 0.597** (Kaggle public LB). Every
+  leaderboard gain we booked was a **direction** gain; the DE axis never moved off chance.
+  Direction tops out around **~0.65** (neighbour-retrieval AUROC_dir 0.651), giving an
+  honest mean-AUROC ceiling near ~0.60.
+  ([technical report](reports/technical-report.md))
+
+- **The public leaderboard's 0.693 does not reproduce on an honest split.** A faithful
+  implementation of the disclosed public recipe (char-ngram two-stage) scores only
+  **0.552** on the real board — below our functional-feature model. The transductive
+  tricks in the public notebooks move an OOD score by ≈0.000. We did not chase inflated
+  numbers. ([findings](knowledge/wiki/findings/field-gap-586-693.md))
+
+- **This sprint's capstone: external biological knowledge does not crack DE either.** A
+  Track B **per-row LLM agent** reasoning over *live-retrieved* GO/STRING biology (the
+  one format the oracle never saw — leak-free, 0% abstention) teased **AUROC_de = 0.631**
+  on a 150-row read, then regressed to **0.578, 95% CI [0.549, 0.607]** on the trustworthy
+  **1,500-row** read — an interval that *includes* the 0.555 ceiling. The wall is
+  format-independent, and the 150-row tease would have been a false breakthrough had we
+  submitted on it. ([findings](knowledge/wiki/findings/external-knowledge-does-not-crack-de.md))
+
+The recurring methodological thread: **a rank-metric AUROC from a small OOD sample lies.**
+A naive 60-row CV inflated Track B by **0.187** (0.675 CV → 0.488 LB) and *inverted* a
+conclusion; our honest dual-OOD split predicts the real leaderboard to within **~0.004–0.005**
+and became the trusted offline gate we rank every idea on before spending a Kaggle submission.
+
+## What's technically interesting
+
+- **A leak-free dual-OOD evaluation harness** ([`eval/split.py`](src/bio_reasoning/eval/split.py))
+  — holds perturbations *and* target genes out simultaneously, mirroring the test set's
+  structure, so offline scores actually predict the board. This discipline is the keystone
+  the whole project rests on.
+- **A cheating-oracle ceiling probe** ([`eval/de_ceiling.py`](src/bio_reasoning/eval/de_ceiling.py),
+  [`scripts/de_ceiling_probe.py`](scripts/de_ceiling_probe.py)) — the falsification tool
+  that turns "we couldn't crack DE" into "DE is unrankable even by a model allowed to cheat,"
+  after catching and defusing a subtle intra-fold label-leakage trap (a mirage 0.960).
+- **A self-evolving agentic optimization loop** ([`trial_loop/`](src/bio_reasoning/trial_loop/))
+  — AlphaEvolve/GEPA/ACE-style search: a population of variants under reflection-driven
+  mutation that reasons over misclassified cases
+  ([`reflective_mutation.py`](src/bio_reasoning/trial_loop/reflective_mutation.py),
+  [`evolve.py`](src/bio_reasoning/trial_loop/evolve.py)) plus a scored fusion-config axis
+  ([`config_predictor.py`](src/bio_reasoning/trial_loop/config_predictor.py)), each iteration
+  logged to a legible per-iteration journal
+  ([`journal.py`](src/bio_reasoning/trial_loop/journal.py)) so you can see whether the search
+  is improving or random-walking.
+- **A calibrated retrieval agent** — a per-row Track B agent that pulls GO:BP terms and STRING
+  partners live from mygene.info / string-db, with the abstention collapse that sank v1 (72%
+  `0/0` ties → LB 0.488) fixed to 0%.
+
+Full writeup: [`reports/technical-report.md`](reports/technical-report.md).
+
+## Approach
+
+We run this project **agentically**: the whole investigation above was built by directing
+agents — define the goal, shape the plan, review the diffs — not by hand-writing the code.
+It is deliberate practice in agent-driven engineering on a biologically meaningful problem,
+with a bias toward system-level tooling (an honest harness, a self-improving loop) over
+hand-tuning. Full philosophy + agent conventions: [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
 
 ## Team
+
 - Jongmin Sung — https://www.linkedin.com/in/jongmin-sung/
 - Bing Hu — https://www.linkedin.com/in/bingxuhu/
 - Joo Lee — https://www.linkedin.com/in/joo-lee-b0a9b9161/
 
-## Approach
-
-We're running this project **agentically**: we plan, guide, and review;
-the agent does most of the actual code work. The point is hands-on
-practice with agent-driven engineering on a biologically meaningful problem
-in a low-stakes setting. Concretely:
-
-- **Agents do the work, we manage.** Define goals, shape the plan, review
-  diffs, give feedback. The agent executes under our direction.
-- **Agents must ask.** When intent is ambiguous, stop and ask — alignment
-  beats velocity.
-- **System over micro-management.** Cutting-edge harness and agentic
-  workflows over hand-tuning.
-
-(Full philosophy + agent conventions: [`.claude/CLAUDE.md`](.claude/CLAUDE.md))
-
-## Where to start
-
-If you just cloned this repo:
-
-1. Skim [`docs/challenge.md`](docs/challenge.md) — what the challenge is,
-   tracks, our entry decision.
-2. Skim [`docs/where-things-live.md`](docs/where-things-live.md) — repo
-   vs. Drive vs. Kaggle.
-3. Point your Claude Code (or any agent) at [`.claude/CLAUDE.md`](.claude/CLAUDE.md) —
-   team-shared conventions and skills.
-
-## Setup
+## Repo tour
 
 ```bash
-uv sync                 # install deps
-cp .env.example .env    # add API keys (Together AI / Fireworks for GPT-OSS-120B; Kaggle)
+uv sync    # install deps
 ```
 
-For this repo's current multi-provider testing flow, a repo-local virtualenv is
-also supported:
-
-```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install --upgrade pip setuptools wheel
-python -m pip install -e .
-python -m pip install anthropic openai python-dotenv pandas scikit-learn "dspy>=3.1.3" "azure-identity>=1.23.0" vllm
-```
-
-Data is pulled from Kaggle, not committed. See `data/README.md` for
-download instructions once `scripts/prepare_data.py` is wired up.
-
-## Script organization
-
-The repo is currently organized around three execution layers:
-
-### 1. Main challenge runners
-- `scripts/track_a_prompt_only.py` — main Track A runner
-- `scripts/track_b_agentic.py` — main Track B runner
-
-These are the scripts to evolve toward full challenge submissions.
-
-Shared, importable pieces live under `src/bio_reasoning/`: the runners' agent
-wiring (`build_openrouter_lm`, `build_react_agent`, `predict_row` in
-`track_b_agentic.py`) and the OpenAI-compatible chat client
-(`src/bio_reasoning/utils/openai_compat.py`, `post_chat_completion`) are reused
-by the trial-loop below.
-
-### 1b. Trial-loop optimization harness
-- `scripts/trial_loop.py` — CLI to score Track A prompt variants (`--track a`,
-  default) or the Track B agent (`--track b`) on the leak-free dual-OOD
-  validation split, then propose → run → reflect → archive over a grid.
-- `src/bio_reasoning/trial_loop/` — the importable harness (loop, reflect,
-  archive, types).
-- `scripts/self_improve_loop.py` — the 24/7 self-improvement runner: propose →
-  triple-verify (a candidate must beat baseline on every OOD split by more than
-  the seed noise band; when a Traxler real-label fold is supplied, an OOD-survivor
-  must *also* beat baseline on that held-out in-domain fold) → promote, until dry
-  or budget-capped. Two lanes share the gate: the default **DE-votes** lane (live
-  prompt variants, KB-ruled-out channels filtered; search policy via
-  `--proposer {grid,bandit,llm}`) and the **agentic** lane (`--agentic`) that
-  searches Track B tool configs — which real-data tools (GO/STRING/Traxler
-  direction) a per-variant ReAct agent may call — with the tool-free agent as
-  baseline (leak-safe: the Traxler tool is dropped whenever its fold is the eval).
-  It never submits — a gate-surviving variant is surfaced for a human-gated
-  Kaggle submission.
-  Backed by `trial_loop.{inference,proposers,de_variants,bandit,llm_proposer,agent_variants,tools,gate,ruled_out,driver,submission,preflight}`.
-- `make verify` — fast DEV pipeline (minutes, not the ~1.4–2.8 h full-val gate):
-  `scripts/verify_loop.py` preflights one real smoke trial on a `--val-n` subsample
-  (asserts non-empty responses, `n_val>0`, non-nan mean, a written archive — liveness ≠
-  working), then `scripts/self_improve_loop.py --val-n N` prints a `DEV SIGNAL READ`
-  (baseline vs best-variant Δ) as a go/no-go. The `--val-n` knob is DEV-ONLY and makes the
-  gate untrustworthy — never promote off it. Tune with `make verify VAL_N=120 MAX_TRIALS=8`.
-- `scripts/build_traxler_labels.py` — regenerates the Traxler native real-label
-  validation fold (`data/external/traxler_labels.csv`, gitignored — a reproducible
-  artifact like `train.csv`) that the gate's optional external check scores against.
-  Backed by `data.traxler_labels` (log2FC→schema thresholding + a leak-free exemplar pool).
-
-Artifacts (`trials.jsonl`, leaderboard, per-row cache) are written to
-`outputs/trial-loop/`; self-improve trials to `outputs/self-improve-loop/`
-(both gitignored). The self-improve runner also writes a human-readable
-`journal.md` there (one legible entry per iteration — config, the knob changed
-vs the running best, result ± noise band, best-so-far trajectory; `--no-journal`
-to disable) so you can see whether the search is improving or random-walking. Track B needs the `track-b` dep group
-(`uv sync --group track-b`) and `OPENROUTER_API_KEY`.
-
-### 2. Track B tools
-- `scripts/tools/` — local and external tool implementations used by Track B
-
-Recommended rule: keep reusable tool logic in `scripts/tools/`, not embedded
-inside agent runner scripts.
-
-### 3. Smoke / validation scripts
-- `scripts/smoke/provider_smoke.py` — quick provider ping
-- `scripts/smoke/track_schema_smoke.py` — minimal Track A / Track B schema validation
-- `scripts/smoke/common.py` — shared provider-selection + request helpers
-
-Recommended rule: keep smoke tests lightweight, provider-aware, and focused on
-connectivity + output schema rather than full evaluation quality.
-
-## Provider configuration
-
-Provider selection is controlled by `.env` via:
-
-```env
-BIOREASONING_LLM_PROVIDER=openai_compatible  # or: openai, azure_openai, anthropic
-```
-
-Supported modes currently include:
-
-- `openai_compatible` — local vLLM / GPT-OSS or other OpenAI-compatible endpoints
-- `openai` — OpenAI-hosted models
-- `azure_openai` — Azure OpenAI or Azure AI Foundry / OpenAI-compatible endpoints
-- `anthropic` — Anthropic-hosted models
-
-The smoke scripts also accept a `--provider` override:
-
-```bash
---provider gpt_oss
---provider openai
---provider azure
---provider anthropic
-```
-
-## Smoke tests
-
-### Quick provider ping
-
-```bash
-. .venv/bin/activate
-python scripts/smoke/provider_smoke.py --provider azure --prompt 'Reply with exactly: smoke test ok'
-```
-
-### Track A schema smoke test
-
-```bash
-. .venv/bin/activate
-python scripts/smoke/track_schema_smoke.py --provider azure --track a --rows 1 --max-tokens 64
-```
-
-### Track B schema smoke test
-
-```bash
-. .venv/bin/activate
-python scripts/smoke/track_schema_smoke.py --provider azure --track b --rows 1 --max-tokens 64
-```
-
-Outputs are written to:
-
-- `outputs/smoke/track_a_<provider>_smoke_submission.csv`
-- `outputs/smoke/track_b_<provider>_smoke_submission.csv`
-
-## Local GPT-OSS-120B setup
-
-Tracks A and B in the official challenge use GPT-OSS-120B via a local vLLM
-server.
-
-### What is already verified in this repo
-
-- `vllm` is installed in `.venv`
-- the local vLLM OpenAI API server CLI is available
-- Azure smoke tests are passing
-- provider-aware smoke scripts are ready to test GPT-OSS once the server is up
-
-### What is still required on this machine
-
-To pull `openai/gpt-oss-120b`, this node still needs a Hugging Face token.
-Current status on this machine during validation:
-
-- CUDA-visible GPU present: `NVIDIA GB10`
-- disk available: ~660 GB free on `/`
-- Hugging Face token: **not configured yet**
-
-Without HF auth, the model download cannot start.
-
-### Recommended serve command
-
-```bash
-. .venv/bin/activate
-export HF_HOME=${HF_HOME:-$HOME/.cache/huggingface}
-python -m vllm.entrypoints.openai.api_server \
-  --model openai/gpt-oss-120b \
-  --port 8000 \
-  --enforce-eager \
-  --no-enable-prefix-caching
-```
-
-If you need tensor parallelism across multiple GPUs, add:
-
-```bash
-  --tensor-parallel-size 2
-```
-
-### After the local server starts
-
-Run GPT-OSS smoke tests with:
-
-```bash
-. .venv/bin/activate
-BIOREASONING_LLM_PROVIDER=openai_compatible \
-BIOREASONING_OPENAI_API_BASE=http://localhost:8000/v1 \
-BIOREASONING_OPENAI_MODEL=openai/gpt-oss-120b \
-python scripts/smoke/provider_smoke.py --provider gpt_oss --max-tokens 64
-```
-
-```bash
-. .venv/bin/activate
-BIOREASONING_LLM_PROVIDER=openai_compatible \
-BIOREASONING_OPENAI_API_BASE=http://localhost:8000/v1 \
-BIOREASONING_OPENAI_MODEL=openai/gpt-oss-120b \
-python scripts/smoke/track_schema_smoke.py --provider gpt_oss --track a --rows 1 --max-tokens 64
-```
-
-```bash
-. .venv/bin/activate
-BIOREASONING_LLM_PROVIDER=openai_compatible \
-BIOREASONING_OPENAI_API_BASE=http://localhost:8000/v1 \
-BIOREASONING_OPENAI_MODEL=openai/gpt-oss-120b \
-python scripts/smoke/track_schema_smoke.py --provider gpt_oss --track b --rows 1 --max-tokens 64
-```
-
-### Recommended next cleanup
-
-As the repo matures, the cleanest layout is:
-
-- `scripts/run/` — primary Track A / Track B runners
-- `scripts/tools/` — Track B tools
-- `scripts/smoke/` — provider and schema smoke tests
-- `src/bio_reasoning/utils/` — reusable provider clients / config
-
-That keeps submission logic, tools, smoke tests, and reusable library code
-separated cleanly.
-
-## Canonical docs
+Start with [`reports/technical-report.md`](reports/technical-report.md) for the full story,
+then the canonical docs:
 
 | File | Owns |
 |---|---|
+| [`reports/technical-report.md`](reports/technical-report.md) | The full investigation — problem, methods, results, negative results |
 | [`docs/challenge.md`](docs/challenge.md) | Challenge summary, per-track detail, entry decision |
 | [`docs/roadmap.md`](docs/roadmap.md) | Single living plan — priority-ordered Todo + completed milestones |
-| [`docs/development.md`](docs/development.md) | Setup, R&D workflow, conventions |
-| [`docs/where-things-live.md`](docs/where-things-live.md) | Map of repo / Drive / Kaggle and a "what goes where" cheatsheet |
-| [`knowledge/wiki/`](knowledge/wiki/) | Distilled team knowledge — see its [README](knowledge/wiki/README.md) for the four `/wiki-*` skills |
-| [`.claude/CLAUDE.md`](.claude/CLAUDE.md) | Agent-facing team conventions |
+| [`docs/development.md`](docs/development.md) | Setup, provider config, GPT-OSS serving, R&D workflow, conventions |
+| [`docs/architecture.md`](docs/architecture.md) | System design — data flow, components, per-track notes |
+| [`docs/where-things-live.md`](docs/where-things-live.md) | Map of repo / Drive / Kaggle |
+| [`knowledge/wiki/`](knowledge/wiki/) | Distilled team knowledge — findings, methods, decisions |
+
+Code layout: importable library in `src/bio_reasoning/`, entry points in `scripts/`. Data is
+pulled from Kaggle, not committed. Full setup detail (provider config, local GPT-OSS/vLLM
+serving, smoke tests) lives in [`docs/development.md`](docs/development.md).
 
 ## Resources
 
 - **GitHub:** https://github.com/jmsung/bio-reasoning
-- **Drive** (papers, raw artifacts, writeups): private — shared with the team
 - **Kaggle:**
   [Track A](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-a) ·
-  [Track B](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b) ·
-  [Track C](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-c)
+  [Track B](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b)
+- **Challenge overview:** https://genentech.github.io/BioReasoningChallenge/
 
 ## License
 
@@ -287,7 +133,7 @@ MIT — see [`LICENSE`](LICENSE).
 
 ## Source of truth
 
-`README.md` and `docs/` are the authoritative reference for this repo.
-Any code change that affects workflow, API, file layout, data schema, or
-commands **must** update the relevant docs in the same commit or PR.
-Stale docs are worse than missing docs.
+`README.md` and `docs/` are the authoritative reference for this repo. Any code change that
+affects workflow, API, file layout, data schema, or commands **must** update the relevant docs
+in the same commit or PR. Stale docs are worse than missing docs.
+</content>
