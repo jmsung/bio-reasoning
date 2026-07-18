@@ -96,3 +96,10 @@ channel only if standalone DE-AUROC ≥ min AND low Spearman vs the current `s_d
 Any future DE channel (logprob, retrieval) should be validated through it on
 OOD-val before spending an LB submission. It is exactly the CFA gate that rejected
 the STRING proximity channel here.
+
+## See also
+
+[[de-unlearnable-on-dual-ood]] — the terminal proof this finding pointed toward: a
+leakage-allowed oracle caps AUROC_de at **0.555 ± 0.036 ≈ chance**, so the DE axis is
+unlearnable-by-design, not merely un-cracked by curated edges. ·
+[[direction-transfers-de-doesnt]] · [[marginal-de-caps-at-degree]]

@@ -147,3 +147,10 @@ implicitly via char n-grams + `same_prefix2`/`same_suffix2` features.
   constraints and the legality reasoning (a frozen tabular PFN is neither the
   fixed base LLM, a fine-tune of it, nor an external *LLM* → reads as legal); the
   one open item is confirming it on the JS-rendered Kaggle Rules tab.
+
+## See also
+
+[[de-unlearnable-on-dual-ood]] — why the "open lane" (external knowledge fed to the
+LLM) does not rescue rank on the DE axis: the axis is unlearnable-by-design (oracle
+ceiling 0.555 ≈ chance), so the field's headroom, if real, must live on direction /
+an easier-than-dual-OOD split. · [[direction-transfers-de-doesnt]]

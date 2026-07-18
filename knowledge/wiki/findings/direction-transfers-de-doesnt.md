@@ -112,6 +112,8 @@ housekeeping-up / immune-down). So any signal source — feature, edge, retrieva
 
 ## See also
 
-[[neighbor-retrieval-direction-lever]] · [[curated-edges-fail-de-axis]] ·
-[[marginal-de-caps-at-degree]] · [[housekeeping-transfer-hypothesis]] ·
-[[track-a-eda]] · [[track-b-abstention-failure]] · [[dir-ceiling-equal-weight-fusion]]
+[[de-unlearnable-on-dual-ood]] (the oracle-ceiling capstone: even a cheating oracle
+caps AUROC_de at 0.555 ≈ chance) · [[neighbor-retrieval-direction-lever]] ·
+[[curated-edges-fail-de-axis]] · [[marginal-de-caps-at-degree]] ·
+[[housekeeping-transfer-hypothesis]] · [[track-a-eda]] ·
+[[track-b-abstention-failure]] · [[dir-ceiling-equal-weight-fusion]]
