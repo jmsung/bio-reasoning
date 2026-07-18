@@ -108,7 +108,10 @@ by the trial-loop below.
 
 Artifacts (`trials.jsonl`, leaderboard, per-row cache) are written to
 `outputs/trial-loop/`; self-improve trials to `outputs/self-improve-loop/`
-(both gitignored). Track B needs the `track-b` dep group
+(both gitignored). The self-improve runner also writes a human-readable
+`journal.md` there (one legible entry per iteration — config, the knob changed
+vs the running best, result ± noise band, best-so-far trajectory; `--no-journal`
+to disable) so you can see whether the search is improving or random-walking. Track B needs the `track-b` dep group
 (`uv sync --group track-b`) and `OPENROUTER_API_KEY`.
 
 ### 2. Track B tools
