@@ -47,12 +47,21 @@ def main() -> None:
     print(f"\n{'baseline':<22}{'pooled (all rows)':<34}{'leak-free CV (mean±std)'}")
     for name, pu, pdn in [("constant (no signal)", const, const), ("prior (functional)", up, down)]:
         pooled = score_preds(labels, pu, pdn)
-        fold_means = []
+        fold_means, n_evals = [], []
         for tr, ev in doubly_disjoint_folds(df, k=K, seed=SEED):
+            # A doubly-disjoint fold can hold out every row on small/sparse data,
+            # leaving 0 eval rows — skip it (an empty fold scores nothing) rather
+            # than hand evaluate() an empty array, which fails loud by design.
+            if len(ev) == 0:
+                continue
             assert_leak_free(df, tr, ev)
             fold_means.append(score_preds(labels[ev], pu[ev], pdn[ev])["mean"])
-        fm = np.array(fold_means, dtype=float)
-        cv = f"{np.nanmean(fm):.3f} ± {np.nanstd(fm):.3f}  (n_eval≈{int(np.mean([len(ev) for _, ev in doubly_disjoint_folds(df, k=K, seed=SEED)]))})"
+            n_evals.append(len(ev))
+        if fold_means:
+            fm = np.array(fold_means, dtype=float)
+            cv = f"{np.nanmean(fm):.3f} ± {np.nanstd(fm):.3f}  (n_eval≈{int(np.mean(n_evals))})"
+        else:
+            cv = "n/a  (no non-empty folds)"
         print(f"{name:<22}{_fmt(pooled):<34}{cv}")
 
     print(
