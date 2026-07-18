@@ -110,6 +110,10 @@ Ordered by priority — understand → plan → build.
     - [x] (#55) rl/llm variant proposer
     - [x] (#56) agentic tool-use
     - [x] (#57) deadlock fix
+    - [x] (#68) AlphaEvolve population driver + blind free-form mutation (#66/#67/#68)
+    - [x] (#69) GEPA/ACE reflection-driven mutation — `--proposer alphaevolve-reflect`
+      collects the incumbent's misclassified val rows and reasons a targeted prompt OR
+      fusion-config revision (not a blind reword), carrying the *why* into the journal
     - **Current blocker: throughput** (~1.4–2.8 h/trial); heavy loop
       optimization deferred.
 

@@ -7,6 +7,27 @@ from dataclasses import asdict, dataclass
 
 
 @dataclass(frozen=True)
+class PipelineConfig:
+    """A structured fusion-pipeline configuration a reflective mutation may select.
+
+    The prompt axis edits *wording*; this axis edits the *pipeline* — which DE/DIR
+    channels (:mod:`bio_reasoning.models.fuse`) get rank-fused, with what per-channel
+    weight, and which optional features feed them. Tuple fields keep it hashable so a
+    :class:`Variant` carrying one stays hashable (usable as a dict/set key).
+
+    Attributes:
+        channels: Ordered channel names to fuse (from the shipped channel vocabulary;
+            an unknown name is rejected by ``validate_pipeline_config``).
+        weights: Per-channel fusion weight, aligned 1:1 with ``channels``.
+        features: Optional feature toggles that condition the channels.
+    """
+
+    channels: tuple[str, ...]
+    weights: tuple[float, ...]
+    features: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class Variant:
     """One Track A prompt-only configuration to evaluate.
 
@@ -35,6 +56,14 @@ class Variant:
         self_critique: Track B agentic knob — when ``True`` the agent runs a
             second self-critique/verify pass over its first prediction. Inert for
             prompt-only (``tools is None``) variants; part of the agent cache key.
+        reason: Optional human-readable *why* attached by a reflective mutation
+            (:mod:`trial_loop.reflective_mutation`) — the failure pattern the reflector
+            read and the revision it proposed. Surfaced by the journal so each
+            generation logs its reasoning, not just its score. ``None`` for
+            blind/grid/bandit variants.
+        pipeline_config: Optional structured fusion-pipeline config selected by a
+            reflective mutation targeting the pipeline (not the prompt). ``None`` for
+            prompt-only variants.
     """
 
     id: str
@@ -45,6 +74,8 @@ class Variant:
     seeds: tuple[int, ...] = (42, 43, 44)
     tools: tuple[str, ...] | None = None
     self_critique: bool = False
+    reason: str | None = None
+    pipeline_config: PipelineConfig | None = None
 
 
 @dataclass
@@ -74,4 +105,11 @@ class TrialRecord:
         v["seeds"] = tuple(v["seeds"])
         if v.get("tools") is not None:
             v["tools"] = tuple(v["tools"])
+        pc = v.get("pipeline_config")
+        if pc is not None:
+            v["pipeline_config"] = PipelineConfig(
+                channels=tuple(pc["channels"]),
+                weights=tuple(pc["weights"]),
+                features=tuple(pc.get("features", ())),
+            )
         return cls(variant=Variant(**v), **d)

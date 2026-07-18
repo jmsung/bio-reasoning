@@ -15,6 +15,13 @@ surfaced for a human-gated submission, Goal 5):
     same journal so the trajectory is legible. Knobs: --generations --top-k --children.
     uv run python scripts/self_improve_loop.py --proposer alphaevolve --budget-usd 5
 
+  * AlphaEvolve-reflect (``--proposer alphaevolve-reflect``): the same driver, but the
+    GEPA/ACE upgrade from BLIND to LEARN-WHY mutation — each parent's misclassified val
+    rows are collected and handed to the reflector, which reasons about the failure
+    pattern and proposes a *targeted* prompt OR fusion-config revision, carrying its
+    stated reason into the journal. Knob: --error-top-n.
+    uv run python scripts/self_improve_loop.py --proposer alphaevolve-reflect --budget-usd 5
+
   * Agentic (``--agentic``): tool-config proposer + a per-variant DSPy ReAct agent
     over the real-data tools (GO/STRING/Traxler-direction). Baseline is the tool-free
     agent, so the gate accepts a config only if real tools beat it. A Traxler fold csv
@@ -216,8 +223,10 @@ _EVOLVE_SEED_TEMPLATES = (_DIRECTION_PRIOR, _GO_CONTEXT)
 def _evolve_setup(args, df):
     """AlphaEvolve lane: seed population + mutation author + prompt predictor.
 
-    ``propose_fn`` is the gpt-oss mutation author — ``mutate_prompt`` hands it the full
-    instruction (parent template + reward history), so this is a bare completion call.
+    ``propose_fn`` is the gpt-oss mutation author — ``mutate_prompt`` (blind) or
+    ``reflect_and_mutate`` (reflection-driven, ``--proposer alphaevolve-reflect``) hands
+    it the full instruction (parent template + reward history or misclassified rows), so
+    this is a bare completion call reused for both modes.
     """
     infer, predictor, example_key_fn, spent_usd, errors_fn = _de_infer(args, df)
     n = max(1, min(args.population, len(_EVOLVE_SEED_TEMPLATES)))
@@ -290,6 +299,10 @@ def _run_evolve(args, df) -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     persist = _make_persist(args, spent_usd)
 
+    # Reflection-driven mode (GEPA/ACE): reuse the same completion caller as the reflector
+    # so each parent's misclassified rows drive a reasoned mutation, not a blind reword.
+    reflect_fn = propose_fn if args.proposer == "alphaevolve-reflect" else None
+
     res = evolve_loop(
         df,
         seed_variants,
@@ -305,12 +318,14 @@ def _run_evolve(args, df) -> None:
         spent_fn=spent_usd if args.budget_usd is not None else None,
         example_key_fn=example_key_fn,
         val_n=args.val_n,
+        reflect_fn=reflect_fn,
+        error_top_n=args.error_top_n,
         on_record=persist,
     )
 
     traj = " → ".join(f"{m:.3f}" for m in res.best_trajectory)
     print(
-        f"\n[loop] search=alphaevolve  generations={res.generations}  "
+        f"\n[loop] search={args.proposer}  generations={res.generations}  "
         f"evaluated={len(res.records)}  stopped={res.stopped_reason}"
     )
     print(f"[loop] best-so-far trajectory: [{traj}]")
@@ -335,13 +350,22 @@ def main() -> None:
     ap.add_argument("--baseline-id", default="jsagent", help="Starting baseline variant id.")
     ap.add_argument(
         "--proposer",
-        choices=(*PROPOSERS, "alphaevolve"),
+        choices=(*PROPOSERS, "alphaevolve", "alphaevolve-reflect"),
         default="grid",
         help="DE lane search policy: grid (walk once) | bandit (UCB resample) | llm "
         "(gpt-oss optimizer) | alphaevolve (population-based evolutionary driver — "
-        "top-K selection + free-form mutation, see --generations/--top-k/--children). "
-        "bandit/llm/alphaevolve never self-converge — pair with --generations, "
+        "top-K selection + BLIND free-form mutation) | alphaevolve-reflect (same driver "
+        "but GEPA/ACE REFLECTION-driven mutation — each parent's misclassified val rows "
+        "drive a reasoned prompt OR fusion-config revision; see --error-top-n). "
+        "bandit/llm/alphaevolve* never self-converge — pair with --generations, "
         "--max-trials, or --budget-usd. Ignored under --agentic.",
+    )
+    ap.add_argument(
+        "--error-top-n",
+        type=int,
+        default=20,
+        help="alphaevolve-reflect: how many of each parent's misclassified val rows to "
+        "feed the reflector (most-confidently-wrong first).",
     )
     ap.add_argument(
         "--population",
@@ -402,7 +426,7 @@ def main() -> None:
 
     df = pd.read_csv(args.train_csv)
 
-    if args.proposer == "alphaevolve" and not args.agentic:
+    if args.proposer in ("alphaevolve", "alphaevolve-reflect") and not args.agentic:
         _run_evolve(args, df)
         return
 
