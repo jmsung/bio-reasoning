@@ -157,6 +157,7 @@ _(none yet)_
 - [DE is unlearnable on the honest dual-OOD split — leakage-allowed oracle caps AUROC_de at 0.555 ≈ chance](findings/de-unlearnable-on-dual-ood.md) — 2026-07-17
 - [Under a noisy evaluator, a resampling policy (bandit) beats a try-each-once grid](findings/resampling-beats-try-each-once-under-noise.md) — 2026-07-17
 - [DE is unlearnable from identity/marginals — leakage-allowed oracle caps at 0.555 (≈chance) on OOD; naive 0.960 is a leakage mirage](findings/de-unlearnable-oracle-ceiling.md) — 2026-07-17
+- [The 0.586→0.693 Track A gap is not a reachable signal — transductive tricks ≈0 on OOD, public recipe doesn't reproduce](findings/field-gap-586-693.md) — 2026-07-17
 
 ### Methods
 
