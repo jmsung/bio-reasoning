@@ -33,8 +33,13 @@ Ordered by priority — understand → plan → build.
      (transferability hypothesis — see [[housekeeping-transfer-hypothesis]]) —
      **done via PerturbQA Stage-0 probe: transfer is selection-inflated on the
      overlap and gives no robust OOD lift; lane closed**
-   - enumerate Tahoe's 50-line panel; flag myeloid/monocytic lines (THP-1,
-     U937, …) closest to macrophages
+   - [x] enumerate Tahoe's 50-line panel; flag myeloid/monocytic lines (THP-1,
+     U937, …) closest to macrophages — **done (`research/tahoe-100m-transfer`):
+     panel is entirely solid-tumor, ZERO myeloid lines. Tahoe's only leak-free
+     channel (drug-MoA→target) covers just 3.1% of Track A perts, and a PERFECT
+     oracle on that 3% lifts dual-OOD mean only +0.0079 ± 0.0030 (upper bound =
+     seed noise). Clean negative — strictly weaker than the already-closed
+     PerturbQA lane. See [[tahoe-100m-transfer]].**
    - **Perturb-seq lane go/no-go** → [`perturb-seq-lane-decision.md`](perturb-seq-lane-decision.md):
      **DECIDED — NO-GO, lane closed.** `research/perturb-seq-transfer-probe` measured no
      robust OOD lift (+0.0075 mean = one-seed noise; overlap DE 0.72 collapses to ~0.53 on
