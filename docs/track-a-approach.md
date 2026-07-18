@@ -2,6 +2,8 @@
 
 **From:** Joo · **For:** Jongmin (to structure into a plan)
 
+> _Early approach notes (2026-07-14), since validated/extended by the findings: direction, functional (not identity) retrieval, and the dual-OOD holdout were **confirmed** and are central to the final method; the DE-confidence-from-prior-data and literature-crawl ideas were **tested and closed** (DE proven unlearnable, external-knowledge parity). See [`reports/technical-report.md`](../reports/technical-report.md) and [`knowledge/wiki/findings/`](../knowledge/wiki/findings/)._
+
 Track A is the prompt-only track: a single model call per perturbation–gene
 pair, no tools. Our proposal here is a **safe, evidence-grounded baseline** —
 the floor that the agentic Track B method (see `track-b-approach.md`) has to

@@ -2,6 +2,8 @@
 
 **From:** Joo · **For:** Jongmin (to structure into a plan)
 
+> _Early approach notes (2026-07-14), since validated/extended by the findings: functional biological tools, graded confidence, and the dual-OOD holdout were **confirmed**; the agentic literature/dataset-crawl idea was **tested → parity** (external knowledge doesn't crack DE, and arbitrary literature is off the allowed-data list). See [`reports/technical-report.md`](../reports/technical-report.md) and [`knowledge/wiki/findings/external-knowledge-does-not-crack-de.md`](../knowledge/wiki/findings/external-knowledge-does-not-crack-de.md)._
+
 Track B is the agentic tool-use track: same task and data as Track A (predict
 up/down/none for a perturbation–gene pair, same AUROC metric), but the model may
 **reason and call tools** across many rounds per row. Where Track A leans on a
