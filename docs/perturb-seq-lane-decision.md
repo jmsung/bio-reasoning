@@ -39,17 +39,17 @@ The published consensus is **strongly cautionary for the OOD-both-axes regime** 
 
 - The challenge **explicitly allows** PerturbQA and Tahoe-100M as augmentation (permissively licensed). `knowledge/source/2026-bioreasoning-challenge-overview.md`.
 - PerturbQA is built from / includes Replogle K562/RPE1 — a flagged leakage-check requirement.
-- **The check was run and PASSED:** Track A is mouse macrophage; PerturbQA is human K562/RPE1/HepG2/Jurkat → disjoint on **both** species and cell type, so Track A labels cannot derive from it and measured transfer is **not** source-inflated. `mb/active/research-perturb-seq-transfer-probe.md`.
+- **The check was run and PASSED:** Track A is mouse macrophage; PerturbQA is human K562/RPE1/HepG2/Jurkat → disjoint on **both** species and cell type, so Track A labels cannot derive from it and measured transfer is **not** source-inflated. (`research/perturb-seq-transfer-probe`).
 
 ## 4. Coverage — NOT a blocker
 
-The probe's uppercase-ortholog map covers **64/96 (67%) of TEST perts** and 242 train-overlap pairs. The essential-gene core (where signal concentrates) is well-measured. `mb/active/research-perturb-seq-transfer-probe.md`.
+The probe's uppercase-ortholog map covers **64/96 (67%) of TEST perts** and 242 train-overlap pairs. The essential-gene core (where signal concentrates) is well-measured. (`research/perturb-seq-transfer-probe`).
 
 ## 5. Cost of opening the lane
 
 - **Cheap route (already de-risked by the probe):** PerturbQA curated CSVs on pandas alone — no `pertpy`/`scanpy`, no single-cell download. Most of the measured signal came from here.
 - **Expensive route (may be unnecessary):** genome-scale Replogle pseudobulk pull — tens–100+ GB server-side, ortholog mapping, DE-thresholding, new deps. `knowledge/wiki/methods/perturb-seq-data-assessment.md`.
-- **Integration:** an external-retrieval channel reusing the existing `fuse()` / `cfa_gate()` harness (~500 lines per the pre-probe scoping). `mb/notes/perturb-seq-data-lane.md`.
+- **Integration:** an external-retrieval channel reusing the existing `fuse()` / `cfa_gate()` harness (~500 lines per the pre-probe scoping).
 
 ## 6. What the probe has already measured (and what it hasn't)
 
@@ -63,7 +63,7 @@ The probe's uppercase-ortholog map covers **64/96 (67%) of TEST perts** and 242 
 
 1. **Does the external channel *fuse* for a real OOD lift, or is it redundant?** Stage-0 measured *on-overlap agreement*, not *held-out lift*. The transferable DE is marginal (pert-level) — exactly the kind of signal existing channels may already capture. **Decisive number = probe Goal 5's fused-mean on `holdout_split` vs 0.5663.**
 2. **Ceiling vs cost.** Even a successful lane reinforces **direction (already ~0.65-capped)** and adds only *marginal* pert-DE, not pair-specific DE. Honest mean-AUROC ceiling stays ~0.60–0.65 — ~0.10 below the field's **unverified** 0.693 (which does not reproduce on a true dual-OOD split; `knowledge/wiki/findings/competitor-landscape.md`). The cheap PerturbQA-CSV route means the *cost* of a first real submission is low, so the bar for "worth trying once" is correspondingly low.
-3. **Is rank-1 reachable by *any* data lane?** Standing team conclusion: rank-1 likely needs the untried **model-based DE crack** (token-logprob self-consistency, endpoint-gated) *or* the field sitting on an easier-than-dual-OOD split — **not more direction/data**. The data lane's honest best case is "a modest, bounded lift on an axis we already lead," not rank-1. `knowledge/wiki/findings/direction-transfers-de-doesnt.md`; `mb/notes/perturb-seq-data-lane.md`.
+3. **Is rank-1 reachable by *any* data lane?** Standing team conclusion: rank-1 likely needs the untried **model-based DE crack** (token-logprob self-consistency, endpoint-gated) *or* the field sitting on an easier-than-dual-OOD split — **not more direction/data**. The data lane's honest best case is "a modest, bounded lift on an axis we already lead," not rank-1. `knowledge/wiki/findings/direction-transfers-de-doesnt.md`.
 
 ## Decision
 
@@ -133,8 +133,7 @@ not `CFA ADMIT` → **NO-GO.**
 better than our internal STRING-degree marginal-DE proxy on OOD, and the expensive
 Replogle pipeline is not opened. The honest ~0.65 direction ceiling stands; the
 higher-EV rank-1 bet is the **model-based DE crack** (token-logprob self-consistency;
-`feat/de-logprob-self-consistency`), not more data. Verdict recorded in
-`mb/notes/perturb-seq-data-lane.md` and `mb/notes/rank1-plan.md`.
+`feat/de-logprob-self-consistency`), not more data.
 
 ### Real-LB confirmation (2026-07-17, `research/perturb-seq-real-lb-overlap`)
 
