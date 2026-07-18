@@ -23,7 +23,7 @@ Distilled, cited knowledge about the problem, methods, and decisions. See
 [`README.md`](README.md) for conventions and skill commands.
 
 For other artifacts: code in [`src/`](../../src/), team materials in
-[Drive](https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS),
+Drive (private — shared with the team),
 data and submissions in [Kaggle](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-a).
 See [`docs/where-things-live.md`](../../docs/where-things-live.md) for the full
 map.

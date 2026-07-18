@@ -175,5 +175,5 @@ not a shortcut.
 
 ## Shared resources
 - GitHub (code + PRs + issues): https://github.com/jmsung/bio-reasoning
-- Google Drive (papers, materials): https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS
+- Google Drive (papers, materials): private — shared with the team
 - Kaggle competitions: Track A / B / C URLs in the Project section above

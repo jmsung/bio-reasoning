@@ -275,7 +275,7 @@ separated cleanly.
 ## Resources
 
 - **GitHub:** https://github.com/jmsung/bio-reasoning
-- **Drive** (papers, raw artifacts, writeups): https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS
+- **Drive** (papers, raw artifacts, writeups): private — shared with the team
 - **Kaggle:**
   [Track A](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-a) ·
   [Track B](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b) ·

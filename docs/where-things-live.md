@@ -9,7 +9,7 @@ you can't find something or aren't sure where to put something.
 | Where | What it holds | Format |
 |---|---|---|
 | **Repo** (this GitHub repo) | code, configs, team-facing docs | text, in git |
-| **[Drive](https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS)** | raw / binary / large / external artifacts | PDFs, slides, datasets, screenshots |
+| **Drive** (private — shared with the team) | raw / binary / large / external artifacts | PDFs, slides, datasets, screenshots |
 | **Kaggle** ([Track A](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-a) · [Track B](https://www.kaggle.com/competitions/ml-gen-x-bioreasoning-challenge-track-b)) | challenge data, leaderboard, official submission | platform-managed |
 
 Rule of thumb when you don't know where something goes:
@@ -46,7 +46,7 @@ Canonical docs in `docs/`:
 
 ## Drive (shared with team)
 
-Root: https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS
+Root: private — shared with the team
 
 ```
 bio-reasoning-2026/

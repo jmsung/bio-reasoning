@@ -73,7 +73,7 @@ no automatic regeneration.
 
 If a teammate would want to read it on their phone (PDF, slides,
 screenshot), it does NOT live in any of these layers — it lives in
-[Drive](https://drive.google.com/drive/folders/1kE-JCKUJowtu7XFn5LALDt9xEq1DYBxS).
+Drive (private — shared with the team).
 Link to the Drive original via `drive:` in the source page's frontmatter.
 
 ## How to ingest
