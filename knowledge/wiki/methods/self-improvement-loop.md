@@ -128,6 +128,26 @@ lesson:** a variant knob that selects *which* context to retrieve is only real i
 retrieval key function is actually plumbed to the inference call — otherwise the
 search space is smaller than it looks.
 
+## Gotcha — the agentic `n_val=0` was a reporting default, not an empty eval (`fix/agentic-empty-eval-rootcause`)
+
+The overnight `--agentic` run "finished" trials showing `n_val: 0, auroc_de: nan,
+auroc_dir: nan` and a `mean 0.547` that "beat" the floor — read at the time as *the DSPy
+ReAct agent produced no valid predictions (empty eval)*. **That diagnosis was wrong.** The
+agentic eval was **non-empty**: the agent scored a full val set and `mean ≈ 0.484–0.547` was
+a real, weak score near the ~0.533 floor.
+
+The misleading `n_val=0` + nan AUROCs were a **reporting default**. `triple_verify` scored
+each split with `run_variant` (which *does* compute `n_val`/`auroc_de`/`auroc_dir`) but kept
+only the scalar `metrics[metric]` (the mean); the driver then built `TrialRecord.metrics` as
+`{mean, baseline_mean, min_margin, feasibility_ratio, accepted}` — **no diagnostics** — so
+`render_leaderboard`'s `m.get('n_val', 0)` / `.get('auroc_de', nan)` filled them in. Every
+driver trial (DE *and* agentic) showed `n_val=0` + nan AUROCs. Fix: `score_across_seeds_full`
+retains the full per-split dict, `GateResult` carries the representative candidate/baseline
+metrics, and the driver stores `n_val`/`auroc_de`/`auroc_dir`. **General lesson (extends the
+liveness≠working theme):** a degenerate-looking *number in a report* can be a `.get()` default
+rather than a measured value — verify a diagnostic is actually *populated* before diagnosing
+the pipeline from it. Regression-guarded in `test_agentic_empty_eval_rootcause.py`.
+
 ## Safety invariant
 
 The loop **never auto-submits**. `submission.py` builds a schema-valid Track A frame
