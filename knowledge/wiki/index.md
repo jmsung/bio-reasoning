@@ -161,6 +161,7 @@ _(none yet)_
 - [DepMap co-essentiality is a weaker direction key than STRING (0.547) — does not beat/add to the 0.651 incumbent](findings/coessentiality-direction-key-negative.md) — 2026-07-17
 - [The retrieval agent's AUROC_de=0.631 was 150-row noise — regresses to 0.578 [0.549, 0.607] ≈ the ceiling (leak-free)](findings/retrieval-agent-de-headline-was-noise.md) — 2026-07-17
 - [External knowledge does not crack the DE axis — LLM-agent retrieval lands at parity; the DE wall is format-independent](findings/external-knowledge-does-not-crack-de.md) — 2026-07-18
+- [cellshift.bio 0.752 forensics — the Track B leader's edge is most plausibly a data moat, not a rules-legal lever](findings/cellshift-0752-forensics.md) — 2026-07-17
 
 ### Methods
 
