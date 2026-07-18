@@ -45,6 +45,27 @@ def score_external_fold(
     return evaluate(fold_df["label"].to_numpy(), mean[:, 0], mean[:, 1])[metric]
 
 
+def score_across_seeds_full(
+    df,
+    variant: Variant,
+    row_predictor: RowPredictor,
+    seeds: Sequence[int] = (0, 1, 2),
+    **run_kwargs: object,
+) -> list[dict[str, float]]:
+    """Full metric dict (``n_val``/``auroc_de``/``auroc_dir``/``mean``) per split seed.
+
+    ``seeds`` are *split* seeds (each re-draws ``holdout_split``), distinct from
+    ``variant.seeds`` (the multi-sample average within one split). The scalar
+    :func:`score_across_seeds` keeps only ``metrics[metric]``; the gate uses this
+    full-dict form so the per-trial diagnostics (n_val, both AUROCs) survive into the
+    record instead of defaulting to 0/nan in the leaderboard.
+    """
+    return [
+        run_variant(df, variant, row_predictor, seed=s, **run_kwargs).metrics  # type: ignore[arg-type]
+        for s in seeds
+    ]
+
+
 def score_across_seeds(
     df,
     variant: Variant,
@@ -59,8 +80,7 @@ def score_across_seeds(
     from ``variant.seeds`` (the multi-sample average within one split).
     """
     return [
-        run_variant(df, variant, row_predictor, seed=s, **run_kwargs).metrics[metric]  # type: ignore[arg-type]
-        for s in seeds
+        m[metric] for m in score_across_seeds_full(df, variant, row_predictor, seeds, **run_kwargs)
     ]
 
 
@@ -85,6 +105,11 @@ class GateResult:
     external_candidate: float | None = None
     external_baseline: float | None = None
     external_delta: float | None = None
+    # Representative (first split-seed) full metric dict for candidate / baseline —
+    # carries n_val + both AUROCs so the driver record and leaderboard show real
+    # diagnostics instead of the 0/nan defaults.
+    candidate_metrics: dict[str, float] | None = None
+    baseline_metrics: dict[str, float] | None = None
 
     @property
     def min_margin(self) -> float:
@@ -119,8 +144,10 @@ def triple_verify(
     overfitting the challenge-train distribution. The fold is scored only for
     OOD-survivors (short-circuit) since each fold eval is expensive.
     """
-    cand = score_across_seeds(df, candidate, row_predictor, seeds, metric, **run_kwargs)
-    base = score_across_seeds(df, baseline, row_predictor, seeds, metric, **run_kwargs)
+    cand_full = score_across_seeds_full(df, candidate, row_predictor, seeds, **run_kwargs)
+    base_full = score_across_seeds_full(df, baseline, row_predictor, seeds, **run_kwargs)
+    cand = [m[metric] for m in cand_full]
+    base = [m[metric] for m in base_full]
     if noise_band is None:
         noise_band = measure_noise_band(base)
     margins = [c - b for c, b in zip(cand, base, strict=True)]
@@ -142,4 +169,6 @@ def triple_verify(
         external_candidate=ext_cand,
         external_baseline=ext_base,
         external_delta=ext_delta,
+        candidate_metrics=cand_full[0] if cand_full else None,
+        baseline_metrics=base_full[0] if base_full else None,
     )

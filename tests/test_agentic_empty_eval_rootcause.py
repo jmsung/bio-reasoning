@@ -21,7 +21,10 @@ import math
 
 import pandas as pd
 
+from bio_reasoning.trial_loop.archive import render_leaderboard
+from bio_reasoning.trial_loop.driver import self_improve_loop
 from bio_reasoning.trial_loop.loop import make_agent_row_predictor, run_variant
+from bio_reasoning.trial_loop.reflect import make_grid_proposer
 from bio_reasoning.trial_loop.types import Variant
 
 
@@ -56,3 +59,37 @@ def test_agentic_eval_is_nonempty_with_real_score():
 
     assert rec.metrics["n_val"] > 0, "agentic val set is non-empty — not an empty eval"
     assert not math.isnan(rec.metrics["mean"]), "a non-empty eval yields a real mean"
+
+
+def _run_loop():
+    df = _frame()
+    predictor = make_agent_row_predictor(_varied_agent)
+    return self_improve_loop(
+        df,
+        make_grid_proposer([Variant(id="agent-go-s1", tools=("go_terms",), seeds=(42,))]),
+        predictor,
+        Variant(id="agent-prior-s1", tools=(), seeds=(42,)),
+        seeds=(0, 1, 2),
+        noise_band=0.05,
+        max_trials=1,
+    )
+
+
+def test_driver_record_carries_val_diagnostics():
+    """The driver record must carry real n_val + AUROCs — not the 0/nan defaults.
+
+    This is the regression for the phantom: before the fix the driver stored only
+    {mean, baseline_mean, min_margin, feasibility_ratio, accepted}, so these keys were
+    absent and the leaderboard filled them with 0/nan — the false 'empty eval' signal.
+    """
+    rec = _run_loop().records[0]
+    assert rec.metrics["n_val"] > 0
+    assert not math.isnan(rec.metrics["auroc_de"])
+    assert not math.isnan(rec.metrics["auroc_dir"])
+
+
+def test_leaderboard_shows_real_n_val_not_zero():
+    """render_leaderboard must not report a healthy trial as n_val=0."""
+    table = render_leaderboard(_run_loop().records)
+    # the n_val column is the real val-set size (240 rows, ~40% held out), never 0
+    assert "| 0 |" not in table, f"leaderboard still shows n_val=0:\n{table}"
