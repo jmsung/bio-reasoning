@@ -23,10 +23,12 @@ framing is essentially unenforced by the metric. The two transferable wins are t
 and **character / gene-family prefix structure** (the only mechanism that survives
 the doubly-disjoint split; [[track-a-eda]]). The open lane nobody occupies: **real
 external gene knowledge** (GO / STRING / pathway) fed to the LLM, and **TabPFN over
-functional features** ([[tabpfn-for-perturbation-tracks]]). Caveat (measured later):
-external knowledge helps only as *LLM retrieval context*, **not** as a direct
-curated-edge feature on the DE axis — those edges are too sparse/weak
-([[curated-edges-fail-de-axis]]).
+functional features** ([[tabpfn-for-perturbation-tracks]]). Caveat (both measured
+later, both closed): external knowledge helps only as *LLM retrieval context*, **not**
+as a direct curated-edge feature on the DE axis — those edges are too sparse/weak
+([[curated-edges-fail-de-axis]]); and TabPFN over functional features (as combiner
+*and* as primary predictor) is now measured dead — mean ≤ incumbent, DE on the 0.555
+wall, DIR below neighbour-DIR ([[tabpfn-for-perturbation-tracks]]).
 
 ## Where the field stands (live leaderboards, 2026-07)
 
@@ -129,11 +131,13 @@ implicitly via char n-grams + `same_prefix2`/`same_suffix2` features.
    ortholog lookup) fed into gpt-oss reasoning is genuinely differentiated. String
    n-grams cannot know a gene is a transcription factor vs a transporter; our
    evidence prior already can.
-4. **TabPFN over functional features, not strings.** Nobody in the public field
-   uses a tabular foundation model; [[tabpfn-for-perturbation-tracks]] argues (via
-   Palla et al.) it is SOTA for perturbation prediction. Pair it with the
-   functional features the string-ML crowd ignores — the differentiated
-   combination. Do the two-stage decomposition first (orthogonal, cheaper).
+4. **TabPFN over functional features, not strings.** ~~Nobody in the public field
+   uses a tabular foundation model~~ — **measured and closed negative
+   (`feat/tabpfn-predictor`):** a two-stage TabPFN over a dense functional
+   pair-feature table lands mean 0.552 / 0.598 ≤ incumbent, DE on the 0.555 wall,
+   DIR below neighbour-DIR every seed. Palla et al.'s SOTA claim does not transfer
+   to our dual-OOD-both-axes regime; featurization, not backbone, is the wall
+   ([[tabpfn-for-perturbation-tracks]]). Not a differentiator for us.
 5. **Score against the right ceiling.** Before spending LLM budget, replicate a
    proper nearest-family classical baseline on our dual-OOD split. Our
    evidence-prior floor there is **0.533** on the held-out val (cf. 0.534 CV /

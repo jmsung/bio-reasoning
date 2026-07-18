@@ -98,7 +98,14 @@ identity/marginal channels, not ground-truth measurement).
 The competitor-landscape open lane. TabPFN as a **combiner** over our 3 saturated DIR channels
 is already dead (0.613 < 0.651 neighbour-DIR; [[tabpfn-for-perturbation-tracks]]). Framing #2 —
 TabPFN as the **primary predictor** over rich pair features (pert GO/pathway/embedding × gene
-expr/centrality) — is **genuinely untried by us**.
+expr/centrality) — was the last legal+untried lever.
+
+**Update (2026-07, `feat/tabpfn-predictor`): now measured, and it is dead too.** A two-stage
+TabPFN over a 10-column dense functional pair-feature table scored mean **0.552 / 0.598** on the
+dual-OOD split (2 seeds) — DE straddles the 0.555 oracle wall, DIR (0.547 / 0.607) trails
+neighbour-DIR (0.644 / 0.674) on every seed, and the mean is **≤ incumbent** (Track A 0.586 /
+B 0.597). Exactly the floor-matcher the estimate below predicted; **no submission**. Both TabPFN
+framings are closed negative ([[tabpfn-for-perturbation-tracks]]).
 
 - **(a) Plausibility it explains 0.752: low.** Palla et al. show tabular FMs are SOTA for
   perturbation prediction *but only modestly positive in the hardest genome-wide OOD-both-axes
@@ -151,15 +158,17 @@ Both point the same way for us: **no rules-legal, still-available lever gets us 
 - **Is 0.752 a replicable lever or proprietary data?** Most plausibly **proprietary data used
   as a tool** (a data moat) — reinforced by cellshift.bio ≈ Shift Bioscience, a perturb-seq
   company — with a likely dose of public-LB inflation. **Not a method we are failing to copy.**
-- **Is there a concrete rules-legal lever worth a final 4-day sprint?** The only legal + untried
-  option is **TabPFN-as-primary-predictor** (framing #2), and its honest EV is a **floor-raiser
-  (~+0.00–0.02 mean, landing ~0.585–0.60)**, not a path to 0.752. Given the DE-unlearnable
-  capstone (oracle 0.555, format-independent) and the real-LB-confirmed honest split, **0.752 is
-  honestly out of reach** for any lever legal-and-available to us before the deadline.
+- **Is there a concrete rules-legal lever worth a final 4-day sprint?** The last legal + untried
+  option was **TabPFN-as-primary-predictor** (framing #2), whose honest EV we estimated at a
+  **floor-raiser (~+0.00–0.02 mean)**, not a path to 0.752. **Now measured
+  (`feat/tabpfn-predictor`, 2 dual-OOD seeds): dead — mean 0.552 / 0.598 ≤ incumbent, DE on the
+  0.555 wall, DIR below neighbour-DIR every seed.** With this the last legal lever is spent; given
+  the DE-unlearnable capstone (oracle 0.555, format-independent) and the real-LB-confirmed honest
+  split, **0.752 is honestly out of reach** for any lever legal-and-available to us.
 - **Recommendation:** **do not sprint to chase 0.752.** Bank the honest ceiling (the project's
-  publishable negative result, [[de-unlearnable-on-dual-ood]]). If any final effort is spent, run
-  TabPFN-primary-predictor as a cheap Track A/B floor-raiser and read it as a baseline, not a
-  rank bet — and only after confirming tabular-FM legality on the Track B Rules tab.
+  publishable negative result, [[de-unlearnable-on-dual-ood]]). The TabPFN-primary-predictor
+  floor-raiser has now been run and read as a baseline (no lift over incumbent), closing the
+  tabular-FM lane; no rules-legal lever remains.
 
 ## To verify (if ever revisited)
 

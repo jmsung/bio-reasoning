@@ -12,8 +12,10 @@ cites:
 
 [[../home]] | [[../index]]
 
-**Status: draft — combiner framing measured (negative, below); primary-predictor
-framing not yet built.**
+**Status: measured — both framings now closed negative. Combiner framing (DIR
+0.613 < 0.651) and primary-predictor framing (mean ≤ incumbent, hits the DE +
+dir walls) both measured on the dual-OOD split; see the two "Measured" sections
+below.**
 
 Can a general-purpose **tabular foundation model** (TabPFN / TabICL — Prior-Fitted
 Networks that do zero-shot in-context inference, no training) serve as the
@@ -120,10 +122,50 @@ modestly positive in the hardest genome-wide setting). Deps note: pin
 `tabpfn>=2.1,<2.2` (v8+ adds a `TABPFN_TOKEN` license gate that breaks offline
 runs); TabICL is Apache-open.
 
-## Next step
+## Measured: TabPFN-as-primary-predictor is also a dead frame (`feat/tabpfn-predictor`)
 
-Cheap experiment: `feat/tabpfn-track-a` — featurize pairs → TabPFN classifier →
-`prediction_up/down` → validate on `doubly_disjoint_folds` vs the 0.529 floor. If
-it clears the floor at near-zero effort, it becomes both a strong Track A baseline
-*and* the anchor tool for a Track B agent. (This is framing #2 — primary predictor
-over rich features — and remains untried; the combiner framing above is closed.)
+Framing #2 — TabPFN as the **primary** two-stage predictor (`P(DE) · P(up|DE)`),
+not a combiner — is now built and measured (`scripts/tabpfn_predictor_eval.py` +
+`src/bio_reasoning/features/functional_pair_features.py`). Two TabPFN classifiers
+(a P(DE) head on all train rows, a P(up|DE) head on train DE rows) over a **dense,
+10-column functional pair-feature table** distilled from the same knowledge sources
+the incumbent channels use — GO:BP overlap (pert/gene term counts, shared, Jaccard),
+STRING graph (pert/gene degree, direct-edge flag, shared-neighbour count + Jaccard),
+and gene-text embedding cosine. Every column is a pure function of `(pert, gene)`
+identity + static external KB (never labels), so the matrix is leak-free by
+construction; `holdout_split` holds out every val pert **and** gene and
+`assert_leak_free` guards it.
+
+Result on the dual-OOD split, identical val rows (2 seeds — the run was CPU-wedged
+at ~4 min/seed and killed after 2 of 5 completed; the verdict is nonetheless
+decisive, see below):
+
+| seed | TabPFN DE | TabPFN DIR | TabPFN mean | neighbour-DIR |
+|---|---|---|---|---|
+| 0 | 0.558 | 0.547 | 0.552 | 0.644 |
+| 1 | 0.590 | 0.607 | 0.598 | 0.674 |
+
+**Verdict: clean negative — no lift, no submission.** TabPFN-as-primary-predictor
+hits the *same* walls as everything else:
+
+- **DE sits on the wall.** 0.558 / 0.590 straddles the leakage-allowed DE oracle
+  ceiling (0.555, [[de-unlearnable-oracle-ceiling]]) — TabPFN manufactures no DE
+  signal the oracle already proved absent. Expected: its DE features (GO overlap,
+  degree) are exactly the label-free structural correlates that cap ~0.585.
+- **DIR trails neighbour-DIR on *every* seed** (0.547 < 0.644; 0.607 < 0.674). The
+  static functional features carry no direction signal the STRING-neighbour
+  label-borrowing channel lacks; the ~0.65 dir ceiling ([[dir-ceiling-equal-weight-fusion]])
+  stands, and TabPFN sits *below* it.
+- **Mean ≤ incumbent both seeds** (0.552, 0.598 vs Track A LB 0.586 / B 0.597). No
+  seed clears the incumbent by a margin; the honest read is a floor-*matcher*, not a
+  floor-raiser. **No Track A submission CSV generated.**
+
+Only 2/5 seeds landed (CPU wedge), but the verdict does not hinge on the missing
+seeds: both completed seeds are ≤ incumbent on the mean, DIR trails neighbour-DIR on
+every seed, and DE straddles the oracle wall — exactly the outcome the forensics
+([[cellshift-0752-forensics]]) predicted for this lever (EV ~+0.00–0.02, "a cheap
+strong baseline, not a 0.75 cracker"). This confirms Palla et al.'s own thesis from
+the other side: **featurization is the lever, and our features encode no signal past
+the measured walls** — a stronger tabular backbone cannot invent it. Both TabPFN
+framings (combiner + primary predictor) are now closed negative; the tabular-FM lane
+is done.
