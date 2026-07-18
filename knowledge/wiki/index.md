@@ -159,6 +159,8 @@ _(none yet)_
 - [DE is unlearnable from identity/marginals — leakage-allowed oracle caps at 0.555 (≈chance) on OOD; naive 0.960 is a leakage mirage](findings/de-unlearnable-oracle-ceiling.md) — 2026-07-17
 - [The 0.586→0.693 Track A gap is not a reachable signal — transductive tricks ≈0 on OOD, public recipe doesn't reproduce](findings/field-gap-586-693.md) — 2026-07-17
 - [DepMap co-essentiality is a weaker direction key than STRING (0.547) — does not beat/add to the 0.651 incumbent](findings/coessentiality-direction-key-negative.md) — 2026-07-17
+- [The retrieval agent's AUROC_de=0.631 was 150-row noise — regresses to 0.578 [0.549, 0.607] ≈ the ceiling (leak-free)](findings/retrieval-agent-de-headline-was-noise.md) — 2026-07-17
+- [External knowledge does not crack the DE axis — LLM-agent retrieval lands at parity; the DE wall is format-independent](findings/external-knowledge-does-not-crack-de.md) — 2026-07-18
 
 ### Methods
 
