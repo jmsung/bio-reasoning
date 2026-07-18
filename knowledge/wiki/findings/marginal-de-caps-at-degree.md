@@ -70,5 +70,6 @@ marginal cannot move a head that already has connectivity.
 
 ## See also
 
-[[direction-transfers-de-doesnt]] · [[curated-edges-fail-de-axis]] ·
-[[housekeeping-transfer-hypothesis]]
+[[de-unlearnable-on-dual-ood]] (the oracle ceiling: 0.536 marginal is below even the
+leakage-allowed oracle's 0.555) · [[direction-transfers-de-doesnt]] ·
+[[curated-edges-fail-de-axis]] · [[housekeeping-transfer-hypothesis]]
