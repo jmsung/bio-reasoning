@@ -12,10 +12,10 @@ cites:
 
 [[../home]] | [[../index]]
 
-**Status: measured — both framings now closed negative. Combiner framing (DIR
-0.613 < 0.651) and primary-predictor framing (mean ≤ incumbent, hits the DE +
-dir walls) both measured on the dual-OOD split; see the two "Measured" sections
-below.**
+**Status: measured — the whole tabular-ML class is closed negative. Both TabPFN
+framings (combiner DIR 0.613 < 0.651; primary mean ≤ incumbent, on the DE + dir
+walls) AND XGBoost (weaker still on every metric) measured on the dual-OOD split;
+see the three "Measured" sections below.**
 
 Can a general-purpose **tabular foundation model** (TabPFN / TabICL — Prior-Fitted
 Networks that do zero-shot in-context inference, no training) serve as the
@@ -169,3 +169,31 @@ the other side: **featurization is the lever, and our features encode no signal 
 the measured walls** — a stronger tabular backbone cannot invent it. Both TabPFN
 framings (combiner + primary predictor) are now closed negative; the tabular-FM lane
 is done.
+
+## Measured: XGBoost (gradient-boosted twin) is weaker still — the tabular-ML class is closed (`feat/xgboost-predictor`)
+
+Completeness probe to close the tabular-ML class from the *other* end of the model
+family: XGBoost over the **same** functional features, both framings, mirroring the
+two TabPFN scripts exactly (`scripts/xgboost_predictor_eval.py`, modest trees —
+`max_depth=3`, `n_estimators=100`, subsample 0.8 — to guard tiny-data overfitting).
+5 dual-OOD seeds, identical val rows:
+
+| framing | metric | XGBoost | TabPFN | incumbent / wall |
+|---|---|---|---|---|
+| primary 2-stage | DE | 0.549 ± 0.023 | 0.558 / 0.590 | 0.555 oracle ceiling |
+| primary 2-stage | DIR | 0.525 ± 0.016 | 0.547 / 0.607 | 0.651 neighbour-DIR |
+| primary 2-stage | mean | 0.537 ± 0.016 | 0.552 / 0.598 | LB 0.586 / 0.597 |
+| combiner | DIR | 0.571 ± 0.044 | 0.613 | 0.651 neighbour, 0.642 equal-fuse |
+
+**Verdict: clean negative — and XGBoost is weaker than TabPFN on *every* metric**, as
+theory predicts (TabPFN, an in-context PFN, is the stronger small-data tabular model;
+gradient boosting overfits ~250 OOD-DE rows / 10 features more readily). It hits the
+identical walls: DE 0.549 sits *on* the classifier-agnostic oracle ceiling (0.555,
+[[de-unlearnable-oracle-ceiling]]) — the oracle proof is model-independent, so no
+gradient-boosted head could clear it; DIR 0.525 (primary) and 0.571 (combiner) both
+trail neighbour-DIR (0.651, [[dir-ceiling-equal-weight-fusion]]) and even equal-weight
+fusion (0.642); mean 0.537 < both TabPFN and the incumbent LB. **No Track A submission
+generated.** This closes the **tabular-ML class** (both TabPFN framings + XGBoost, both
+combiner and primary): the ceiling is set by *features on a dual-OOD split*, not by
+model form — swapping the head only moves the score *down* toward the wall, never past
+it.
