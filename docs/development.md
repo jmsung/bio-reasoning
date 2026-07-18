@@ -30,6 +30,62 @@ Data and large artifacts are **not** in the repo. See
 [`where-things-live.md`](where-things-live.md) for the repo / Drive / Kaggle
 map.
 
+## Provider configuration
+
+The runners talk to the fixed challenge model (GPT-OSS-120B) through an
+OpenAI-compatible client. Provider selection is controlled by `.env`:
+
+```env
+BIOREASONING_LLM_PROVIDER=openai_compatible  # or: openai, azure_openai, anthropic
+```
+
+Supported modes:
+
+- `openai_compatible` — local vLLM / GPT-OSS or any OpenAI-compatible endpoint
+- `openai` — OpenAI-hosted models
+- `azure_openai` — Azure OpenAI / Azure AI Foundry
+- `anthropic` — Anthropic-hosted models
+
+The smoke scripts also accept a `--provider` override (`gpt_oss`, `openai`,
+`azure`, `anthropic`).
+
+## Local GPT-OSS-120B (vLLM)
+
+Tracks A and B in the official challenge use GPT-OSS-120B. To serve it locally
+you need a Hugging Face token (for the model pull) and a CUDA GPU. Serve command:
+
+```bash
+export HF_HOME=${HF_HOME:-$HOME/.cache/huggingface}
+uv run python -m vllm.entrypoints.openai.api_server \
+  --model openai/gpt-oss-120b \
+  --port 8000 \
+  --enforce-eager \
+  --no-enable-prefix-caching
+# add --tensor-parallel-size N for multi-GPU
+```
+
+Point the runners at it:
+
+```env
+BIOREASONING_LLM_PROVIDER=openai_compatible
+BIOREASONING_OPENAI_API_BASE=http://localhost:8000/v1
+BIOREASONING_OPENAI_MODEL=openai/gpt-oss-120b
+```
+
+## Smoke tests
+
+Lightweight connectivity + output-schema checks (not full-eval quality):
+
+```bash
+# provider ping
+uv run python scripts/smoke/provider_smoke.py --provider azure \
+  --prompt 'Reply with exactly: smoke test ok'
+
+# Track A / Track B schema (writes outputs/smoke/track_<x>_<provider>_smoke_submission.csv)
+uv run python scripts/smoke/track_schema_smoke.py --provider azure --track a --rows 1 --max-tokens 64
+uv run python scripts/smoke/track_schema_smoke.py --provider azure --track b --rows 1 --max-tokens 64
+```
+
 ## R&D workflow
 
 We work in 5 small steps. The point is to keep the plan, the work, and the
