@@ -31,6 +31,11 @@ from dataclasses import dataclass, field
 from bio_reasoning.trial_loop.gate import measure_noise_band, score_across_seeds_full
 from bio_reasoning.trial_loop.loop import ExampleKeyFn, RowPredictor
 from bio_reasoning.trial_loop.prompt_mutation import MutateFn, mutate_prompt
+from bio_reasoning.trial_loop.reflective_mutation import (
+    ReflectFn,
+    collect_val_errors,
+    reflect_and_mutate,
+)
 from bio_reasoning.trial_loop.types import TrialRecord, Variant
 
 
@@ -174,6 +179,8 @@ def evolve_loop(
     spent_fn: Callable[[], float] | None = None,
     example_key_fn: ExampleKeyFn | None = None,
     val_n: int | None = None,
+    reflect_fn: ReflectFn | None = None,
+    error_top_n: int = 20,
     on_record: Callable[[TrialRecord], None] | None = None,
 ) -> EvolveResult:
     """Run the population-based AlphaEvolve loop over prompt-template variants.
@@ -187,6 +194,12 @@ def evolve_loop(
     gain ≤ band) stop the run. ``budget`` caps ``spent_fn()`` (checked before each child
     eval). ``example_key_fn``/``val_n`` are forwarded to the split machinery
     (``val_n`` is DEV-ONLY smoke — it makes the gate untrustworthy; never select off it).
+
+    When ``reflect_fn`` is given the loop switches from **blind** mutation (``propose_fn``)
+    to **reflection-driven** mutation (GEPA/ACE): once per parent per generation it
+    collects that parent's ``error_top_n`` misclassified val rows and hands them to
+    ``reflect_and_mutate``, so each child is a *reasoned* revision (prompt edit or fusion
+    config) with the reflector's ``reason`` attached. ``propose_fn`` is then unused.
     Every evaluated child (and each gen-0 seed) is emitted via ``on_record`` for the
     journal.
     """
@@ -219,15 +232,36 @@ def evolve_loop(
             if over_budget:
                 break
             band_ref = parent.band if noise_band is None else noise_band
+            # Reflection mode: one error-collection rollout per parent feeds every child.
+            parent_errors = (
+                collect_val_errors(
+                    df,
+                    parent.variant,
+                    row_predictor,
+                    seed=seeds[0],
+                    top_n=error_top_n,
+                    example_key_fn=example_key_fn,
+                    val_n=val_n,
+                )
+                if reflect_fn is not None
+                else []
+            )
             for child_index in range(children_per_parent):
                 if budget is not None and spent_fn is not None and spent_fn() >= budget:
                     over_budget = True
                     break
-                child_variant = mutate_prompt(
-                    parent.variant.prompt_template or "",
-                    records,
-                    _diversified(propose_fn, child_index),
-                )
+                if reflect_fn is not None:
+                    child_variant = reflect_and_mutate(
+                        parent.variant,
+                        parent_errors,
+                        _diversified(reflect_fn, child_index),
+                    )
+                else:
+                    child_variant = mutate_prompt(
+                        parent.variant.prompt_template or "",
+                        records,
+                        _diversified(propose_fn, child_index),
+                    )
                 child = _evaluate(df, child_variant, row_predictor, seeds, metric, run_kwargs)
                 children.append(child)
                 emit(_record(child, parent, band_ref, generation))

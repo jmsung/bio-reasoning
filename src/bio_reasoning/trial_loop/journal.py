@@ -90,14 +90,17 @@ def render_journal_entry(history: list[TrialRecord], *, reason: str | None = Non
 
     Earlier records supply the running best (for the knob-diff and best-so-far),
     the Δ, and the trajectory. ``reason`` is an optional optimizer/mutation note
-    shown next to the knob-diff when the caller has one (the driver currently
-    does not, so it is omitted by default)."""
+    shown next to the knob-diff; when the caller passes none it falls back to the
+    variant's own ``reason`` (a reflective mutation attaches the *why* there), so a
+    reflection-driven run logs its reasoning per generation."""
     if not history:
         raise ValueError("render_journal_entry() on empty history")
 
     n = len(history)
     rec = history[-1]
     v = rec.variant
+    if reason is None:
+        reason = v.reason
     m = rec.metrics
     prior = history[:-1]
     best_prior = max(

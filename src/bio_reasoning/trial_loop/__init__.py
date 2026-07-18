@@ -38,6 +38,13 @@ from bio_reasoning.trial_loop.loop import (
     with_self_critique,
 )
 from bio_reasoning.trial_loop.reflect import Proposer, best_trial, make_grid_proposer, reflect
+from bio_reasoning.trial_loop.reflective_mutation import (
+    ValError,
+    collect_val_errors,
+    reflect_and_mutate,
+    select_errors,
+    validate_pipeline_config,
+)
 from bio_reasoning.trial_loop.ruled_out import RULED_OUT, is_ruled_out
 from bio_reasoning.trial_loop.submission import build_track_a_submission
 from bio_reasoning.trial_loop.tools import (
@@ -46,10 +53,11 @@ from bio_reasoning.trial_loop.tools import (
     make_tools,
     traxler_direction_lookup,
 )
-from bio_reasoning.trial_loop.types import TrialRecord, Variant
+from bio_reasoning.trial_loop.types import PipelineConfig, TrialRecord, Variant
 
 __all__ = [
     "Variant",
+    "PipelineConfig",
     "TrialRecord",
     "predict_variant",
     "run_variant",
@@ -67,6 +75,11 @@ __all__ = [
     "evolve_loop",
     "EvolveResult",
     "Individual",
+    "reflect_and_mutate",
+    "collect_val_errors",
+    "select_errors",
+    "validate_pipeline_config",
+    "ValError",
     "make_bandit_proposer",
     "make_llm_proposer",
     "AGENT_TOOL_SUBSETS",
