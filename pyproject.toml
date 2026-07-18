@@ -36,6 +36,7 @@ track-b = [
 ]
 eval = [
     "scikit-learn>=1.7.0",
+    "xgboost>=2.1",
 ]
 tabpfn = [
     # Pin to v2.1.x: it downloads weights from HuggingFace offline. v8+ added a
