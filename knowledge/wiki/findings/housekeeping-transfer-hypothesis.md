@@ -49,4 +49,8 @@ despite the domain gaps.
 ## Next steps
 
 - [ ] Test prediction 1 on Track A data (we have it locally).
-- [ ] Enumerate Tahoe cell lines; flag myeloid / monocytic lines.
+- [x] Enumerate Tahoe cell lines; flag myeloid / monocytic lines — **done, none exist.**
+  Tahoe's panel is entirely solid-tumor (Lung/Bowel/Pancreas/Skin/Breast/…); **zero** myeloid
+  lines, so there is no macrophage-adjacent context to up-weight. Combined with the drug-MoA
+  channel covering only 3.1% of Track A perts, the Tahoe augmentation lead is a
+  **feasibility-bounded clean negative** — see [[tahoe-100m-transfer]].
