@@ -87,6 +87,22 @@ def _representative(per_seed: list[dict[str, float]]) -> dict[str, float]:
     return out
 
 
+def _route_predictor(prompt_rp: RowPredictor, config_rp: RowPredictor) -> RowPredictor:
+    """Dispatch each variant to the predictor for the axis it mutated.
+
+    A variant carrying a ``pipeline_config`` is a config-path child — score it through the
+    config-consuming predictor (:func:`config_predictor.make_config_row_predictor`) so its
+    fusion is actually evaluated, not inherited from the parent's prompt. Everything else
+    (seeds, prompt-path children) stays on the prompt predictor.
+    """
+
+    def _predict(rows, variant: Variant, seed, get_examples):
+        rp = config_rp if variant.pipeline_config is not None else prompt_rp
+        return rp(rows, variant, seed, get_examples)
+
+    return _predict
+
+
 def _diversified(propose_fn: MutateFn, child_index: int) -> MutateFn:
     """Wrap ``propose_fn`` with a per-child variation hint so siblings differ.
 
@@ -181,6 +197,7 @@ def evolve_loop(
     val_n: int | None = None,
     reflect_fn: ReflectFn | None = None,
     error_top_n: int = 20,
+    config_row_predictor: RowPredictor | None = None,
     on_record: Callable[[TrialRecord], None] | None = None,
 ) -> EvolveResult:
     """Run the population-based AlphaEvolve loop over prompt-template variants.
@@ -200,9 +217,17 @@ def evolve_loop(
     collects that parent's ``error_top_n`` misclassified val rows and hands them to
     ``reflect_and_mutate``, so each child is a *reasoned* revision (prompt edit or fusion
     config) with the reflector's ``reason`` attached. ``propose_fn`` is then unused.
+
+    When ``config_row_predictor`` is given, a child that mutated the **pipeline** axis (it
+    carries a ``pipeline_config``) is scored through it — its fusion is actually evaluated
+    instead of inheriting the parent prompt's score — while prompt-path children stay on
+    ``row_predictor`` (:func:`_route_predictor`). Without it, config children fall back to
+    the prompt predictor, so the config axis is representable but not selectable.
     Every evaluated child (and each gen-0 seed) is emitted via ``on_record`` for the
     journal.
     """
+    if config_row_predictor is not None:
+        row_predictor = _route_predictor(row_predictor, config_row_predictor)
     run_kwargs: dict[str, object] = {"example_key_fn": example_key_fn, "val_n": val_n}
     records: list[TrialRecord] = []
 
