@@ -99,6 +99,7 @@ def self_improve_loop(
             example_key_fn=example_key_fn,
             val_n=val_n,
         )
+        cm = gate.candidate_metrics or {}
         rec = TrialRecord(
             variant=cand,
             metrics={
@@ -107,6 +108,12 @@ def self_improve_loop(
                 "min_margin": gate.min_margin,
                 "feasibility_ratio": gate.feasibility_ratio,
                 "accepted": float(gate.accepted),
+                # Real per-trial diagnostics from the gate's representative split — without
+                # these the leaderboard defaults them to n_val=0 / nan (the phantom that read
+                # as an "empty eval" on the overnight agentic run).
+                "n_val": cm.get("n_val", 0),
+                "auroc_de": cm.get("auroc_de", float("nan")),
+                "auroc_dir": cm.get("auroc_dir", float("nan")),
             },
             reflection=(
                 f"vs {baseline.id}: margins={[round(m, 3) for m in gate.margins]} "

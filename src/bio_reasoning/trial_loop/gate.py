@@ -45,6 +45,27 @@ def score_external_fold(
     return evaluate(fold_df["label"].to_numpy(), mean[:, 0], mean[:, 1])[metric]
 
 
+def score_across_seeds_full(
+    df,
+    variant: Variant,
+    row_predictor: RowPredictor,
+    seeds: Sequence[int] = (0, 1, 2),
+    **run_kwargs: object,
+) -> list[dict[str, float]]:
+    """Full metric dict (``n_val``/``auroc_de``/``auroc_dir``/``mean``) per split seed.
+
+    ``seeds`` are *split* seeds (each re-draws ``holdout_split``), distinct from
+    ``variant.seeds`` (the multi-sample average within one split). The scalar
+    :func:`score_across_seeds` keeps only ``metrics[metric]``; the gate uses this
+    full-dict form so the per-trial diagnostics (n_val, both AUROCs) survive into the
+    record instead of defaulting to 0/nan in the leaderboard.
+    """
+    return [
+        run_variant(df, variant, row_predictor, seed=s, **run_kwargs).metrics  # type: ignore[arg-type]
+        for s in seeds
+    ]
+
+
 def score_across_seeds(
     df,
     variant: Variant,
@@ -59,14 +80,30 @@ def score_across_seeds(
     from ``variant.seeds`` (the multi-sample average within one split).
     """
     return [
-        run_variant(df, variant, row_predictor, seed=s, **run_kwargs).metrics[metric]  # type: ignore[arg-type]
-        for s in seeds
+        m[metric] for m in score_across_seeds_full(df, variant, row_predictor, seeds, **run_kwargs)
     ]
 
 
 def measure_noise_band(scores: Sequence[float]) -> float:
     """Seed-to-seed spread of a fixed config = the observed range (max − min)."""
     return float(max(scores) - min(scores))
+
+
+def _representative_metrics(per_split: list[dict[str, float]]) -> dict[str, float] | None:
+    """Collapse per-split metric dicts into one display row for the leaderboard.
+
+    ``n_val`` is taken from the first split (val size is stable across split seeds);
+    ``auroc_de``/``auroc_dir``/``mean`` are averaged over the same splits (nan-skipping)
+    so the rendered row stays internally consistent — ``mean == (auroc_de+auroc_dir)/2``
+    — rather than mixing a multi-split mean with single-split AUROCs.
+    """
+    if not per_split:
+        return None
+    out: dict[str, float] = {"n_val": per_split[0].get("n_val", 0)}
+    for k in ("auroc_de", "auroc_dir", "mean"):
+        vals = [m[k] for m in per_split if k in m and not np.isnan(m[k])]
+        out[k] = float(np.mean(vals)) if vals else float("nan")
+    return out
 
 
 @dataclass
@@ -85,6 +122,12 @@ class GateResult:
     external_candidate: float | None = None
     external_baseline: float | None = None
     external_delta: float | None = None
+    # Representative metric dict for candidate / baseline — n_val from the first split,
+    # AUROCs/mean averaged across splits (see _representative_metrics) — so the driver
+    # record and leaderboard show real, internally-consistent diagnostics instead of the
+    # 0/nan defaults.
+    candidate_metrics: dict[str, float] | None = None
+    baseline_metrics: dict[str, float] | None = None
 
     @property
     def min_margin(self) -> float:
@@ -119,8 +162,10 @@ def triple_verify(
     overfitting the challenge-train distribution. The fold is scored only for
     OOD-survivors (short-circuit) since each fold eval is expensive.
     """
-    cand = score_across_seeds(df, candidate, row_predictor, seeds, metric, **run_kwargs)
-    base = score_across_seeds(df, baseline, row_predictor, seeds, metric, **run_kwargs)
+    cand_full = score_across_seeds_full(df, candidate, row_predictor, seeds, **run_kwargs)
+    base_full = score_across_seeds_full(df, baseline, row_predictor, seeds, **run_kwargs)
+    cand = [m[metric] for m in cand_full]
+    base = [m[metric] for m in base_full]
     if noise_band is None:
         noise_band = measure_noise_band(base)
     margins = [c - b for c, b in zip(cand, base, strict=True)]
@@ -142,4 +187,6 @@ def triple_verify(
         external_candidate=ext_cand,
         external_baseline=ext_base,
         external_delta=ext_delta,
+        candidate_metrics=_representative_metrics(cand_full),
+        baseline_metrics=_representative_metrics(base_full),
     )
