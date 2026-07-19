@@ -2,12 +2,12 @@
 title: Adapting PBio-Agent (LINCSQA) to our Track A/B task
 status: proposed
 cites:
-  - source/2026-kim-pbio-agent.md
-  - source/2026-bioreasoning-challenge-overview.md
+  - domains/ai-reasoning/source/2026-kim-pbio-agent.md
+  - domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md
   - findings/track-a-eda.md
   - findings/housekeeping-transfer-hypothesis.md
   - findings/tabpfn-for-perturbation-tracks.md
-  - source/2025-wu-perturbqa.md
+  - domains/ai-reasoning/source/2025-wu-perturbqa.md
   - findings/track-b-abstention-failure.md
 ---
 

@@ -3,7 +3,7 @@ title: Tahoe-100M adds nothing to Track A — 3% drug-MoA coverage caps it; even
 type: findings
 status: measured
 cites:
-  - source/2025-zhang-tahoe-100m.md
+  - domains/bio-multiomics/source/2025-zhang-tahoe-100m.md
   - findings/direction-transfers-de-doesnt.md
   - findings/de-unlearnable-oracle-ceiling.md
   - findings/housekeeping-transfer-hypothesis.md

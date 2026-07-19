@@ -7,7 +7,7 @@ cites:
   - findings/competitor-landscape.md
   - findings/track-a-eda.md
   - findings/track-b-abstention-failure.md
-  - source/2026-bioreasoning-challenge-overview.md
+  - domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md
 ---
 
 # Curated-edge databases are too sparse/weak to crack the DE axis — go model-based

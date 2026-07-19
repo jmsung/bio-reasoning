@@ -6,7 +6,7 @@ cites:
   - findings/direction-transfers-de-doesnt.md
   - findings/competitor-landscape.md
   - findings/track-a-eda.md
-  - source/2026-bioreasoning-challenge-overview.md
+  - domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md
 ---
 
 # The direction ceiling is ~0.65 — no fusion (equal-weight, weighted, or learned) beats the single best DIR channel

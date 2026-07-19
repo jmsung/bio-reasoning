@@ -3,7 +3,7 @@ title: Track B — the agent underperformed its own prior (rank-metric abstentio
 cites:
   - findings/track-a-eda.md
   - methods/pbio-agent-for-tracks.md
-  - source/2026-bioreasoning-challenge-overview.md
+  - domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md
 ---
 
 # Track B — the agent underperformed its own prior
