@@ -93,7 +93,7 @@ load_dotenv(ROOT / ".env.local", override=True)
 # Watchdog: if any operation blocks longer than this, dump ALL thread stacks to
 # stderr (repeating) so a hang self-diagnoses. macOS py-spy needs sudo, so this is
 # the in-process capture. Default 1800s (30 min) is comfortably above a single
-# variant's legitimate scoring time (~6-18 min at concurrency 8, val ~1.3k rows) so
+# variant's legitimate scoring time (~5-15 min at concurrency 32, val ~1.3k rows) so
 # it fires only on a genuine hang, not normal slow scoring. Tunable via
 # BIOREASONING_HANG_DUMP_S (0 disables).
 _HANG_DUMP_S = int(os.getenv("BIOREASONING_HANG_DUMP_S", "1800"))
@@ -449,7 +449,11 @@ def main() -> None:
     ap.add_argument("--max-trials", type=int, default=None)
     ap.add_argument("--max-tokens", type=int, default=2048)
     ap.add_argument("--reasoning-effort", default="low")
-    ap.add_argument("--concurrency", type=int, default=16)
+    # Default 32: the OpenAI-compatible client (Connection: close) saturates cleanly at
+    # 32 parallel calls (measured 0 errors); the old c8/c16 cap was a stale urllib-era
+    # deadlock bound. gpt-oss is a reasoning model (~7-10s/call), so throughput is
+    # concurrency-bound — 32 cuts a val-60 candidate from ~17 min (c8) to ~5 min.
+    ap.add_argument("--concurrency", type=int, default=32)
     ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "self-improve-loop")
     ap.add_argument(
         "--no-journal",
