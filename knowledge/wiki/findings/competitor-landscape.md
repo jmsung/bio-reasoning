@@ -2,7 +2,7 @@
 title: Competitor landscape — the public field is LLM-free string-ML
 status: draft
 cites:
-  - source/2026-bioreasoning-challenge-overview.md
+  - domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md
   - findings/track-a-eda.md
   - findings/track-b-abstention-failure.md
   - findings/tabpfn-for-perturbation-tracks.md

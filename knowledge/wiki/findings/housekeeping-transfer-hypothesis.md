@@ -2,8 +2,8 @@
 title: Housekeeping-perturbation transferability — augmentation lead
 cites:
   - findings/track-a-eda.md
-  - source/2025-zhang-tahoe-100m.md
-  - source/2025-wu-perturbqa.md
+  - domains/bio-multiomics/source/2025-zhang-tahoe-100m.md
+  - domains/ai-reasoning/source/2025-wu-perturbqa.md
 ---
 
 # Housekeeping-perturbation transferability (augmentation lead)

@@ -18,17 +18,17 @@ Grounded in the consult-KB gate (`.claude/CLAUDE.md`); cites are to `knowledge/`
 | **PerturbQA** (Wu 2025) | ~599k curated pairs, 4 CRISPRi lines | **Human** (K562, RPE1, HepG2, Jurkat) | **Curated `up/down/none` labels** | **Directly** — same task format, no pseudobulking |
 | **Dixit 2016** (original Perturb-seq) | ~200k cells, <25 TF perts | **Mouse** BMDCs + LPS | CRISPR-KO expression | Best species/lineage match but too small for a corpus |
 
-Cites: `knowledge/source/2022-replogle-genome-scale-perturb-seq.md`, `knowledge/source/2025-wu-perturbqa.md`, `knowledge/source/2016-dixit-perturb-seq.md`; compute/tooling in `knowledge/wiki/methods/perturb-seq-data-assessment.md`.
+Cites: `knowledge/domains/bio-multiomics/source/2022-replogle-genome-scale-perturb-seq.md`, `knowledge/domains/ai-reasoning/source/2025-wu-perturbqa.md`, `knowledge/domains/bio-multiomics/source/2016-dixit-perturb-seq.md`; compute/tooling in `knowledge/wiki/methods/perturb-seq-data-assessment.md`.
 
-**Critical organism gap.** The challenge is **mouse BMDMs** (`knowledge/source/2026-bioreasoning-challenge-overview.md`); Replogle and PerturbQA are **human** → all transfer routes through a mouse↔human ortholog map. Only Dixit is native mouse, and it is too small to serve as a retrieval corpus. The cheap, high-coverage route is **PerturbQA's curated CSVs** (pandas only — no `pertpy`/`scanpy`/single-cell download); the expensive route is a genome-scale Replogle pseudobulk pull.
+**Critical organism gap.** The challenge is **mouse BMDMs** (`knowledge/domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md`); Replogle and PerturbQA are **human** → all transfer routes through a mouse↔human ortholog map. Only Dixit is native mouse, and it is too small to serve as a retrieval corpus. The cheap, high-coverage route is **PerturbQA's curated CSVs** (pandas only — no `pertpy`/`scanpy`/single-cell download); the expensive route is a genome-scale Replogle pseudobulk pull.
 
 ## 2. Does external transfer even work? (literature)
 
 The published consensus is **strongly cautionary for the OOD-both-axes regime** — which is exactly our test split:
 
 - **Ahlmann-Eltze 2025** (Nat. Methods): across 4 CRISPR datasets, **no DL/foundation model beat linear/mean baselines** on unseen perturbations. The one thing that consistently won: a linear model with perturbation embeddings pretrained on the *other* cell line — i.e. transfer works via **direction/response**, while generic atlas/FM augmentation washed out. `knowledge/domains/bio-multiomics/source/2025-ahlmann-eltze-dl-perturbation-vs-linear.md`.
-- **Csendes 2025**: Train-Mean beat scGPT/scFoundation on all 4 Perturb-seq datasets; root cause = **low perturbation-specific variance**. `knowledge/source/2025-csendes-fm-perturb-benchmark.md`.
-- **Hou 2026** (leakage-controlled scFM benchmark): across 13 scFMs, **none beat an additive baseline** for perturbation prediction. `knowledge/source/2026-hou-scfm-benchmark.md`.
+- **Csendes 2025**: Train-Mean beat scGPT/scFoundation on all 4 Perturb-seq datasets; root cause = **low perturbation-specific variance**. `knowledge/domains/bio-foundation-models/source/2025-csendes-fm-perturb-benchmark.md`.
+- **Hou 2026** (leakage-controlled scFM benchmark): across 13 scFMs, **none beat an additive baseline** for perturbation prediction. `knowledge/domains/bio-foundation-models/source/2026-hou-scfm-benchmark.md`.
 - **Yuan 2026** (Plausibility ≠ Prediction): LLM predictors are near-chance per-gene and **over-call DE** (dangerous against a `none`-heavy label set); contrastive neighbor/KG retrieval lifts per-gene AUROC 0.50→~0.57–0.63, but **no zero-overlap regime was tested**. `knowledge/domains/ai-reasoning/source/2026-yuan-plausibility-not-prediction-llm-perturbation.md`.
 
 **The one positive signal.** **Palla 2026** (Tabular FMs): TabPFN/TabICL rank #1 on every perturbation task including cross-cell-type — but absolute power is **modest** (0.22–0.58 cosine vs 0.97 oracle), and on genome-wide primary-cell knockouts **93% of logFC is within ±0.1** (near-null). `knowledge/domains/bio-multiomics/source/2026-palla-tabular-foundation-models-perturbation.md`.
@@ -37,7 +37,7 @@ The published consensus is **strongly cautionary for the OOD-both-axes regime** 
 
 ## 3. Leakage risk — NOT a blocker
 
-- The challenge **explicitly allows** PerturbQA and Tahoe-100M as augmentation (permissively licensed). `knowledge/source/2026-bioreasoning-challenge-overview.md`.
+- The challenge **explicitly allows** PerturbQA and Tahoe-100M as augmentation (permissively licensed). `knowledge/domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md`.
 - PerturbQA is built from / includes Replogle K562/RPE1 — a flagged leakage-check requirement.
 - **The check was run and PASSED:** Track A is mouse macrophage; PerturbQA is human K562/RPE1/HepG2/Jurkat → disjoint on **both** species and cell type, so Track A labels cannot derive from it and measured transfer is **not** source-inflated. (`research/perturb-seq-transfer-probe`).
 

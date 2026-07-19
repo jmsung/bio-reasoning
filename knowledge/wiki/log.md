@@ -124,3 +124,10 @@ Search-and-ingest for macrophage gene-perturbation-prediction (Track A/B/C). 16 
   CRISPR functional screens, TF networks) + a slim bio-specific agent set (Biomni, Virtual Cell).
 - All flat `knowledge/source/`, `source_type: papers`, deduped vs the 217-page corpus by title/DOI.
 - Durable pages to be promoted to the knowledge-base SSOT + synced into domains/ later (out of band).
+
+## 2026-07-19 — ADR-0009 flat→domain-nested migration
+- Migrated all 103 flat `knowledge/source/*.md` cards to `knowledge/domains/<domain>/source/`
+  (bio-multiomics 59, bio-foundation-models 38, ai-reasoning 6). Pure history-preserving move
+  (94 flat cards moved to domains/ (R100 renames); 9 untracked-WIP cards excluded); zero domain-twin
+  collisions. Links repointed in wiki/index.md, wiki/methods/, wiki/findings/. Historical log
+  entries above left intact per migration policy.

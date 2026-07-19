@@ -2,7 +2,7 @@
 title: TabPFN / tabular foundation models for Track A and B
 status: draft
 cites:
-  - source/2026-bioreasoning-challenge-overview.md
+  - domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md
   - findings/track-a-eda.md
   - methods/pbio-agent-for-tracks.md
   - domains/bio-multiomics/source/2026-palla-tabular-foundation-models-perturbation.md

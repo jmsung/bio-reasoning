@@ -1,10 +1,10 @@
 ---
 title: Assessing external Perturb-seq datasets — compute plan & tooling
 cites:
-  - source/2022-replogle-genome-scale-perturb-seq.md
-  - source/2021-papalexi-eccite-seq-immune-checkpoints.md
-  - source/2016-dixit-perturb-seq.md
-  - source/2024-peidli-scperturb.md
+  - domains/bio-multiomics/source/2022-replogle-genome-scale-perturb-seq.md
+  - domains/bio-multiomics/source/2021-papalexi-eccite-seq-immune-checkpoints.md
+  - domains/bio-multiomics/source/2016-dixit-perturb-seq.md
+  - domains/bio-multiomics/source/2024-peidli-scperturb.md
   - findings/housekeeping-transfer-hypothesis.md
 ---
 

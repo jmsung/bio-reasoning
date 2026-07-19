@@ -56,7 +56,7 @@ Same task, data, metric, and submission math as Track A — only the modeling
 constraints differ. Authoritative source is the Kaggle Track B "Rules" tab
 (JS-rendered, not machine-fetchable); the below is distilled from
 [`challenge.md`](challenge.md#track-b--multi-agentic-tool-use) and
-[`../knowledge/source/2026-bioreasoning-challenge-overview.md`](../knowledge/source/2026-bioreasoning-challenge-overview.md).
+[`../knowledge/domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md`](../knowledge/domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md).
 
 **Constraints:**
 

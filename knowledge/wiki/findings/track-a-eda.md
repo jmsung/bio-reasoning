@@ -1,7 +1,7 @@
 ---
 title: Track A EDA — data structure and predictive signal
 cites:
-  - source/2026-bioreasoning-challenge-overview.md
+  - domains/ai-reasoning/source/2026-bioreasoning-challenge-overview.md
   - https://mygene.info
   - https://biit.cs.ut.ee/gprofiler/
 ---
