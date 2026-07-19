@@ -128,6 +128,6 @@ Search-and-ingest for macrophage gene-perturbation-prediction (Track A/B/C). 16 
 ## 2026-07-19 — ADR-0009 flat→domain-nested migration
 - Migrated all 103 flat `knowledge/source/*.md` cards to `knowledge/domains/<domain>/source/`
   (bio-multiomics 59, bio-foundation-models 38, ai-reasoning 6). Pure history-preserving move
-  (94 `git mv` R100 + 9 previously-untracked cards added at the new path); zero domain-twin
+  (94 flat cards moved to domains/ (R100 renames); 9 untracked-WIP cards excluded); zero domain-twin
   collisions. Links repointed in wiki/index.md, wiki/methods/, wiki/findings/. Historical log
   entries above left intact per migration policy.
