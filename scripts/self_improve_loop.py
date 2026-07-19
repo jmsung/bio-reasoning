@@ -144,7 +144,9 @@ def _build_agentic_predictor(args, external_fold_df):
         raise SystemExit("--agentic needs OPENROUTER_API_KEY (Bing's gpt-oss endpoint).")
     tba = _load_track_b_module()
     lm = tba.build_openrouter_lm(args.max_tokens, args.max_retries)
-    include_traxler = external_fold_df is None  # (A): no Traxler tool when its fold is the gate
+    # (A) no Traxler tool when its fold gates; also drop it on --no-traxler-tool
+    # (data-compliance: Traxler is NOT on the allowed-data list — PerturbQA + Tahoe-100M only).
+    include_traxler = external_fold_df is None and not getattr(args, "no_traxler_tool", False)
     # Leak-safe (A): the Traxler labels power the tool ONLY when they are NOT the gated
     # fold (include_traxler) — so the tool is functional here, dropped when the fold gates.
     traxler_fn = None
@@ -460,6 +462,13 @@ def main() -> None:
         "--agentic",
         action="store_true",
         help="Loop style ③: search agentic tool configs (not DE-votes prompts).",
+    )
+    ap.add_argument(
+        "--no-traxler-tool",
+        action="store_true",
+        help="Agentic: exclude the Traxler-direction tool so the searched configs use only "
+        "allowed-data tools (GO/STRING). Traxler is NOT on the competition allowed-data list "
+        "(PerturbQA + Tahoe-100M only), so a Traxler-using survivor would be non-submittable.",
     )
     ap.add_argument("--max-iters", type=int, default=40, help="Agentic: ReAct rounds/row.")
     ap.add_argument("--max-retries", type=int, default=2, help="Agentic: LM retries.")
